@@ -1,0 +1,91 @@
+#pragma once
+
+#include <vector>
+#include <map>
+
+#include "llvm/ADT/DenseMap.h"
+
+#include "Expr/Expr.h"
+#include "Block.h"
+
+class Func {
+friend class Block;
+private:
+    const llvm::Function* function;
+
+    llvm::DenseMap<const llvm::BasicBlock*, std::unique_ptr<Block>> blockMap; //DenseMap used for mapping llvm::BasicBlock to Block
+    llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> exprMap; // DenseMap used for mapping llvm::Value to Expr
+    llvm::DenseMap<const llvm::Value*, std::unique_ptr<Value>> valueMap; //DenseMap used in parsing alloca instruction for mapping llvm::Value to Value
+
+    unsigned varCount; //counter for assigning names of variables
+    unsigned blockCount; // counter for assigning names of blocks
+
+    /**
+     * @brief getBlockName Returns name of the block if the block already has an assigned name.
+     * Otherwise assigns new name for the block in form of string containing block + blockCount,
+     * inserts the block to the blockMap and return the assigned name.
+     * @param block llvm::BasicBlock
+     * @return Name assigned for given block.
+     */
+    std::string getBlockName(const llvm::BasicBlock* block); //RENAME
+
+    /**
+     * @brief getExpr Finds Expr in exprMap with key val.
+     * @param val Key of the Expr
+     * @return Pointer to the Expr if val is found, nullptr otherwise.
+     */
+    Expr* getExpr(const llvm::Value* val);
+
+    /**
+     * @brief createExpr Inserts expr into the exprMap using val as a key.
+     * @param val Key
+     * @param expr Mapped Value
+     */
+    void createExpr(const llvm::Value* val, std::unique_ptr<Expr> expr);
+
+    /**
+     * @brief createExpr Casts ins to const llvm::Value* and calls createExpr
+     * @param ins llvm::Instruction
+     * @param expr Mapped Value
+     */
+    void createExpr(const llvm::Instruction* ins, std::unique_ptr<Expr> expr);
+
+    /**
+     * @brief getVarName Creates a new name for a variable in form of string containing "var" + varCount.
+     * @return String containing a variable name.
+     */
+    std::string getVarName();
+
+public:
+
+    /**
+     * @brief Func Constructor for Func.
+     * @param func llvm::Function for parsing
+     */
+    Func(llvm::Function* func);
+
+    /**
+     * @brief parseFunction Parses blocks of the llvm::Function.
+     */
+    void parseFunction();
+
+    /**
+     * @brief print Prints the translated function in the llvm::outs() stream.
+     */
+    void print() const;
+
+    /**
+     * @brief saveFile Saves the translated function to the given file.
+     * @param file Opened file for saving the function.
+     */
+    void saveFile(std::ofstream& file) const;
+
+    /**
+     * @brief getType Transforms llvm::Type into corresponding Type object
+     * @param type llvm::Type for transformation
+     * @param isArray Indicates that given llvm::Type is array
+     * @param size Size of the array
+     * @return unique_ptr to corresponding Type object
+     */
+    static std::unique_ptr<Type> getType(const llvm::Type* type, bool isArray = false, unsigned int size = 0);
+};
