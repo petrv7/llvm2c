@@ -14,6 +14,17 @@ public:
     virtual std::string toString() const = 0;
 };
 
+class GepExpr : public Expr {
+public:
+    Expr* element;
+    std::vector<std::pair<std::unique_ptr<Type>, std::string>> args;
+
+    GepExpr(Expr*);
+    void print() const override;
+    std::string toString() const override;
+    void addArg(std::unique_ptr<Type>, const std::string&);
+};
+
 class Struct : public Expr {
 public:
     std::string name;

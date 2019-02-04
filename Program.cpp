@@ -43,7 +43,7 @@ void Program::parseProgram() {
                 continue;
             }
         }
-        functions.push_back(std::move(std::make_unique<Func>(&func)));
+        functions.push_back(std::move(std::make_unique<Func>(&func, this)));
     }
 }
 
@@ -76,4 +76,14 @@ void Program::saveFile(const std::string& fileName) const {
     }
 
     file.close();
+}
+
+Struct* Program::getStruct(const std::string& name) const {
+    for (const auto& strct : structs) {
+        if (strct->name == name) {
+            return strct.get();
+        }
+    }
+
+    return nullptr;
 }

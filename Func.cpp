@@ -9,7 +9,8 @@
 #include <string>
 #include <fstream>
 
-Func::Func(llvm::Function* func) {
+Func::Func(llvm::Function* func, Program* program) {
+    this->program = program;
     function = func;
     varCount = 0;
     blockCount = 0;
@@ -127,6 +128,10 @@ void Func::saveFile(std::ofstream& file) const {
     }
 
     file << "}\n\n";
+}
+
+Struct* Func::getStruct(const std::string& name) const {
+    return program->getStruct(name);
 }
 
 std::unique_ptr<Type> Func::getType(const llvm::Type* type, bool isArray, unsigned int size) {

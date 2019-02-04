@@ -2,6 +2,32 @@
 
 #include "llvm/Support/raw_ostream.h"
 
+GepExpr::GepExpr(Expr* element)
+    : element(element) { }
+
+void GepExpr::print() const {
+    std::string print = "(" + element->toString();
+    print.append(" + " + args[0].second + ")");
+
+    for (unsigned int i = 1; i < args.size(); i++) {
+        print = "(" + args[i].first->toString() + "*)" + print;
+        print.append(" + " + args[i].second + ")");
+    }
+
+    print = "*(" + print + ")";
+    llvm::outs() << print;
+}
+
+std::string GepExpr::toString() const {
+    std::string ret;
+//TODO
+    return ret;
+}
+
+void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
+    args.push_back(std::make_pair(std::move(type), index));
+}
+
 Struct::Struct(const std::string & name)
     : name(name) { }
 

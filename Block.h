@@ -123,6 +123,12 @@ private:
     void parseSelectInstruction(const llvm::Instruction& ins);
 
     /**
+     * @brief parseGepInstruction Parses getelementptr instruction into GepExpr.
+     * @param ins getelementptr instruction
+     */
+    void parseGepInstruction(const llvm::Instruction& ins);
+
+    /**
      * @brief parseLLVMInstruction Calls corresponding parse method for given instruction.
      * @param ins Instruction for parsing
      */

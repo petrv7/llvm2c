@@ -47,4 +47,6 @@ public:
      * @param fileName Name of the file.
      */
     void saveFile(const std::string& fileName) const;
+
+    Struct* getStruct(const std::string& name) const;
 };

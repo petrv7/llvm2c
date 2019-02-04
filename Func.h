@@ -5,17 +5,22 @@
 
 #include "llvm/ADT/DenseMap.h"
 
+class Program;
+
 #include "Expr/Expr.h"
 #include "Block.h"
+#include "Program.h"
 
 class Func {
 friend class Block;
 private:
     const llvm::Function* function;
+    const Program* program;
 
     llvm::DenseMap<const llvm::BasicBlock*, std::unique_ptr<Block>> blockMap; //DenseMap used for mapping llvm::BasicBlock to Block
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> exprMap; // DenseMap used for mapping llvm::Value to Expr
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<Value>> valueMap; //DenseMap used in parsing alloca instruction for mapping llvm::Value to Value
+    llvm::DenseMap<const llvm::Value*, std::unique_ptr<GepExpr>> gepExprMap; //DenseMap used in parsing getelementptr instruction for mapping llvm::Value to GepExpr
 
     unsigned varCount; //counter for assigning names of variables
     unsigned blockCount; // counter for assigning names of blocks
@@ -62,7 +67,7 @@ public:
      * @brief Func Constructor for Func.
      * @param func llvm::Function for parsing
      */
-    Func(llvm::Function* func);
+    Func(llvm::Function* func, Program* program);
 
     /**
      * @brief parseFunction Parses blocks of the llvm::Function.
@@ -79,6 +84,8 @@ public:
      * @param file Opened file for saving the function.
      */
     void saveFile(std::ofstream& file) const;
+
+    Struct* getStruct(const std::string& name) const;
 
     /**
      * @brief getType Transforms llvm::Type into corresponding Type object
