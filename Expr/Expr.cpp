@@ -6,22 +6,20 @@ GepExpr::GepExpr(Expr* element)
     : element(element) { }
 
 void GepExpr::print() const {
+    llvm::outs() << this->toString();
+}
+
+std::string GepExpr::toString() const {
     std::string print = "(" + element->toString();
     print.append(" + " + args[0].second + ")");
 
     for (unsigned int i = 1; i < args.size(); i++) {
-        print = "(" + args[i].first->toString() + "*)" + print;
+        print = "((" + args[i].first->toString() + ")" + print;
         print.append(" + " + args[i].second + ")");
     }
 
     print = "*(" + print + ")";
-    llvm::outs() << print;
-}
-
-std::string GepExpr::toString() const {
-    std::string ret;
-//TODO
-    return ret;
+    return print;
 }
 
 void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
@@ -44,7 +42,7 @@ void Struct::print() const {
 
         llvm::outs() << ";\n";
     }
-    llvm::outs() << "}\n";
+    llvm::outs() << "};\n";
 }
 
 std::string Struct::toString() const {
@@ -62,7 +60,7 @@ std::string Struct::toString() const {
 
         ret += ";\n";
     }
-    ret += "}\n";
+    ret += "};\n";
 
     return ret;
 }

@@ -1,6 +1,61 @@
 #include "Type.h"
 
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/Support/raw_ostream.h"
+
+std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool isArray, unsigned int size) {
+    if (isArray) {
+        if (type->getArrayElementType()->isArrayTy()) {
+            return std::make_unique<ArrayType>(std::move(getType(type->getArrayElementType(), true, type->getArrayElementType()->getArrayNumElements())), size);
+        } else {
+            return std::make_unique<ArrayType>(std::move(getType(type->getArrayElementType())), size);
+        }
+    }
+
+    if (type->isVoidTy()) {
+        return std::make_unique<VoidType>();
+    }
+
+    if (type->isIntegerTy()) {
+        const auto intType = static_cast<const llvm::IntegerType*>(type);
+        switch(intType->getBitWidth()) {
+        case 8:
+            return std::make_unique<CharType>(false);
+        case 16:
+            return std::make_unique<ShortType>(false);
+        case 32:
+            return std::make_unique<IntType>(false);
+        case 64:
+            return std::make_unique<LongType>(false);
+        default:
+            return nullptr;
+        }
+    }
+
+    if (type->isFloatTy()) {
+        return std::make_unique<FloatType>();
+    }
+
+    if (type->isDoubleTy()) {
+        return std::make_unique<DoubleType>();
+    }
+
+    if (type->isX86_FP80Ty()) {
+        return std::make_unique<LongDoubleType>();
+    }
+
+    if (type->isPointerTy()) {
+        const auto ptr = static_cast<const llvm::PointerType*>(type);
+        return std::make_unique<PointerType>(std::move(getType(ptr->getElementType())));
+    }
+
+    if (type->isStructTy()) {
+        const llvm::StructType* structType = llvm::dyn_cast<const llvm::StructType>(type);
+        return std::make_unique<StructType>(structType->getName().str().erase(0, 7));
+    }
+
+    return nullptr;
+}
 
 StructType::StructType(const std::string& name)
     : name(name) { }

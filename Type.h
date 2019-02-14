@@ -1,5 +1,7 @@
 #pragma once
 
+#include "llvm/IR/Type.h"
+
 #include <string>
 #include <memory>
 
@@ -8,6 +10,15 @@ public:
     virtual ~Type() = default;
     virtual void print() const = 0;
     virtual std::string toString() const = 0;
+
+    /**
+     * @brief getType Transforms llvm::Type into corresponding Type object
+     * @param type llvm::Type for transformation
+     * @param isArray Indicates that given llvm::Type is array
+     * @param size Size of the array
+     * @return unique_ptr to corresponding Type object
+     */
+    static std::unique_ptr<Type> getType(const llvm::Type* type, bool isArray = false, unsigned int size = 0);
 };
 
 class StructType : public Type {

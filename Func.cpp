@@ -4,6 +4,8 @@
 #include <llvm/IR/Metadata.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include "Type.h"
+
 #include <utility>
 #include <cstdint>
 #include <string>
@@ -14,6 +16,13 @@ Func::Func(llvm::Function* func, Program* program) {
     function = func;
     varCount = 0;
     blockCount = 0;
+
+    if (func->getReturnType()->isArrayTy()) {
+        unsigned int size = func->getReturnType()->getArrayNumElements();
+        returnType = std::move(Type::getType(func->getReturnType(), true, size));
+    } else {
+        returnType = std::move(Type::getType(func->getReturnType()));
+    }
 
     parseFunction();
 }
@@ -62,7 +71,7 @@ void Func::parseFunction() {
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
-        exprMap[&arg] = std::make_unique<Value>(varName, std::move(getType(arg.getType())));
+        exprMap[&arg] = std::make_unique<Value>(varName, std::move(Type::getType(arg.getType())));
         varCount++;
     }
 
@@ -73,7 +82,8 @@ void Func::parseFunction() {
 }
 
 void Func::print() const {
-    llvm::outs() << function->getName().str() << "(";
+    returnType->print();
+    llvm::outs() <<  " " << function->getName().str() << "(";
     bool first = true;
 
     for (const llvm::Value& arg : function->args()) {
@@ -132,58 +142,4 @@ void Func::saveFile(std::ofstream& file) const {
 
 Struct* Func::getStruct(const std::string& name) const {
     return program->getStruct(name);
-}
-
-std::unique_ptr<Type> Func::getType(const llvm::Type* type, bool isArray, unsigned int size) {
-    if (isArray) {
-        if (type->getArrayElementType()->isArrayTy()) {
-            return std::make_unique<ArrayType>(std::move(getType(type->getArrayElementType(), true, type->getArrayElementType()->getArrayNumElements())), size);
-        } else {
-            return std::make_unique<ArrayType>(std::move(getType(type->getArrayElementType())), size);
-        }
-    }
-
-    if (type->isVoidTy()) {
-        return std::make_unique<VoidType>();
-    }
-
-    if (type->isIntegerTy()) {
-        const auto intType = static_cast<const llvm::IntegerType*>(type);
-        switch(intType->getBitWidth()) {
-        case 8:
-            return std::make_unique<CharType>(false);
-        case 16:
-            return std::make_unique<ShortType>(false);
-        case 32:
-            return std::make_unique<IntType>(false);
-        case 64:
-            return std::make_unique<LongType>(false);
-        default:
-            return nullptr;
-        }
-    }
-
-    if (type->isFloatTy()) {
-        return std::make_unique<FloatType>();
-    }
-
-    if (type->isDoubleTy()) {
-        return std::make_unique<DoubleType>();
-    }
-
-    if (type->isX86_FP80Ty()) {
-        return std::make_unique<LongDoubleType>();
-    }
-
-    if (type->isPointerTy()) {
-        const auto ptr = static_cast<const llvm::PointerType*>(type);
-        return std::make_unique<PointerType>(std::move(getType(ptr->getElementType())));
-    }
-
-    if (type->isStructTy()) {
-        const llvm::StructType* structType = llvm::dyn_cast<const llvm::StructType>(type);
-        return std::make_unique<StructType>(structType->getName());
-    }
-
-    return nullptr;
 }

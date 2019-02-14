@@ -8,6 +8,7 @@
 #include "llvm/IR/DebugInfoMetadata.h"
 
 #include "Func.h"
+#include "Type.h"
 #include "Expr/BinaryExpr.h"
 #include "Expr/UnaryExpr.h"
 
@@ -87,9 +88,9 @@ void Block::parseAllocaInstruction(const llvm::Instruction& ins) {
 
     if (allocaInst->getAllocatedType()->isArrayTy()) {
         unsigned int size = allocaInst->getAllocatedType()->getArrayNumElements();
-        func->valueMap[llvm::cast<const llvm::Value>(&ins)] = std::make_unique<Value>(func->getVarName(), std::move(func->getType(allocaInst->getAllocatedType(), true, size)));
+        func->valueMap[llvm::cast<const llvm::Value>(&ins)] = std::make_unique<Value>(func->getVarName(), std::move(Type::getType(allocaInst->getAllocatedType(), true, size)));
     } else {
-        func->valueMap[llvm::cast<const llvm::Value>(&ins)] = std::make_unique<Value>(func->getVarName(), std::move(func->getType(allocaInst->getAllocatedType())));
+        func->valueMap[llvm::cast<const llvm::Value>(&ins)] = std::make_unique<Value>(func->getVarName(), std::move(Type::getType(allocaInst->getAllocatedType())));
     }
 
     func->createExpr(&ins, std::make_unique<RefExpr>(func->valueMap[llvm::cast<const llvm::Value>(&ins)].get()));
@@ -298,7 +299,7 @@ void Block::parseCastInstruction(const llvm::Instruction& ins) {
     Expr* expr = func->getExpr(ins.getOperand(0));
     const llvm::CastInst* CI = llvm::cast<const llvm::CastInst>(&ins);
 
-    func->createExpr(&ins, std::make_unique<CastExpr>(expr, std::move(func->getType(CI->getDestTy()))));
+    func->createExpr(&ins, std::make_unique<CastExpr>(expr, std::move(Type::getType(CI->getDestTy()))));
 }
 
 void Block::parseSelectInstruction(const llvm::Instruction& ins) {
@@ -336,9 +337,9 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
         std::string indexValue = std::to_string(llvm::cast<llvm::ConstantInt>(index)->getSExtValue());
         if (index->getType()->isArrayTy()) {
             unsigned int size = index->getType()->getArrayNumElements();
-            gepExpr->addArg(std::move(func->getType(index->getType(), true, size)), indexValue);
+            gepExpr->addArg(std::move(Type::getType(index->getType(), true, size)), indexValue);
         } else {
-            gepExpr->addArg(std::move(func->getType(index->getType())), indexValue);
+            gepExpr->addArg(std::make_unique<PointerType>(Type::getType(index->getType())), indexValue);
         }
     }
 

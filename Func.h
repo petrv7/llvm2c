@@ -14,6 +14,8 @@ class Program;
 class Func {
 friend class Block;
 private:
+    std::unique_ptr<Type> returnType;
+
     const llvm::Function* function;
     const Program* program;
 
@@ -86,13 +88,4 @@ public:
     void saveFile(std::ofstream& file) const;
 
     Struct* getStruct(const std::string& name) const;
-
-    /**
-     * @brief getType Transforms llvm::Type into corresponding Type object
-     * @param type llvm::Type for transformation
-     * @param isArray Indicates that given llvm::Type is array
-     * @param size Size of the array
-     * @return unique_ptr to corresponding Type object
-     */
-    static std::unique_ptr<Type> getType(const llvm::Type* type, bool isArray = false, unsigned int size = 0);
 };

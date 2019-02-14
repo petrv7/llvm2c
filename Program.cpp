@@ -4,6 +4,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IRReader/IRReader.h"
 
+#include "Type.h"
+
 #include <fstream>
 #include <exception>
 
@@ -21,6 +23,7 @@ void Program::parseProgram() {
         std::string name = "";
         if (structType->hasName()) {
             name = structType->getName().str();
+            name.erase(0, 7);
         }
 
         auto structExpr = std::make_unique<Struct>(name);
@@ -28,9 +31,9 @@ void Program::parseProgram() {
         for (llvm::Type* type : structType->elements()) {
             if (type->isArrayTy()) {
                 unsigned int size = type->getArrayNumElements();
-                structExpr->addItem(std::move(Func::getType(type, true, size)), getStructVarName());
+                structExpr->addItem(std::move(Type::getType(type, true, size)), getStructVarName());
             } else {
-                structExpr->addItem(std::move(Func::getType(type)), getStructVarName());
+                structExpr->addItem(std::move(Type::getType(type)), getStructVarName());
             }
         }
 
