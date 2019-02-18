@@ -61,7 +61,7 @@ StructType::StructType(const std::string& name)
     : name(name) { }
 
 void StructType::print() const {
-    llvm::outs() << "struct " << name;
+    llvm::outs() << toString();
 }
 
 std::string StructType::toString() const {
@@ -77,11 +77,7 @@ void ArrayType::print() const {
 }
 
 void ArrayType::printSize() const {
-    llvm::outs() << "[" << size << "]";
-
-    if (ArrayType* AT = dynamic_cast<ArrayType*>(type.get())) {
-        AT->printSize();
-    }
+    llvm::outs() << sizeToString();
 }
 
 std::string ArrayType::toString() const {
@@ -92,7 +88,7 @@ std::string ArrayType::sizeToString() const {
     std::string ret;
 
     ret += "[";
-    ret += size;
+    ret += std::to_string(size);
     ret += "]";
     if (ArrayType* AT = dynamic_cast<ArrayType*>(type.get())) {
         ret += AT->sizeToString();
@@ -102,7 +98,7 @@ std::string ArrayType::sizeToString() const {
 }
 
 void VoidType::print() const {
-    llvm::outs() << "void";
+    llvm::outs() << toString();
 }
 
 std::string VoidType::toString() const {
@@ -113,8 +109,7 @@ PointerType::PointerType(std::unique_ptr<Type> type)
     : type(std::move(type)) { }
 
 void PointerType::print() const {
-    type->print();
-    llvm::outs() << "*";
+    llvm::outs() << toString();
 }
 
 std::string PointerType::toString() const {
@@ -126,10 +121,7 @@ IntegerType::IntegerType(const std::string& name, bool unsignedType)
       unsignedType(unsignedType) { }
 
 void IntegerType::print() const {
-    if (unsignedType) {
-        llvm::outs() << "unsigned ";
-    }
-    llvm::outs() << name;
+    llvm::outs() << toString();
 }
 
 std::string IntegerType::toString() const {
@@ -159,7 +151,7 @@ FloatingPointType::FloatingPointType(const std::string& name)
     :name(name) { }
 
 void FloatingPointType::print() const {
-    llvm::outs() << name;
+    llvm::outs() << toString();
 }
 
 std::string FloatingPointType::toString() const {

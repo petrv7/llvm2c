@@ -74,6 +74,10 @@ void Program::saveFile(const std::string& fileName) const {
     std::ofstream file;
     file.open(fileName);
 
+    for (const auto& structExpr : structs) {
+        file << structExpr->toString();
+    }
+
     for (const auto& func : functions) {
         func->saveFile(file);
     }

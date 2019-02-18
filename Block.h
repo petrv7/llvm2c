@@ -9,6 +9,9 @@
 
 class Func;
 
+/**
+ * @brief The Block class represents one of the block of the LLVM function.
+ */
 class Block {
 friend class Func;
 

@@ -1,4 +1,5 @@
 #include "Expr.h"
+#include "UnaryExpr.h"
 
 #include "llvm/Support/raw_ostream.h"
 
@@ -10,16 +11,35 @@ void GepExpr::print() const {
 }
 
 std::string GepExpr::toString() const {
-    std::string print = "(" + element->toString();
-    print.append(" + " + args[0].second + ")");
+    std::string print;
+    unsigned int i = 1;
+    bool isStruct = false;
 
-    for (unsigned int i = 1; i < args.size(); i++) {
-        print = "((" + args[i].first->toString() + ")" + print;
-        print.append(" + " + args[i].second + ")");
+    RefExpr* RE = static_cast<RefExpr*>(element);
+    if (Value* val = dynamic_cast<Value*>(RE->expr)) {
+        if (StructType* ST = dynamic_cast<StructType*>(val->type.get())) {
+            print = args[0].second;
+            i = 2;
+            isStruct = true;
+        }
+    } else {
+        print = "(" + element->toString();
+        print.append(" + " + args[0].second + ")");
     }
 
-    print = "*(" + print + ")";
-    return print;
+    for (i; i < args.size(); i++) {
+        if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
+            print = "(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
+        } else {
+            print = "(((" + args[i].first->toString() + ")" + print;
+        }
+        print.append(") + " + args[i].second + ")");
+    }
+
+    if (isStruct) {
+        return print;
+    }
+    return "*(" + print + ")";
 }
 
 void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
@@ -30,19 +50,7 @@ Struct::Struct(const std::string & name)
     : name(name) { }
 
 void Struct::print() const {
-    llvm::outs() << "struct " << name << " {\n";
-    for (const auto& item : items) {
-        llvm::outs() << "    ";
-        item.first->print();
-        llvm::outs() << " " << item.second;
-
-        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
-            AT->printSize();
-        }
-
-        llvm::outs() << ";\n";
-    }
-    llvm::outs() << "};\n";
+    llvm::outs() << toString();
 }
 
 std::string Struct::toString() const {
@@ -87,8 +95,7 @@ JumpExpr::JumpExpr(const std::string &block)
     : block(block) { }
 
 void JumpExpr::print() const {
-    llvm::outs() << "goto ";
-    llvm::outs() << block;
+    llvm::outs() << toString();
 }
 
 std::string JumpExpr::toString() const {
@@ -106,25 +113,12 @@ IfExpr::IfExpr(const std::string &trueBlock)
       falseBlock("") { }
 
 void IfExpr::print() const {
-    if (cmp != nullptr) {
-        llvm::outs() << "if (";
-        llvm::outs() << cmp->toString();
-        llvm::outs() << ") {\n    goto ";
-        llvm::outs() << trueBlock;
-        llvm::outs() << ";\n}";
-        llvm::outs() << " else {\n    goto ";
-        llvm::outs() << falseBlock;
-        llvm::outs() << ";\n}";
-    } else {
-        llvm::outs() << "goto ";
-        llvm::outs() << trueBlock;
-        llvm::outs() << ";";
-    }
+    llvm::outs() << toString();
 }
 
 std::string IfExpr::toString() const {
     if (cmp != nullptr) {
-        return "if (" + cmp->toString() + ") {\n    goto " + trueBlock + ";\n} else {\n    goto " + falseBlock + ";\n}";
+        return "if (" + cmp->toString() + ") {\n        goto " + trueBlock + ";\n    } else {\n        goto " + falseBlock + ";\n    }";
     }
 
     return "goto " + trueBlock + ";";
@@ -136,18 +130,7 @@ SwitchExpr::SwitchExpr(Expr* cmp, const std::string &def, std::map<int, std::str
       cases(cases) { }
 
 void SwitchExpr::print() const {
-    llvm::outs() << "switch(";
-    cmp->print();
-    llvm::outs() << ") {\n";
-
-    for (const auto &iter : cases) {
-        llvm::outs() << "case " << iter.first << ":\n";
-        llvm::outs() << "    goto " << iter.second << ";\n";
-    }
-
-    llvm::outs() << "default:\n";
-    llvm::outs() << "    goto " << def << ";\n";
-    llvm::outs() << "}";
+    llvm::outs() << toString();
 }
 
 std::string SwitchExpr::toString() const {
@@ -175,7 +158,7 @@ AsmExpr::AsmExpr(const std::string &inst)
     :inst(inst) { }
 
 void AsmExpr::print() const {
-    llvm::outs() << "asm(\"" << inst << "\");";
+    llvm::outs() << toString();
 }
 
 std::string AsmExpr::toString() const {
@@ -187,20 +170,7 @@ CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params)
       params(params) { }
 
 void CallExpr::print() const {
-    llvm::outs() << funcName << "(";
-
-    bool first = true;
-    for (auto param : params) {
-        if (first) {
-            param->print();
-        } else {
-            llvm::outs() << ", ";
-            param->print();
-        }
-        first = false;
-    }
-
-    llvm::outs() << ");";
+    llvm::outs() << toString();
 }
 
 std::string CallExpr::toString() const {

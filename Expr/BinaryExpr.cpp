@@ -15,9 +15,7 @@ AddExpr::AddExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void AddExpr::print() const {
-    left->print();
-    llvm::outs() << " + ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string AddExpr::toString() const {
@@ -28,9 +26,7 @@ SubExpr::SubExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void SubExpr::print() const {
-    left->print();
-    llvm::outs() << " - ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string SubExpr::toString() const {
@@ -41,10 +37,7 @@ EqualsExpr::EqualsExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void EqualsExpr::print() const {
-    left->print();
-    llvm::outs() << " = ";
-    right->print();
-    llvm::outs() << ";";
+    llvm::outs() << toString();
 }
 
 std::string EqualsExpr::toString() const {
@@ -55,9 +48,7 @@ MulExpr::MulExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void MulExpr::print() const {
-    left->print();
-    llvm::outs() << " * ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string MulExpr::toString() const {
@@ -68,9 +59,7 @@ DivExpr::DivExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void DivExpr::print() const {
-    left->print();
-    llvm::outs() << " / ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string DivExpr::toString() const {
@@ -81,9 +70,7 @@ RemExpr::RemExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void RemExpr::print() const {
-    left->print();
-    llvm::outs() << " % ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string RemExpr::toString() const {
@@ -94,9 +81,7 @@ AndExpr::AndExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void AndExpr::print() const {
-    left->print();
-    llvm::outs() << " & ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string AndExpr::toString() const {
@@ -107,9 +92,7 @@ OrExpr::OrExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void OrExpr::print() const {
-    left->print();
-    llvm::outs() << " | ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string OrExpr::toString() const {
@@ -120,9 +103,7 @@ XorExpr::XorExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void XorExpr::print() const {
-    left->print();
-    llvm::outs() << " ^ ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string XorExpr::toString() const {
@@ -135,11 +116,7 @@ CmpExpr::CmpExpr(Expr* l, Expr* r, std::string cmp) :
 }
 
 void CmpExpr::print() const {
-    left->print();
-    llvm::outs() << " ";
-    llvm::outs() << comparsion;
-    llvm::outs() << " ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string CmpExpr::toString() const {
@@ -150,9 +127,7 @@ AshrExpr::AshrExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void AshrExpr::print() const {
-    left->print();
-    llvm::outs() << " >> ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string AshrExpr::toString() const {
@@ -164,9 +139,7 @@ LshrExpr::LshrExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void LshrExpr::print() const {
-    left->print();
-    llvm::outs() << " >> ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string LshrExpr::toString() const {
@@ -177,9 +150,7 @@ ShlExpr::ShlExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void ShlExpr::print() const {
-    left->print();
-    llvm::outs() << " << ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string ShlExpr::toString() const {
@@ -191,12 +162,7 @@ SelectExpr::SelectExpr(Expr* comp, Expr* l, Expr* r) :
     comp(comp) { }
 
 void SelectExpr::print() const {
-    llvm::outs() << "(";
-    comp->print();
-    llvm::outs() << ") ? ";
-    left->print();
-    llvm::outs() << " : ";
-    right->print();
+    llvm::outs() << toString();
 }
 
 std::string SelectExpr::toString() const {

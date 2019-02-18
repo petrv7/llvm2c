@@ -6,6 +6,7 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/DebugInfoMetadata.h"
+#include "llvm/IR/GetElementPtrTypeIterator.h"
 
 #include "Func.h"
 #include "Type.h"
@@ -190,6 +191,7 @@ void Block::parseBrInstruction(const llvm::Instruction& ins) {
     }
 
     Expr* cmp = func->exprMap[ins.getOperand(0)].get();
+
     std::string trueBlock = func->getBlockName((llvm::BasicBlock*)ins.getOperand(1));
     std::string falseBlock = func->getBlockName((llvm::BasicBlock*)ins.getOperand(2));
 
@@ -322,30 +324,49 @@ void Block::parseSelectInstruction(const llvm::Instruction& ins) {
 void Block::parseGepInstruction(const llvm::Instruction& ins) {
     const llvm::GetElementPtrInst* gepInst = llvm::cast<llvm::GetElementPtrInst>(&ins);
 
-    Expr* expr;
-    if (gepInst->getOperand(0)->getType()->isStructTy()) {
-        llvm::StructType* structType = llvm::cast<llvm::StructType>(gepInst->getOperand(0)->getType());
-        expr = func->getStruct(structType->getName().str());
-    } else {
-        expr = func->getExpr(gepInst->getOperand(0));
-    }
-
+    Expr* expr = func->getExpr(gepInst->getOperand(0));
     auto gepExpr = std::make_unique<GepExpr>(expr);
 
-    for (unsigned int i = 1; i < gepInst->getNumOperands(); i++) {
-        llvm::Value* index = gepInst->getOperand(i);
-        std::string indexValue = std::to_string(llvm::cast<llvm::ConstantInt>(index)->getSExtValue());
-        if (index->getType()->isArrayTy()) {
-            unsigned int size = index->getType()->getArrayNumElements();
-            gepExpr->addArg(std::move(Type::getType(index->getType(), true, size)), indexValue);
-        } else {
-            gepExpr->addArg(std::make_unique<PointerType>(Type::getType(index->getType())), indexValue);
+    std::string indexValue;
+    llvm::Type* prevType = gepInst->getOperand(0)->getType();
+
+    bool isStruct = false;
+    llvm::PointerType* PT = llvm::cast<llvm::PointerType>(gepInst->getOperand(0)->getType());
+    if (PT->getElementType()->isStructTy()) {
+        isStruct = true;
+        llvm::StructType* ST = llvm::cast<llvm::StructType>(PT->getElementType());
+        std::string structName = ST->getName().str().erase(0, 7);
+        std::string varName = func->getExpr(gepInst->getOperand(0))->toString().erase(0,2);
+        varName = varName.erase(varName.length() - 1, varName.length());
+        gepExpr->addArg(std::make_unique<VoidType>(), varName + "." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue()].second);
+    }
+
+    for (auto it = llvm::gep_type_begin(gepInst); it != llvm::gep_type_end(gepInst); it++) {
+        if (isStruct) {
+            std::advance(it, 2);
+            if (it == llvm::gep_type_end(gepInst)) {
+                break;
+            }
         }
+
+        if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(it.getOperand())) {
+            indexValue = std::to_string(CI->getSExtValue());
+        } else {
+            indexValue = func->getExpr(it.getOperand())->toString();
+        }
+
+
+        if (prevType->isArrayTy()) {
+            unsigned int size = prevType->getArrayNumElements();
+            gepExpr->addArg(std::move(Type::getType(prevType, true, size)), indexValue);
+        } else {
+            gepExpr->addArg(std::make_unique<PointerType>(Type::getType(prevType)), indexValue);
+        }
+        prevType = it.getIndexedType();
     }
 
     func->gepExprMap[llvm::cast<const llvm::Value>(&ins)] = std::move(gepExpr);
     func->createExpr(&ins, std::make_unique<RefExpr>(func->gepExprMap[llvm::cast<const llvm::Value>(&ins)].get()));
-    llvm::outs() << "";
 }
 
 void Block::parseLLVMInstruction(const llvm::Instruction& ins) {

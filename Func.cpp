@@ -77,6 +77,9 @@ void Func::parseFunction() {
 
     for (const auto& block : *function) {
         getBlockName(&block);
+    }
+
+    for (const auto& block : *function) {
         blockMap[&block]->parseLLVMBlock();
     }
 }

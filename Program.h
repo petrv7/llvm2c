@@ -7,6 +7,9 @@
 
 #include "Func.h"
 
+/**
+ * @brief The Program class represents the whole parsed LLVM program.
+ */
 class Program {
 private:
     llvm::LLVMContext context;
@@ -33,7 +36,7 @@ public:
     Program(const std::string& file);
 
     /**
-     * @brief parseProgram
+     * @brief parseProgram Parses the whole program into corresponding expressions.
      */
     void parseProgram();
 
@@ -48,5 +51,10 @@ public:
      */
     void saveFile(const std::string& fileName) const;
 
+    /**
+     * @brief getStruct Returns Struct expression with the given name.
+     * @param name Name of the struct
+     * @return Struct expression if the struct is found, nullptr otherwise
+     */
     Struct* getStruct(const std::string& name) const;
 };

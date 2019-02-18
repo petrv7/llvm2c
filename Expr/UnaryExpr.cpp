@@ -14,9 +14,7 @@ RefExpr::RefExpr(Expr* expr) :
     UnaryExpr(expr) { }
 
 void RefExpr::print() const {
-    llvm::outs() << "&(";
-    expr->print();
-    llvm::outs() << ")";
+    llvm::outs() << toString();
 }
 
 std::string RefExpr::toString() const {
@@ -27,18 +25,16 @@ DerefExpr::DerefExpr(Expr* expr) :
     UnaryExpr(expr) { }
 
 void DerefExpr::print() const {
-    RefExpr* refExpr = nullptr;
-    if ((refExpr = dynamic_cast<RefExpr*>(expr)) != nullptr) {
-        refExpr->expr->print();
-    } else {
-        llvm::outs() << "*(";
-        expr->print();
-        llvm::outs() << ")";
-    }
+    llvm::outs() << toString();
 }
 
 std::string DerefExpr::toString() const {
-    return "*(" + expr->toString() + ")";
+    RefExpr* refExpr = nullptr;
+    if ((refExpr = dynamic_cast<RefExpr*>(expr)) != nullptr) {
+        return refExpr->expr->toString();
+    } else {
+        return "*(" + expr->toString() + ")";
+    }
 }
 
 RetExpr::RetExpr(Expr* ret)
@@ -48,20 +44,13 @@ RetExpr::RetExpr()
     : UnaryExpr(nullptr) { }
 
 void RetExpr::print() const {
-    llvm::outs() << "return";
-
-    if (expr != nullptr) {
-        llvm::outs() << " ";
-        expr->print();
-    }
-
-    llvm::outs() << ";";
+    llvm::outs() << toString();
 }
 
 std::string RetExpr::toString() const {
     std::string ret;
 
-    ret += "return";
+    ret += "return ";
     if (expr != nullptr) {
         ret += expr->toString() + ";";
     }
@@ -75,13 +64,7 @@ CastExpr::CastExpr(Expr* expr, std::unique_ptr<Type> type)
 }
 
 void CastExpr::print() const {
-    llvm::outs() << "(";
-    castType->print();
-    llvm::outs() << ")";
-
-    if (expr != nullptr) {
-        expr->print();
-    }
+    llvm::outs() << toString();
 }
 
 std::string CastExpr::toString() const {

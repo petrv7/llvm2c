@@ -11,6 +11,9 @@ class Program;
 #include "Block.h"
 #include "Program.h"
 
+/**
+ * @brief The Func class represents one of the functions of the LLVM program.
+ */
 class Func {
 friend class Block;
 private:
@@ -87,5 +90,10 @@ public:
      */
     void saveFile(std::ofstream& file) const;
 
+    /**
+     * @brief getStruct Returns Struct expression with the given name.
+     * @param name Name of the struct
+     * @return Struct expression if the struct is found, nullptr otherwise
+     */
     Struct* getStruct(const std::string& name) const;
 };
