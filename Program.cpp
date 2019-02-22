@@ -59,10 +59,9 @@ std::string Program::getStructVarName() {
 }
 
 void Program::print() const {
-    for (const auto& structExpr : structs) {
-        structExpr->print();
+    for (auto it = structs.rbegin(); it != structs.rend(); it++) {
+        it->get()->print();
     }
-
     llvm::outs() << "\n";
 
     for (const auto& func : functions) {

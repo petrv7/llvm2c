@@ -45,6 +45,7 @@ public:
 private:
     const llvm::BasicBlock* block;
     std::vector<Expr*> abstractSyntaxTree; //vector used for saving instructions of the block in form of AST, rename
+    std::map<Expr*, std::unique_ptr<Expr>> derefs;
     Func* func;
 
     /**

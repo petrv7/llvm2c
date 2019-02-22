@@ -13,39 +13,95 @@ void GepExpr::print() const {
 std::string GepExpr::toString() const {
     std::string print;
     unsigned int i = 1;
-    bool isStruct = false;
 
     RefExpr* RE = static_cast<RefExpr*>(element);
     if (Value* val = dynamic_cast<Value*>(RE->expr)) {
         if (StructType* ST = dynamic_cast<StructType*>(val->type.get())) {
             print = args[0].second;
             i = 2;
-            isStruct = true;
+        } else {
+            print = element->toString();
         }
     } else {
-        print = "(" + element->toString();
-        print.append(" + " + args[0].second + ")");
+        if (args[0].second == "0") {
+            print = element->toString();
+        } else {
+            if (auto VT = dynamic_cast<VoidType*>(args[0].first.get())) {
+                print = args[0].second;
+            } else {
+                print = "(" + element->toString();
+                print.append(" + " + args[0].second + ")");
+            }
+        }
     }
 
     for (i; i < args.size(); i++) {
         if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
-            print = "(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
+            if (auto ST = dynamic_cast<StructType*>(AT->type.get())) {
+                print = "*(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
+            } else {
+                print = "(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
+            }
         } else {
             print = "(((" + args[i].first->toString() + ")" + print;
         }
         print.append(") + " + args[i].second + ")");
     }
 
-    if (isStruct) {
-        return print;
-    }
-    return "*(" + print + ")";
+    return print;
 }
 
 void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
     args.push_back(std::make_pair(std::move(type), index));
 }
+/*
+GepExpr2::GepExpr2(Expr* element)
+    :element(element) { }
 
+void GepExpr2::print() const {
+    llvm::outs() << toString();
+}
+
+std::string GepExpr2::toString() const {
+    return args[args.size() - 1]->toString();
+}
+
+GepPointerExpr::GepPointerExpr(Expr* expr, const std::string& idx)
+    : expr(expr),
+      idx(idx) { }
+
+void GepPointerExpr::print() const {
+    llvm::outs() << toString();
+}
+
+std::string GepPointerExpr::toString() const {
+    return "(" + expr->toString() + " + " + idx + ")";
+}
+
+GepArrayExpr::GepArrayExpr(Expr* expr, const std::string& idx)
+    : expr(expr),
+      idx(idx) { }
+
+void GepArrayExpr::print() const {
+    llvm::outs() << toString();
+}
+
+std::string GepArrayExpr::toString() const {
+    return "(" + expr->toString() + "[" + idx + "]";
+}
+
+GepStructExpr::GepStructExpr(Expr* expr, const std::string& idx)
+    : expr(expr),
+      idx(idx) { }
+
+void GepStructExpr::print() const {
+    llvm::outs() << toString();
+}
+
+std::string GepStructExpr::toString() const {
+    return "(" + expr->toString() + "." + idx + ")";
+}
+*/
 Struct::Struct(const std::string & name)
     : name(name) { }
 

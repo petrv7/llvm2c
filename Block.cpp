@@ -108,8 +108,11 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins) {
     }
     Expr* val0 = func->getExpr(ins.getOperand(0));
 
-    UnaryExpr* val1 = static_cast<UnaryExpr*>(func->getExpr(ins.getOperand(1)));
-    func->createExpr(&ins, std::make_unique<EqualsExpr>(val1->expr, val0));
+    /*UnaryExpr* val1 = static_cast<UnaryExpr*>(func->getExpr(ins.getOperand(1)));
+    func->createExpr(&ins, std::make_unique<EqualsExpr>(val1->expr, val0));*/
+    Expr* val1 = func->getExpr(ins.getOperand(1));
+    derefs[val1] = std::make_unique<DerefExpr>(val1);
+    func->createExpr(&ins, std::make_unique<EqualsExpr>(derefs[val1].get(), val0));
 
     abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
 }
@@ -192,8 +195,8 @@ void Block::parseBrInstruction(const llvm::Instruction& ins) {
 
     Expr* cmp = func->exprMap[ins.getOperand(0)].get();
 
-    std::string trueBlock = func->getBlockName((llvm::BasicBlock*)ins.getOperand(1));
-    std::string falseBlock = func->getBlockName((llvm::BasicBlock*)ins.getOperand(2));
+    std::string falseBlock = func->getBlockName((llvm::BasicBlock*)ins.getOperand(1));
+    std::string trueBlock = func->getBlockName((llvm::BasicBlock*)ins.getOperand(2));
 
     func->createExpr(&ins, std::make_unique<IfExpr>(cmp, trueBlock, falseBlock));
 
@@ -336,9 +339,14 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
         isStruct = true;
         llvm::StructType* ST = llvm::cast<llvm::StructType>(PT->getElementType());
         std::string structName = ST->getName().str().erase(0, 7);
-        std::string varName = func->getExpr(gepInst->getOperand(0))->toString().erase(0,2);
-        varName = varName.erase(varName.length() - 1, varName.length());
-        gepExpr->addArg(std::make_unique<VoidType>(), varName + "." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue()].second);
+        std::string varName = func->getExpr(gepInst->getOperand(0))->toString();
+
+        if (varName.at(0) == '&') {
+            varName = func->getExpr(gepInst->getOperand(0))->toString().erase(0,2);
+            varName = varName.erase(varName.length() - 1, varName.length());
+        }
+
+        gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue()].second + ")");
     }
 
     for (auto it = llvm::gep_type_begin(gepInst); it != llvm::gep_type_end(gepInst); it++) {
@@ -365,8 +373,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
         prevType = it.getIndexedType();
     }
 
-    func->gepExprMap[llvm::cast<const llvm::Value>(&ins)] = std::move(gepExpr);
-    func->createExpr(&ins, std::make_unique<RefExpr>(func->gepExprMap[llvm::cast<const llvm::Value>(&ins)].get()));
+    func->createExpr(&ins, std::move(gepExpr));
 }
 
 void Block::parseLLVMInstruction(const llvm::Instruction& ins) {

@@ -24,7 +24,49 @@ public:
     std::string toString() const override;
     void addArg(std::unique_ptr<Type>, const std::string&);
 };
+/*
+class GepExpr2 : public Expr {
+public:
+    Expr* element;
+    std::vector<std::unique_ptr<Expr>> args;
 
+    GepExpr2(Expr*);
+    void print() const override;
+    std::string toString() const override;
+    void addArg(std::unique_ptr<Expr>);
+};
+
+
+class GepPointerExpr : public Expr {
+    Expr* expr;
+    std::string idx;
+
+public:
+    GepPointerExpr(Expr*, const std::string&);
+    void print() const override;
+    std::string toString() const override;
+};
+
+class GepArrayExpr : public Expr {
+    Expr* expr;
+    std::string idx;
+
+public:
+    GepArrayExpr(Expr*, const std::string&);
+    void print() const override;
+    std::string toString() const override;
+};
+
+class GepStructExpr : public Expr {
+    Expr* expr;
+    std::string element;
+
+public:
+    GepStructExpr(Expr*, const std::string&);
+    void print() const override;
+    std::string toString() const override;
+};
+*/
 class Struct : public Expr {
 public:
     std::string name;
