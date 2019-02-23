@@ -96,4 +96,11 @@ public:
      * @return Struct expression if the struct is found, nullptr otherwise
      */
     Struct* getStruct(const std::string& name) const;
+
+    /**
+     * @brief getGlobalVar Returns corresponding GlobalValue expression.
+     * @param val llvm global variable
+     * @return GlobalValue expression
+     */
+    GlobalValue* getGlobalVar(llvm::Value* val) const;
 };

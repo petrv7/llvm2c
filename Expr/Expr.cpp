@@ -54,54 +54,7 @@ std::string GepExpr::toString() const {
 void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
     args.push_back(std::make_pair(std::move(type), index));
 }
-/*
-GepExpr2::GepExpr2(Expr* element)
-    :element(element) { }
 
-void GepExpr2::print() const {
-    llvm::outs() << toString();
-}
-
-std::string GepExpr2::toString() const {
-    return args[args.size() - 1]->toString();
-}
-
-GepPointerExpr::GepPointerExpr(Expr* expr, const std::string& idx)
-    : expr(expr),
-      idx(idx) { }
-
-void GepPointerExpr::print() const {
-    llvm::outs() << toString();
-}
-
-std::string GepPointerExpr::toString() const {
-    return "(" + expr->toString() + " + " + idx + ")";
-}
-
-GepArrayExpr::GepArrayExpr(Expr* expr, const std::string& idx)
-    : expr(expr),
-      idx(idx) { }
-
-void GepArrayExpr::print() const {
-    llvm::outs() << toString();
-}
-
-std::string GepArrayExpr::toString() const {
-    return "(" + expr->toString() + "[" + idx + "]";
-}
-
-GepStructExpr::GepStructExpr(Expr* expr, const std::string& idx)
-    : expr(expr),
-      idx(idx) { }
-
-void GepStructExpr::print() const {
-    llvm::outs() << toString();
-}
-
-std::string GepStructExpr::toString() const {
-    return "(" + expr->toString() + "." + idx + ")";
-}
-*/
 Struct::Struct(const std::string & name)
     : name(name) { }
 
@@ -124,7 +77,7 @@ std::string Struct::toString() const {
 
         ret += ";\n";
     }
-    ret += "};\n";
+    ret += "};";
 
     return ret;
 }
@@ -136,7 +89,7 @@ void Struct::addItem(std::unique_ptr<Type> type, const std::string& name) {
 Value::Value(const std::string& s, std::unique_ptr<Type> type) {
     this->type = std::move(type);
     val = s;
-    typePrinted = false;
+    init = false;
 }
 
 void Value::print() const {
@@ -144,6 +97,30 @@ void Value::print() const {
 }
 
 std::string Value::toString() const {
+    return val;
+}
+
+GlobalValue::GlobalValue(const std::string& varName, const std::string& value, std::unique_ptr<Type> type)
+    : Value(varName, std::move(type)),
+      value(value) { }
+
+void GlobalValue::print() const {
+    llvm::outs() << toString();
+}
+
+std::string GlobalValue::toString() const {
+    if (!init) {
+        std::string ret = type->toString() + " " + val.substr(1, val.length());
+        if (ArrayType* AT = dynamic_cast<ArrayType*>(type.get())) {
+            ret += AT->sizeToString();
+        }
+        if (!value.empty()) {
+            ret += " = " + value;
+        }
+
+        return ret + ";";
+    }
+
     return val;
 }
 

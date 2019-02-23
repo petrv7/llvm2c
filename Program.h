@@ -4,6 +4,7 @@
 
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/IR/Module.h>
+#include "llvm/ADT/DenseMap.h"
 
 #include "Func.h"
 
@@ -18,14 +19,29 @@ private:
 
     std::vector<std::unique_ptr<Func>> functions; // vector of parsed functions
     std::vector<std::unique_ptr<Struct>> structs; // vector of parsed structs
+    llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<GlobalValue>> globalVars; //map containing global variables
 
     unsigned structVarCount;
+    unsigned gvarCount;
 
     /**
-     * @brief getVarName Creates a new name for a variable in form of string containing "var" + varCount.
-     * @return String containing a variable name.
+     * @brief getVarName Creates a new name for a variable in form of string containing "var" + structVarCount.
+     * @return String containing a new variable name.
      */
     std::string getStructVarName();
+
+    /**
+     * @brief getGvarName Creates a new name for a global variable in form of string containing "gvar" + gvarCount.
+     * @return String containing a new variable name.
+     */
+    std::string getGvarName();
+
+    /**
+     * @brief getValue Return string containing value used for global variable initialization.
+     * @param val llvm Constant used for initialization
+     * @return Init value
+     */
+    std::string getValue(const llvm::Constant* val) const;
 
 public:
 
@@ -36,9 +52,24 @@ public:
     Program(const std::string& file);
 
     /**
-     * @brief parseProgram Parses the whole program into corresponding expressions.
+     * @brief parseProgram Parses the whole program (structs, functions and global variables0.
      */
     void parseProgram();
+
+    /**
+     * @brief parseStructs Parses structures into Struct expression.
+     */
+    void parseStructs();
+
+    /**
+     * @brief parseFunctions Parses functions into corresponding expressions.
+     */
+    void parseFunctions();
+
+    /**
+     * @brief parseGlobalVars Parses global variables.
+     */
+    void parseGlobalVars();
 
     /**
      * @brief print Prints the translated program in the llvm::outs() stream.
@@ -57,4 +88,11 @@ public:
      * @return Struct expression if the struct is found, nullptr otherwise
      */
     Struct* getStruct(const std::string& name) const;
+
+    /**
+     * @brief getGlobalVar Returns corresponding GlobalValue expression.
+     * @param val llvm global variable
+     * @return GlobalValue expression
+     */
+    GlobalValue* getGlobalVar(llvm::Value* val) const;
 };

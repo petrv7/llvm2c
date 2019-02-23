@@ -146,3 +146,7 @@ void Func::saveFile(std::ofstream& file) const {
 Struct* Func::getStruct(const std::string& name) const {
     return program->getStruct(name);
 }
+
+GlobalValue* Func::getGlobalVar(llvm::Value* val) const {
+    return program->getGlobalVar(val);
+}

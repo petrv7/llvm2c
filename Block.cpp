@@ -34,12 +34,12 @@ void Block::parseLLVMBlock() {
 }
 
 void Block::print() {
-    unsetAllTypePrinted();
+    unsetAllInit();
 
     for (const auto expr : abstractSyntaxTree) {
         llvm::outs() << "    ";
         if (auto val = dynamic_cast<Value*>(expr)) {
-            if (!val->typePrinted) {
+            if (!val->init) {
                 val->type->print();
                 llvm::outs() << " ";
                 expr->print();
@@ -49,7 +49,7 @@ void Block::print() {
                 }
 
                 llvm::outs() << ";\n";
-                val->typePrinted = true;
+                val->init = true;
             }
         } else {
             expr->print();
@@ -60,12 +60,12 @@ void Block::print() {
 }
 
 void Block::saveFile(std::ofstream& file) {
-    unsetAllTypePrinted();
+    unsetAllInit();
 
     for (const auto expr : abstractSyntaxTree) {
         file << "    ";
         if (auto val = dynamic_cast<Value*>(expr)) {
-            if (!val->typePrinted) {
+            if (!val->init) {
                 file << val->type->toString();
                 file << " ";
                 file << expr->toString();
@@ -75,7 +75,7 @@ void Block::saveFile(std::ofstream& file) {
                 }
 
                 file << ";\n";
-                val->typePrinted = true;
+                val->init = true;
             }
         } else {
             file << expr->toString();
@@ -99,7 +99,11 @@ void Block::parseAllocaInstruction(const llvm::Instruction& ins) {
 }
 
 void Block::parseLoadInstruction(const llvm::Instruction& ins) {
-    func->createExpr(&ins, std::make_unique<DerefExpr>(func->exprMap[ins.getOperand(0)].get()));
+    if (func->exprMap.find(ins.getOperand(0)) == func->exprMap.end()) {
+        func->createExpr(&ins, std::make_unique<DerefExpr>(func->getGlobalVar(ins.getOperand(0))));
+    } else {
+        func->createExpr(&ins, std::make_unique<DerefExpr>(func->exprMap[ins.getOperand(0)].get()));
+    }
 }
 
 void Block::parseStoreInstruction(const llvm::Instruction& ins) {
@@ -438,10 +442,10 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
     }
 }
 
-void Block::unsetAllTypePrinted() {
+void Block::unsetAllInit() {
     for (auto expr : abstractSyntaxTree) {
         if (Value* val = dynamic_cast<Value*>(expr)) {
-            val->typePrinted = false;
+            val->init = false;
         }
     }
 }

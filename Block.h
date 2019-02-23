@@ -145,10 +145,10 @@ private:
     void setMetadataInfo(const llvm::CallInst* ins);
 
     /**
-     * @brief unsetAllTypePrinted Resets the typePrinted flag for every variable.
+     * @brief unsetAllInit Resets the init flag for every variable.
      * Used for repeated calling of print and saveFile.
      */
-    void unsetAllTypePrinted();
+    void unsetAllInit();
 
     /**
      * @brief createConstantValue Creates Value for given ConstantInt or ConstantFP and inserts it into exprMap.
