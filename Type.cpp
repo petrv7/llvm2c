@@ -3,13 +3,9 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/Support/raw_ostream.h"
 
-std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool isArray, unsigned int size) {
-    if (isArray) {
-        if (type->getArrayElementType()->isArrayTy()) {
-            return std::make_unique<ArrayType>(std::move(getType(type->getArrayElementType(), true, type->getArrayElementType()->getArrayNumElements())), size);
-        } else {
-            return std::make_unique<ArrayType>(std::move(getType(type->getArrayElementType())), size);
-        }
+std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
+    if (type->isArrayTy()) {
+        return std::make_unique<ArrayType>(std::move(getType(type->getArrayElementType())), type->getArrayNumElements());
     }
 
     if (type->isVoidTy()) {
@@ -54,7 +50,51 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool isArray, unsign
         return std::make_unique<StructType>(structType->getName().str().erase(0, 7));
     }
 
+    if (type->isFunctionTy()) {
+        const llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(type);
+        auto functionType = std::make_unique<FunctionType>(std::move(getType(FT->getReturnType())));
+        for (unsigned i = 0; i < FT->getNumParams(); i++) {
+            functionType->addParam(std::move(getType(FT->getParamType(0))));
+        }
+
+        return functionType;
+    }
+
     return nullptr;
+}
+
+FunctionType::FunctionType(std::unique_ptr<Type> retType)
+    : retType(std::move(retType)) { }
+
+void FunctionType::addParam(std::unique_ptr<Type> param) {
+    params.push_back(std::move(param));
+}
+
+void FunctionType::printParams() const {
+    llvm::outs() << paramsToString();
+}
+
+std::string FunctionType::paramsToString() const {
+    std::string ret = "(";
+    bool first = true;
+    for (const auto& param : params) {
+        if (!first) {
+            ret += ", ";
+        }
+        first = false;
+
+        ret += param->toString();
+    }
+
+    return ret + ")";
+}
+
+void FunctionType::print() const {
+    llvm::outs() << toString();
+}
+
+std::string FunctionType::toString() const {
+    return retType->toString();
 }
 
 StructType::StructType(const std::string& name)
@@ -105,14 +145,31 @@ std::string VoidType::toString() const {
     return "void";
 }
 
-PointerType::PointerType(std::unique_ptr<Type> type)
-    : type(std::move(type)) { }
+PointerType::PointerType(std::unique_ptr<Type> type) {
+    if (auto PT = dynamic_cast<PointerType*>(type.get())) {
+        isFuncPointer = PT->isFuncPointer;
+        levels = PT->levels + 1;
+        params = PT->params;
+    }
+
+    if (auto FT = dynamic_cast<FunctionType*>(type.get())) {
+        isFuncPointer = true;
+        params = FT->paramsToString();
+    }
+
+    levels = 1;
+    this->type = std::move(type);
+}
 
 void PointerType::print() const {
     llvm::outs() << toString();
 }
 
 std::string PointerType::toString() const {
+    if (isFuncPointer) {
+        return type->toString();
+    }
+
     return type->toString() + "*";
 }
 

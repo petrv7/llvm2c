@@ -14,11 +14,23 @@ public:
     /**
      * @brief getType Transforms llvm::Type into corresponding Type object
      * @param type llvm::Type for transformation
-     * @param isArray Indicates that given llvm::Type is array
-     * @param size Size of the array
      * @return unique_ptr to corresponding Type object
      */
-    static std::unique_ptr<Type> getType(const llvm::Type* type, bool isArray = false, unsigned int size = 0);
+    static std::unique_ptr<Type> getType(const llvm::Type* type);
+};
+
+class FunctionType : public Type {
+public:
+    std::unique_ptr<Type> retType;
+    std::vector<std::unique_ptr<Type>> params;
+
+    FunctionType(std::unique_ptr<Type>);
+
+    void addParam(std::unique_ptr<Type>);
+    void printParams() const;
+    std::string paramsToString() const;
+    void print() const override;
+    std::string toString() const override;
 };
 
 class StructType : public Type {
@@ -53,6 +65,9 @@ public:
 class PointerType : public Type {
 public:
     std::unique_ptr<Type> type;
+    bool isFuncPointer;
+    unsigned levels;
+    std::string params;
 
     PointerType(std::unique_ptr<Type>);
 

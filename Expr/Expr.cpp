@@ -93,10 +93,20 @@ Value::Value(const std::string& s, std::unique_ptr<Type> type) {
 }
 
 void Value::print() const {
-    llvm::outs() << val;
+    llvm::outs() << toString();
 }
 
 std::string Value::toString() const {
+    if (auto PT = dynamic_cast<PointerType*>(type.get())) {
+        if (PT->isFuncPointer) {
+            std::string ret = "(";
+            for (unsigned i = 0; i < PT->levels; i++) {
+                ret += "*";
+            }
+            return ret + val + ")";
+        }
+    }
+
     return val;
 }
 
@@ -200,7 +210,8 @@ std::string AsmExpr::toString() const {
 
 CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params)
     : funcName(funcName),
-      params(params) { }
+      params(params),
+      isUsed(false) { }
 
 void CallExpr::print() const {
     llvm::outs() << toString();
@@ -222,7 +233,7 @@ std::string CallExpr::toString() const {
         first = false;
     }
 
-    ret += ");";
+    ret += ")";
 
     return ret;
 }

@@ -37,8 +37,8 @@ void Block::print() {
     unsetAllInit();
 
     for (const auto expr : abstractSyntaxTree) {
-        llvm::outs() << "    ";
         if (auto val = dynamic_cast<Value*>(expr)) {
+            llvm::outs() << "    ";
             if (!val->init) {
                 val->type->print();
                 llvm::outs() << " ";
@@ -48,10 +48,23 @@ void Block::print() {
                     AT->printSize();
                 }
 
+                if (auto PT = dynamic_cast<PointerType*>(val->type.get())) {
+                    if (PT->isFuncPointer) {
+                        llvm::outs() << PT->params;
+                    }
+                }
+
                 llvm::outs() << ";\n";
                 val->init = true;
             }
+        } else if (auto CE = dynamic_cast<CallExpr*>(expr)) {
+            if (!CE->isUsed) {
+                llvm::outs() << "    ";
+                expr->print();
+                llvm::outs() << ";\n";
+            }
         } else {
+            llvm::outs() << "    ";
             expr->print();
             llvm::outs() << "\n";
         }
@@ -87,13 +100,7 @@ void Block::saveFile(std::ofstream& file) {
 void Block::parseAllocaInstruction(const llvm::Instruction& ins) {
     const auto allocaInst = llvm::cast<const llvm::AllocaInst>(&ins);
 
-    if (allocaInst->getAllocatedType()->isArrayTy()) {
-        unsigned int size = allocaInst->getAllocatedType()->getArrayNumElements();
-        func->valueMap[llvm::cast<const llvm::Value>(&ins)] = std::make_unique<Value>(func->getVarName(), std::move(Type::getType(allocaInst->getAllocatedType(), true, size)));
-    } else {
-        func->valueMap[llvm::cast<const llvm::Value>(&ins)] = std::make_unique<Value>(func->getVarName(), std::move(Type::getType(allocaInst->getAllocatedType())));
-    }
-
+    func->valueMap[llvm::cast<const llvm::Value>(&ins)] = std::make_unique<Value>(func->getVarName(), std::move(Type::getType(allocaInst->getAllocatedType())));
     func->createExpr(&ins, std::make_unique<RefExpr>(func->valueMap[llvm::cast<const llvm::Value>(&ins)].get()));
     abstractSyntaxTree.push_back(func->valueMap[llvm::cast<const llvm::Value>(&ins)].get());
 }
@@ -107,13 +114,22 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins) {
 }
 
 void Block::parseStoreInstruction(const llvm::Instruction& ins) {
+    auto type = std::move(Type::getType(ins.getOperand(0)->getType()));
+    if (auto PT = dynamic_cast<PointerType*>(type.get())) {
+        if (PT->isFuncPointer) {
+            llvm::Function* function = llvm::cast<llvm::Function>(ins.getOperand(0));
+            func->createExpr(ins.getOperand(0), std::make_unique<Value>("&" + function->getName().str(), std::make_unique<VoidType>()));
+        }
+    }
     if (func->getExpr(ins.getOperand(0)) == nullptr) {
         createConstantValue(ins.getOperand(0));
     }
     Expr* val0 = func->getExpr(ins.getOperand(0));
 
-    /*UnaryExpr* val1 = static_cast<UnaryExpr*>(func->getExpr(ins.getOperand(1)));
-    func->createExpr(&ins, std::make_unique<EqualsExpr>(val1->expr, val0));*/
+    if (auto CE = dynamic_cast<CallExpr*>(val0)) {
+        CE->isUsed = true;
+    }
+
     Expr* val1 = func->getExpr(ins.getOperand(1));
     derefs[val1] = std::make_unique<DerefExpr>(val1);
     func->createExpr(&ins, std::make_unique<EqualsExpr>(derefs[val1].get(), val0));
@@ -162,6 +178,13 @@ void Block::parseCmpInstruction(const llvm::Instruction& ins) {
         createConstantValue(ins.getOperand(1));
     }
     Expr* val1 = func->getExpr(ins.getOperand(1));
+
+    if (auto CE = dynamic_cast<CallExpr*>(val0)) {
+        CE->isUsed = true;
+    }
+    if (auto CE = dynamic_cast<CallExpr*>(val1)) {
+        CE->isUsed = true;
+    }
 
     auto cmpInst = llvm::cast<const llvm::CmpInst>(&ins);
 
@@ -214,7 +237,12 @@ void Block::parseRetInstruction(const llvm::Instruction& ins) {
         if (func->getExpr(ins.getOperand(0)) == nullptr) {
             createConstantValue(ins.getOperand(0));
         }
-        func->createExpr(&ins, std::make_unique<RetExpr>(func->getExpr(ins.getOperand(0))));
+        Expr* expr = func->getExpr(ins.getOperand(0));
+        if (auto CE = dynamic_cast<CallExpr*>(expr)) {
+            CE->isUsed = true;
+        }
+
+        func->createExpr(&ins, std::make_unique<RetExpr>(expr));
     }
 
     abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
@@ -284,12 +312,14 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
     std::string funcName;
     std::vector<Expr*> params;
 
-    if (callInst->getFunction()->hasName()) { //TODO function without name
+    if (callInst->getCalledFunction() != nullptr) { //TODO function without name
         funcName = callInst->getCalledFunction()->getName().str();
         if (funcName.compare("llvm.dbg.declare") == 0) {
             setMetadataInfo(callInst);
             return;
         }
+    } else {
+        funcName = func->getExpr(callInst->getCalledValue())->toString();
     }
 
     for (const auto& param : callInst->arg_operands()) {
@@ -370,7 +400,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
 
         if (prevType->isArrayTy()) {
             unsigned int size = prevType->getArrayNumElements();
-            gepExpr->addArg(std::move(Type::getType(prevType, true, size)), indexValue);
+            gepExpr->addArg(std::move(Type::getType(prevType)), indexValue);
         } else {
             gepExpr->addArg(std::make_unique<PointerType>(Type::getType(prevType)), indexValue);
         }

@@ -37,12 +37,7 @@ void Program::parseStructs() {
         auto structExpr = std::make_unique<Struct>(name);
 
         for (llvm::Type* type : structType->elements()) {
-            if (type->isArrayTy()) {
-                unsigned int size = type->getArrayNumElements();
-                structExpr->addItem(std::move(Type::getType(type, true, size)), getStructVarName());
-            } else {
-                structExpr->addItem(std::move(Type::getType(type)), getStructVarName());
-            }
+            structExpr->addItem(std::move(Type::getType(type)), getStructVarName());
         }
 
         structs.push_back(std::move(structExpr));
@@ -75,12 +70,7 @@ void Program::parseGlobalVars() {
         }
 
         llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
-        if (PI->getElementType()->isArrayTy()) {
-            unsigned int size = PI->getElementType()->getArrayNumElements();
-            globalVars[&gvar] = std::make_unique<GlobalValue>(gvarName, value, std::move(Type::getType(PI->getElementType(), true, size)));
-        } else {
-            globalVars[&gvar] = std::make_unique<GlobalValue>(gvarName, value, std::move(Type::getType(PI->getElementType())));
-        }
+        globalVars[&gvar] = std::make_unique<GlobalValue>(gvarName, value, std::move(Type::getType(PI->getElementType())));
     }
 }
 

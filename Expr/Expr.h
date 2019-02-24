@@ -100,6 +100,7 @@ class CallExpr : public Expr {
 public:
     std::string funcName;
     std::vector<Expr*> params;
+    bool isUsed;
 
     CallExpr(const std::string&, std::vector<Expr*>);
     void print() const override;

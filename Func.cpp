@@ -16,13 +16,7 @@ Func::Func(llvm::Function* func, Program* program) {
     function = func;
     varCount = 0;
     blockCount = 0;
-
-    if (func->getReturnType()->isArrayTy()) {
-        unsigned int size = func->getReturnType()->getArrayNumElements();
-        returnType = std::move(Type::getType(func->getReturnType(), true, size));
-    } else {
-        returnType = std::move(Type::getType(func->getReturnType()));
-    }
+    returnType = std::move(Type::getType(func->getReturnType()));
 
     parseFunction();
 }
