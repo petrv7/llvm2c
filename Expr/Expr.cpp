@@ -99,11 +99,13 @@ void Value::print() const {
 std::string Value::toString() const {
     if (auto PT = dynamic_cast<PointerType*>(type.get())) {
         if (PT->isFuncPointer) {
-            std::string ret = "(";
-            for (unsigned i = 0; i < PT->levels; i++) {
-                ret += "*";
+            if (!init) {
+                std::string ret = "(";
+                for (unsigned i = 0; i < PT->levels; i++) {
+                    ret += "*";
+                }
+                return ret + val + ")";
             }
-            return ret + val + ")";
         }
     }
 

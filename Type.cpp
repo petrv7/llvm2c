@@ -53,8 +53,12 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
     if (type->isFunctionTy()) {
         const llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(type);
         auto functionType = std::make_unique<FunctionType>(std::move(getType(FT->getReturnType())));
-        for (unsigned i = 0; i < FT->getNumParams(); i++) {
-            functionType->addParam(std::move(getType(FT->getParamType(0))));
+        if (FT->getNumParams() == 0) {
+            functionType->addParam(std::make_unique<VoidType>());
+        } else {
+            for (unsigned i = 0; i < FT->getNumParams(); i++) {
+                functionType->addParam(std::move(getType(FT->getParamType(0))));
+            }
         }
 
         return functionType;
@@ -146,6 +150,8 @@ std::string VoidType::toString() const {
 }
 
 PointerType::PointerType(std::unique_ptr<Type> type) {
+    levels = 1;
+
     if (auto PT = dynamic_cast<PointerType*>(type.get())) {
         isFuncPointer = PT->isFuncPointer;
         levels = PT->levels + 1;
@@ -157,7 +163,6 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
         params = FT->paramsToString();
     }
 
-    levels = 1;
     this->type = std::move(type);
 }
 
