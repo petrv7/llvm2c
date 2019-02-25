@@ -151,6 +151,7 @@ std::string VoidType::toString() const {
 
 PointerType::PointerType(std::unique_ptr<Type> type) {
     levels = 1;
+    isFuncPointer = false;
 
     if (auto PT = dynamic_cast<PointerType*>(type.get())) {
         isFuncPointer = PT->isFuncPointer;

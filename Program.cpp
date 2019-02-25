@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <exception>
+#include <algorithm>
 
 Program::Program(const std::string &file) {
     error = llvm::SMDiagnostic();
@@ -59,7 +60,12 @@ void Program::parseGlobalVars() {
     for (const llvm::GlobalVariable& gvar : module->globals()) {
         std::string gvarName;
         if (gvar.hasName()) {
-            gvarName = "&" + gvar.getName().str();
+            if (gvar.hasPrivateLinkage()) {
+                gvarName = "ConstGlobalVar";
+            }
+            std::string replacedName = gvar.getName().str();
+            std::replace(replacedName.begin(), replacedName.end(), '.', '_');
+            gvarName = "&" + gvarName + replacedName;
         } else {
             gvarName = getGvarName();
         }
@@ -91,6 +97,10 @@ std::string Program::getGvarName() {
 }
 
 std::string Program::getValue(const llvm::Constant* val) const {
+    if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(val->getType())) {
+        return "&" + val->getName().str();
+    }
+
     if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
         return std::to_string(CI->getSExtValue());
     }

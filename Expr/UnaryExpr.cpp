@@ -50,12 +50,12 @@ void RetExpr::print() const {
 std::string RetExpr::toString() const {
     std::string ret;
 
-    ret += "return ";
+    ret += "return";
     if (expr != nullptr) {
-        ret += expr->toString() + ";";
+        ret += " " + expr->toString();
     }
 
-    return ret;
+    return ret + ";";
 }
 
 CastExpr::CastExpr(Expr* expr, std::unique_ptr<Type> type)

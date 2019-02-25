@@ -116,8 +116,7 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins) {
 void Block::parseStoreInstruction(const llvm::Instruction& ins) {
     auto type = std::move(Type::getType(ins.getOperand(0)->getType()));
     if (auto PT = dynamic_cast<PointerType*>(type.get())) {
-        if (PT->isFuncPointer) {
-            llvm::Function* function = llvm::cast<llvm::Function>(ins.getOperand(0));
+        if (llvm::Function* function = llvm::dyn_cast<llvm::Function>(ins.getOperand(0))) {
             func->createExpr(ins.getOperand(0), std::make_unique<Value>("&" + function->getName().str(), std::make_unique<VoidType>()));
         }
     }
@@ -193,16 +192,16 @@ void Block::parseCmpInstruction(const llvm::Instruction& ins) {
     } else if (cmpInst->getPredicate() == llvm::CmpInst::ICMP_NE || cmpInst->getPredicate() == llvm::CmpInst::FCMP_ONE) {
         func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "!="));
     } else if (cmpInst->getPredicate() == llvm::CmpInst::ICMP_UGT || cmpInst->getPredicate() == llvm::CmpInst::ICMP_SGT
-                || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OGT) {
+               || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OGT) {
         func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, ">"));
     } else if (cmpInst->getPredicate() == llvm::CmpInst::ICMP_UGE || cmpInst->getPredicate() == llvm::CmpInst::ICMP_SGE
-                || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OGE) {
+               || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OGE) {
         func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, ">="));
     } else if (cmpInst->getPredicate() == llvm::CmpInst::ICMP_ULT || cmpInst->getPredicate() == llvm::CmpInst::ICMP_SLT
-                || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OLT) {
+               || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OLT) {
         func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "<"));
     } else if (cmpInst->getPredicate() == llvm::CmpInst::ICMP_ULE || cmpInst->getPredicate() == llvm::CmpInst::ICMP_SLE
-                || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OLE) {
+               || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OLE) {
         func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "<="));
     } else if (cmpInst->getPredicate() == llvm::CmpInst::FCMP_FALSE) {
         func->createExpr(&ins, std::make_unique<Value>("0", std::make_unique<IntegerType>("int", false)));
@@ -323,6 +322,9 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
     }
 
     for (const auto& param : callInst->arg_operands()) {
+        if (llvm::ConstantExpr* CE = llvm::dyn_cast<llvm::ConstantExpr>(param.get())) {
+            parseConstantGep(CE);
+        }
         if (func->getExpr(param) == nullptr) {
             createConstantValue(param);
         }
@@ -415,10 +417,10 @@ void Block::parseLLVMInstruction(const llvm::Instruction& ins) {
     if (opcode == llvm::Instruction::Alloca) {
         parseAllocaInstruction(ins);
     } else if (opcode == llvm::Instruction::Add || opcode == llvm::Instruction::FAdd || opcode == llvm::Instruction::Sub
-                || opcode == llvm::Instruction::FSub || opcode == llvm::Instruction::Mul || opcode == llvm::Instruction::FMul
-                || opcode == llvm::Instruction::UDiv || opcode == llvm::Instruction::FDiv || opcode == llvm::Instruction::SDiv
-                || opcode == llvm::Instruction::URem || opcode == llvm::Instruction::FRem || opcode == llvm::Instruction::SRem
-                || opcode == llvm::Instruction::And || opcode == llvm::Instruction::Or || opcode == llvm::Instruction::Xor) {
+               || opcode == llvm::Instruction::FSub || opcode == llvm::Instruction::Mul || opcode == llvm::Instruction::FMul
+               || opcode == llvm::Instruction::UDiv || opcode == llvm::Instruction::FDiv || opcode == llvm::Instruction::SDiv
+               || opcode == llvm::Instruction::URem || opcode == llvm::Instruction::FRem || opcode == llvm::Instruction::SRem
+               || opcode == llvm::Instruction::And || opcode == llvm::Instruction::Or || opcode == llvm::Instruction::Xor) {
         parseBinaryInstruction(ins);
     } else if (opcode == llvm::Instruction::Load) {
         parseLoadInstruction(ins);
@@ -460,7 +462,8 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());
 
         std::regex varName("var[0-9]+");
-        if (!std::regex_match(localVar->getName().str(), varName)) {
+        std::regex constGlobalVarName("ConstGlobalVar_.+");
+        if (!std::regex_match(localVar->getName().str(), varName) && !std::regex_match(localVar->getName().str(), constGlobalVarName)) {
             variable->val = localVar->getName();
         }
 
@@ -488,3 +491,11 @@ void Block::createConstantValue(llvm::Value* val) {
         func->createExpr(val, std::make_unique<Value>(std::to_string(CFP->getValueAPF().convertToFloat()), std::make_unique<IntType>(false)));
     }
 }
+
+std::string Block::parseConstantGep(llvm::ConstantExpr *expr) const {
+    llvm::outs() << func->getGlobalVar(expr->getOperand(0))->val;
+    llvm::outs().flush();
+
+    return "";
+}
+

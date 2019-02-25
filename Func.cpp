@@ -84,13 +84,15 @@ void Func::print() const {
     bool first = true;
 
     for (const llvm::Value& arg : function->args()) {
-        if (first) {
-            exprMap.find(&arg)->second->print();
-        } else {
+        if (!first) {
             llvm::outs() << ", ";
-            exprMap.find(&arg)->second->print();
         }
         first = false;
+
+        Value* val = static_cast<Value*>(exprMap.find(&arg)->second.get());
+        val->type->print();
+        llvm::outs() << " ";
+        val->print();
     }
 
     llvm::outs() << ") {\n";

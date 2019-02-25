@@ -4,6 +4,7 @@
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Value.h"
+#include "llvm/IR/Constants.h"
 
 #include "Expr/Expr.h"
 
@@ -155,4 +156,11 @@ private:
      * @param val constant value
      */
     void createConstantValue(llvm::Value* val);
+
+    /**
+     * @brief parseConstantGep Parses GetElementPtrConstantExpr.
+     * @param expr GetElementPtrConstantExpr for parsing
+     * @return String containing parsed GetElementPtrConstantExpr
+     */
+    std::string parseConstantGep(llvm::ConstantExpr* expr) const;
 };
