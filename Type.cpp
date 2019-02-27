@@ -19,6 +19,7 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
             return std::make_unique<CharType>(false);
         case 16:
             return std::make_unique<ShortType>(false);
+        case 1:
         case 32:
             return std::make_unique<IntType>(false);
         case 64:

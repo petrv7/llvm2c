@@ -423,42 +423,84 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
 }
 
 void Block::parseLLVMInstruction(const llvm::Instruction& ins) {
-    unsigned opcode = ins.getOpcode();
-    if (opcode == llvm::Instruction::Alloca) {
-        parseAllocaInstruction(ins);
-    } else if (opcode == llvm::Instruction::Add || opcode == llvm::Instruction::FAdd || opcode == llvm::Instruction::Sub
-               || opcode == llvm::Instruction::FSub || opcode == llvm::Instruction::Mul || opcode == llvm::Instruction::FMul
-               || opcode == llvm::Instruction::UDiv || opcode == llvm::Instruction::FDiv || opcode == llvm::Instruction::SDiv
-               || opcode == llvm::Instruction::URem || opcode == llvm::Instruction::FRem || opcode == llvm::Instruction::SRem
-               || opcode == llvm::Instruction::And || opcode == llvm::Instruction::Or || opcode == llvm::Instruction::Xor) {
+    switch (ins.getOpcode()) {
+    case llvm::Instruction::Add:
+    case llvm::Instruction::FAdd:
+    case llvm::Instruction::Sub:
+    case llvm::Instruction::FSub:
+    case llvm::Instruction::Mul:
+    case llvm::Instruction::FMul:
+    case llvm::Instruction::UDiv:
+    case llvm::Instruction::FDiv:
+    case llvm::Instruction::SDiv:
+    case llvm::Instruction::URem:
+    case llvm::Instruction::FRem:
+    case llvm::Instruction::SRem:
+    case llvm::Instruction::And:
+    case llvm::Instruction::Or:
+    case llvm::Instruction::Xor:
         parseBinaryInstruction(ins);
-    } else if (opcode == llvm::Instruction::Load) {
+        break;
+    case llvm::Instruction::Alloca:
+        parseAllocaInstruction(ins);
+        break;
+    case llvm::Instruction::Load:
         parseLoadInstruction(ins);
-    } else if (opcode == llvm::Instruction::Store) {
+        break;
+    case llvm::Instruction::Store:
         parseStoreInstruction(ins);
-    } else if (opcode == llvm::Instruction::ICmp || opcode == llvm::Instruction::FCmp) {
+        break;
+    case llvm::Instruction::ICmp:
+    case llvm::Instruction::FCmp:
         parseCmpInstruction(ins);
-    } else if (opcode == llvm::Instruction::Br) {
+        break;
+    case llvm::Instruction::Br:
         parseBrInstruction(ins);
-    } else if (opcode == llvm::Instruction::Ret) {
+        break;
+    case llvm::Instruction::Ret:
         parseRetInstruction(ins);
-    } else if (opcode == llvm::Instruction::Switch) {
+        break;
+    case llvm::Instruction::Switch:
         parseSwitchInstruction(ins);
-    } else if (opcode == llvm::Instruction::Unreachable || opcode == llvm::Instruction::Fence) {
+        break;
+    case llvm::Instruction::Unreachable:
+    case llvm::Instruction::Fence:
         parseAsmInst(ins);
-    } else if (opcode == llvm::Instruction::Shl || opcode == llvm::Instruction::LShr || opcode == llvm::Instruction::AShr) {
+        break;
+    case llvm::Instruction::Shl:
+    case llvm::Instruction::LShr:
+    case llvm::Instruction::AShr:
         parseShiftInstruction(ins);
-    } else if (opcode == llvm::Instruction::Call) {
+        break;
+    case llvm::Instruction::Call:
         parseCallInstruction(ins);
-    } else if (opcode == llvm::Instruction::SExt || opcode == llvm::Instruction::ZExt || opcode == llvm::Instruction::FPToSI
-               || opcode == llvm::Instruction::SIToFP || opcode == llvm::Instruction::FPTrunc || opcode == llvm::Instruction::FPExt
-               || opcode == llvm::Instruction::FPToUI || opcode == llvm::Instruction::UIToFP || opcode == llvm::Instruction::PtrToInt
-               || opcode == llvm::Instruction::IntToPtr || opcode == llvm::Instruction::Trunc || opcode == llvm::Instruction::BitCast) {
+        break;
+    case llvm::Instruction::SExt:
+    case llvm::Instruction::ZExt:
+    case llvm::Instruction::FPToSI:
+    case llvm::Instruction::SIToFP:
+    case llvm::Instruction::FPTrunc:
+    case llvm::Instruction::FPExt:
+    case llvm::Instruction::FPToUI:
+    case llvm::Instruction::UIToFP:
+    case llvm::Instruction::PtrToInt:
+    case llvm::Instruction::IntToPtr:
+    case llvm::Instruction::Trunc:
+    case llvm::Instruction::BitCast:
         parseCastInstruction(ins);
-    } else if (opcode == llvm::Instruction::Select) {
+        break;
+    case llvm::Instruction::Select:
         parseSelectInstruction(ins);
-    } else if (opcode == llvm::Instruction::GetElementPtr) {
+        break;
+    case llvm::Instruction::GetElementPtr:
         parseGepInstruction(ins);
+        break;
+    case llvm::Instruction::PHI:
+        throw std::invalid_argument("Instruction \"phi\" is not supported!");
+        break;
+    default:
+        throw std::invalid_argument("Instruction not supported!");
+        break;
     }
 }
 
