@@ -5,6 +5,8 @@
 #include <vector>
 #include <memory>
 
+#include "llvm/Support/raw_ostream.h"
+
 #include "../Type.h"
 
 class Expr {
@@ -12,20 +14,35 @@ public:
     virtual ~Expr() = default;
     virtual void print() const = 0;
     virtual std::string toString() const = 0;
+    virtual Type* getType() = 0;
+    virtual void setType(std::unique_ptr<Type>) = 0;
 };
 
-class GepExpr : public Expr {
+class ExprBase : public Expr {
+public:
+    std::unique_ptr<Type> type;
+
+    Type* getType() override {
+        return type.get();
+    }
+
+    void setType(std::unique_ptr<Type> type) override {
+        this->type = std::move(type);
+    }
+};
+
+class GepExpr : public ExprBase {
 public:
     Expr* element;
     std::vector<std::pair<std::unique_ptr<Type>, std::string>> args;
 
-    GepExpr(Expr*);
+    GepExpr(Expr*, std::unique_ptr<Type>);
     void print() const override;
     std::string toString() const override;
     void addArg(std::unique_ptr<Type>, const std::string&);
 };
 
-class Struct : public Expr {
+class Struct : public ExprBase {
 public:
     std::string name;
     std::vector<std::pair<std::unique_ptr<Type>, std::string>> items;
@@ -36,10 +53,9 @@ public:
     void addItem(std::unique_ptr<Type>, const std::string&);
 };
 
-class Value : public Expr {
+class Value : public ExprBase {
 public:
-    std::unique_ptr<Type> type;
-    std::string val;
+    std::string valueName;
     bool init;
 
     Value(const std::string&, std::unique_ptr<Type>);
@@ -56,7 +72,7 @@ public:
     std::string toString() const override;
 };
 
-class JumpExpr : public Expr {
+class JumpExpr : public ExprBase {
 public:
     JumpExpr(const std::string&);
     std::string block;
@@ -64,7 +80,7 @@ public:
     std::string toString() const override;
 };
 
-class IfExpr : public Expr {
+class IfExpr : public ExprBase {
 public:
     Expr* cmp;
     std::string trueBlock;
@@ -76,7 +92,7 @@ public:
     std::string toString() const override;
 };
 
-class SwitchExpr : public Expr {
+class SwitchExpr : public ExprBase {
 public:
     Expr* cmp;
     std::string def;
@@ -87,7 +103,7 @@ public:
     std::string toString() const override;
 };
 
-class AsmExpr : public Expr { //rename
+class AsmExpr : public ExprBase {
 public:
     std::string inst;
 
@@ -96,13 +112,13 @@ public:
     std::string toString() const override;
 };
 
-class CallExpr : public Expr {
+class CallExpr : public ExprBase {
 public:
     std::string funcName;
     std::vector<Expr*> params;
     bool isUsed;
 
-    CallExpr(const std::string&, std::vector<Expr*>);
+    CallExpr(const std::string&, std::vector<Expr*>, std::unique_ptr<Type>);
     void print() const override;
     std::string toString() const override;
 };

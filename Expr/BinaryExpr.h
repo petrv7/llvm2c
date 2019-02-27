@@ -4,7 +4,7 @@
 
 #include "Expr.h"
 
-class BinaryExpr : public Expr {
+class BinaryExpr : public ExprBase {
 public:
     Expr* left;
     Expr* right;
@@ -93,7 +93,7 @@ public:
 
 class LshrExpr : public BinaryExpr {
 public:
-    LshrExpr(Expr*, Expr*);
+    LshrExpr(Expr*, Expr*, bool);
     void print() const override;
     std::string toString() const override;
 };

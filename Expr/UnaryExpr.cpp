@@ -8,10 +8,13 @@
 
 UnaryExpr::UnaryExpr(Expr *expr) {
     this->expr = expr;
+    setType(expr->getType()->clone());
 }
 
 RefExpr::RefExpr(Expr* expr) :
-    UnaryExpr(expr) { }
+    UnaryExpr(expr) {
+    setType(std::make_unique<PointerType>(expr->getType()->clone()));
+}
 
 void RefExpr::print() const {
     llvm::outs() << toString();
@@ -22,7 +25,10 @@ std::string RefExpr::toString() const {
 }
 
 DerefExpr::DerefExpr(Expr* expr) :
-    UnaryExpr(expr) { }
+    UnaryExpr(expr) {
+    auto PT = static_cast<PointerType*>(expr->getType());
+    setType(PT->type->clone());
+}
 
 void DerefExpr::print() const {
     llvm::outs() << toString();
@@ -60,7 +66,7 @@ std::string RetExpr::toString() const {
 
 CastExpr::CastExpr(Expr* expr, std::unique_ptr<Type> type)
     : UnaryExpr(expr) {
-    castType = std::move(type);
+    setType(std::move(type));
 }
 
 void CastExpr::print() const {
@@ -70,7 +76,7 @@ void CastExpr::print() const {
 std::string CastExpr::toString() const {
     std::string ret;
 
-    ret += "(" + castType->toString() + ")";
+    ret += "(" + getType()->toString() + ")";
     if (expr != nullptr) {
         ret += expr->toString();
     }

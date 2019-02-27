@@ -9,6 +9,8 @@
 BinaryExpr::BinaryExpr(Expr* l, Expr* r) {
     left = l;
     right = r;
+
+    setType(std::move(Type::getBinaryType(left->getType(), right->getType())));
 }
 
 AddExpr::AddExpr(Expr* l, Expr* r) :
@@ -134,8 +136,7 @@ std::string AshrExpr::toString() const {
     return "(" + left->toString() + " >> " + right->toString() + ")";
 }
 
-//TODO
-LshrExpr::LshrExpr(Expr* l, Expr* r) :
+LshrExpr::LshrExpr(Expr* l, Expr* r, bool isUnsigned) :
     BinaryExpr(l, r) { }
 
 void LshrExpr::print() const {
@@ -143,7 +144,12 @@ void LshrExpr::print() const {
 }
 
 std::string LshrExpr::toString() const {
-    return "(" + left->toString() + " >> " + right->toString() + ")";
+    std::string ret = "(";
+    auto IT = static_cast<IntegerType*>(left->getType());
+    if (!IT->unsignedType) {
+        ret += "(unsigned " + IT->toString() + ")";
+    }
+    return ret + left->toString() + " >> " + right->toString() + ")";
 }
 
 ShlExpr::ShlExpr(Expr* l, Expr* r) :

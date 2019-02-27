@@ -4,7 +4,7 @@
 
 #include "Expr.h"
 
-class UnaryExpr : public Expr {
+class UnaryExpr : public ExprBase {
 public:
     UnaryExpr(Expr *);
 
@@ -35,8 +35,6 @@ public:
 
 class CastExpr : public UnaryExpr {
 public:
-    std::unique_ptr<Type> castType;
-
     CastExpr(Expr*, std::unique_ptr<Type>);
     void print() const override;
     std::string toString() const override;

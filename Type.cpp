@@ -68,8 +68,68 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
     return nullptr;
 }
 
+std::unique_ptr<Type> Type::getBinaryType(const Type* left, const Type* right) {
+    if (const auto LDT = dynamic_cast<const LongDoubleType*>(left)) {
+        return std::make_unique<LongDoubleType>();
+    }
+    if (const auto LDT = dynamic_cast<const LongDoubleType*>(right)) {
+        return std::make_unique<LongDoubleType>();
+    }
+
+    if (const auto DT = dynamic_cast<const DoubleType*>(left)) {
+        return std::make_unique<DoubleType>();
+    }
+    if (const auto DT = dynamic_cast<const DoubleType*>(right)) {
+        return std::make_unique<DoubleType>();
+    }
+
+    if (const auto FT = dynamic_cast<const FloatType*>(left)) {
+        return std::make_unique<FloatType>();
+    }
+    if (const auto FT = dynamic_cast<const FloatType*>(right)) {
+        return std::make_unique<FloatType>();
+    }
+
+    if (const auto LT = dynamic_cast<const LongType*>(left)) {
+        return std::make_unique<LongType>(LT->unsignedType);
+    }
+    if (const auto LT = dynamic_cast<const LongType*>(right)) {
+        return std::make_unique<LongType>(LT->unsignedType);
+    }
+
+    if (const auto IT = dynamic_cast<const IntType*>(left)) {
+        return std::make_unique<IntType>(IT->unsignedType);
+    }
+    if (const auto IT = dynamic_cast<const IntType*>(right)) {
+        return std::make_unique<IntType>(IT->unsignedType);
+    }
+
+    if (const auto ST = dynamic_cast<const ShortType*>(left)) {
+        return std::make_unique<ShortType>(ST->unsignedType);
+    }
+    if (const auto ST = dynamic_cast<const ShortType*>(right)) {
+        return std::make_unique<ShortType>(ST->unsignedType);
+    }
+
+    if (const auto CT = dynamic_cast<const CharType*>(left)) {
+        return std::make_unique<CharType>(CT->unsignedType);
+    }
+    if (const auto CT = dynamic_cast<const CharType*>(right)) {
+        return std::make_unique<CharType>(CT->unsignedType);
+    }
+}
+
+
+
 FunctionType::FunctionType(std::unique_ptr<Type> retType)
     : retType(std::move(retType)) { }
+
+FunctionType::FunctionType(const FunctionType& other) {
+    retType = other.retType->clone();
+    for (auto& param : other.params) {
+        params.push_back(param->clone());
+    }
+}
 
 void FunctionType::addParam(std::unique_ptr<Type> param) {
     params.push_back(std::move(param));
@@ -94,6 +154,10 @@ std::string FunctionType::paramsToString() const {
     return ret + ")";
 }
 
+std::unique_ptr<Type> FunctionType::clone() const {
+    return std::make_unique<FunctionType>(*this);
+}
+
 void FunctionType::print() const {
     llvm::outs() << toString();
 }
@@ -104,6 +168,14 @@ std::string FunctionType::toString() const {
 
 StructType::StructType(const std::string& name)
     : name(name) { }
+
+StructType::StructType(const StructType& other) {
+    name = other.name;
+}
+
+std::unique_ptr<Type> StructType::clone() const  {
+    return std::make_unique<StructType>(*this);
+}
 
 void StructType::print() const {
     llvm::outs() << toString();
@@ -116,6 +188,15 @@ std::string StructType::toString() const {
 ArrayType::ArrayType(std::unique_ptr<Type> type, unsigned int size)
     : size(size),
       type(std::move(type)) { }
+
+ArrayType::ArrayType(const ArrayType& other) {
+    size = other.size;
+    type = other.type->clone();
+}
+
+std::unique_ptr<Type> ArrayType::clone() const  {
+    return std::make_unique<ArrayType>(*this);
+}
 
 void ArrayType::print() const {
     type->print();
@@ -140,6 +221,10 @@ std::string ArrayType::sizeToString() const {
     }
 
     return ret;
+}
+
+std::unique_ptr<Type> VoidType::clone() const  {
+    return std::make_unique<VoidType>();
 }
 
 void VoidType::print() const {
@@ -168,6 +253,17 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
     this->type = std::move(type);
 }
 
+PointerType::PointerType(const PointerType &other) {
+    type = other.type->clone();
+    isFuncPointer = other.isFuncPointer;
+    levels = other.levels;
+    params = other.params;
+}
+
+std::unique_ptr<Type> PointerType::clone() const  {
+    return std::make_unique<PointerType>(*this);
+}
+
 void PointerType::print() const {
     llvm::outs() << toString();
 }
@@ -183,6 +279,15 @@ std::string PointerType::toString() const {
 IntegerType::IntegerType(const std::string& name, bool unsignedType)
     : name(name),
       unsignedType(unsignedType) { }
+
+IntegerType::IntegerType(const IntegerType& other) {
+    name = other.name;
+    unsignedType = other.unsignedType;
+}
+
+std::unique_ptr<Type> IntegerType::clone() const  {
+    return std::make_unique<IntegerType>(*this);
+}
 
 void IntegerType::print() const {
     llvm::outs() << toString();
@@ -202,17 +307,41 @@ std::string IntegerType::toString() const {
 CharType::CharType(bool unsignedType)
     : IntegerType("char", unsignedType) { }
 
+std::unique_ptr<Type> CharType::clone() const  {
+    return std::make_unique<CharType>(*this);
+}
+
 IntType::IntType(bool unsignedType)
     : IntegerType("int", unsignedType) { }
+
+std::unique_ptr<Type> IntType::clone() const  {
+    return std::make_unique<IntType>(*this);
+}
 
 ShortType::ShortType(bool unsignedType)
     : IntegerType("short", unsignedType) { }
 
+std::unique_ptr<Type> ShortType::clone() const  {
+    return std::make_unique<ShortType>(*this);
+}
+
 LongType::LongType(bool unsignedType)
     : IntegerType("long", unsignedType) { }
 
+std::unique_ptr<Type> LongType::clone() const  {
+    return std::make_unique<LongType>(*this);
+}
+
 FloatingPointType::FloatingPointType(const std::string& name)
     :name(name) { }
+
+FloatingPointType::FloatingPointType(const FloatingPointType& other) {
+    name = other.name;
+}
+
+std::unique_ptr<Type> FloatingPointType::clone() const  {
+    return std::make_unique<FloatingPointType>(*this);
+}
 
 void FloatingPointType::print() const {
     llvm::outs() << toString();
@@ -225,8 +354,20 @@ std::string FloatingPointType::toString() const {
 FloatType::FloatType()
     : FloatingPointType("float") { }
 
+std::unique_ptr<Type> FloatType::clone() const  {
+    return std::make_unique<FloatType>(*this);
+}
+
 DoubleType::DoubleType()
     : FloatingPointType("double") { }
 
+std::unique_ptr<Type> DoubleType::clone() const  {
+    return std::make_unique<DoubleType>(*this);
+}
+
 LongDoubleType::LongDoubleType()
     : FloatingPointType("long double") { }
+
+std::unique_ptr<Type> LongDoubleType::clone() const  {
+    return std::make_unique<LongDoubleType>(*this);
+}

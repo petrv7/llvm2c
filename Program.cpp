@@ -46,16 +46,13 @@ void Program::parseStructs() {
 }
 
 void Program::parseFunctions() {
-    for(llvm::Function& func : module->functions()) {
+    for(const llvm::Function& func : module->functions()) {
         if (func.hasName()) {
-            /*if (func.getName().str().compare("llvm.dbg.declare") == 0) {
-                continue;
-            }*/
             if (func.isDeclaration()) { // ?
                 continue;
             }
         }
-        functions.push_back(std::move(std::make_unique<Func>(&func, this)));
+        functions.push_back(std::make_unique<Func>(&func, this));
     }
 }
 
@@ -152,6 +149,8 @@ void Program::print() const {
     for (const auto& func : functions) {
         func->print();
     }
+
+    llvm::outs().flush();
 }
 
 void Program::saveFile(const std::string& fileName) const {

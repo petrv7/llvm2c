@@ -3,8 +3,10 @@
 
 #include "llvm/Support/raw_ostream.h"
 
-GepExpr::GepExpr(Expr* element)
-    : element(element) { }
+GepExpr::GepExpr(Expr* element, std::unique_ptr<Type> type)
+    : element(element) {
+    setType(std::move(type));
+}
 
 void GepExpr::print() const {
     llvm::outs() << this->toString();
@@ -14,25 +16,28 @@ std::string GepExpr::toString() const {
     std::string print;
     unsigned int i = 1;
 
-    RefExpr* RE = static_cast<RefExpr*>(element);
-    if (Value* val = dynamic_cast<Value*>(RE->expr)) {
-        if (StructType* ST = dynamic_cast<StructType*>(val->type.get())) {
-            print = args[0].second;
-            i = 2;
-        } else {
-            print = element->toString();
-        }
-    } else {
-        if (args[0].second == "0") {
-            print = element->toString();
-        } else {
-            if (auto VT = dynamic_cast<VoidType*>(args[0].first.get())) {
+    if (UnaryExpr* UE = dynamic_cast<UnaryExpr*>(element)) {
+        if (Value* val = dynamic_cast<Value*>(UE->expr)) {
+            if (StructType* ST = dynamic_cast<StructType*>(val->type.get())) {
                 print = args[0].second;
+                i = 2;
             } else {
-                print = "(" + element->toString();
-                print.append(" + " + args[0].second + ")");
+                print = element->toString();
+            }
+        } else {
+            if (args[0].second == "0") {
+                print = element->toString();
+            } else {
+                if (auto VT = dynamic_cast<VoidType*>(args[0].first.get())) {
+                    print = args[0].second;
+                } else {
+                    print = "(" + element->toString();
+                    print.append(" + " + args[0].second + ")");
+                }
             }
         }
+    } else if (GlobalValue* GV = dynamic_cast<GlobalValue*>(element)) {
+        print = GV->toString();
     }
 
     for (i; i < args.size(); i++) {
@@ -86,9 +91,9 @@ void Struct::addItem(std::unique_ptr<Type> type, const std::string& name) {
     items.push_back(std::make_pair(std::move(type), name));
 }
 
-Value::Value(const std::string& s, std::unique_ptr<Type> type) {
-    this->type = std::move(type);
-    val = s;
+Value::Value(const std::string& valueName, std::unique_ptr<Type> type) {
+    setType(std::move(type));
+    this->valueName = valueName;
     init = false;
 }
 
@@ -104,12 +109,12 @@ std::string Value::toString() const {
                 for (unsigned i = 0; i < PT->levels; i++) {
                     ret += "*";
                 }
-                return ret + val + ")";
+                return ret + valueName + ")";
             }
         }
     }
 
-    return val;
+    return valueName;
 }
 
 GlobalValue::GlobalValue(const std::string& varName, const std::string& value, std::unique_ptr<Type> type)
@@ -122,7 +127,7 @@ void GlobalValue::print() const {
 
 std::string GlobalValue::toString() const {
     if (!init) {
-        std::string ret = type->toString() + " " + val.substr(1, val.length());
+        std::string ret = type->toString() + " " + valueName.substr(1, valueName.length());
         if (ArrayType* AT = dynamic_cast<ArrayType*>(type.get())) {
             ret += AT->sizeToString();
         }
@@ -133,7 +138,7 @@ std::string GlobalValue::toString() const {
         return ret + ";";
     }
 
-    return val;
+    return valueName;
 }
 
 JumpExpr::JumpExpr(const std::string &block)
@@ -210,10 +215,12 @@ std::string AsmExpr::toString() const {
     return "asm(\"" + inst + "\");";
 }
 
-CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params)
+CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type)
     : funcName(funcName),
       params(params),
-      isUsed(false) { }
+      isUsed(false) {
+    setType(std::move(type));
+}
 
 void CallExpr::print() const {
     llvm::outs() << toString();

@@ -16,7 +16,7 @@ Func::Func(llvm::Function* func, Program* program) {
     function = func;
     varCount = 0;
     blockCount = 0;
-    returnType = std::move(Type::getType(func->getReturnType()));
+    returnType = Type::getType(func->getReturnType());
 
     parseFunction();
 }

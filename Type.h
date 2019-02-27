@@ -8,6 +8,7 @@
 class Type {
 public:
     virtual ~Type() = default;
+    virtual std::unique_ptr<Type> clone() const = 0;
     virtual void print() const = 0;
     virtual std::string toString() const = 0;
 
@@ -17,6 +18,14 @@ public:
      * @return unique_ptr to corresponding Type object
      */
     static std::unique_ptr<Type> getType(const llvm::Type* type);
+
+    /**
+     * @brief getBinaryType Returns type that would be result of a binary operation
+     * @param left left argument of the operation
+     * @param right right argument of the operation
+     * @return unique_ptr to Type object
+     */
+    static std::unique_ptr<Type> getBinaryType(const Type* left, const Type* right);
 };
 
 class FunctionType : public Type {
@@ -25,10 +34,13 @@ public:
     std::vector<std::unique_ptr<Type>> params;
 
     FunctionType(std::unique_ptr<Type>);
+    FunctionType(const FunctionType&);
 
     void addParam(std::unique_ptr<Type>);
     void printParams() const;
     std::string paramsToString() const;
+
+    std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
 };
@@ -38,7 +50,9 @@ public:
     std::string name;
 
     StructType(const std::string&);
+    StructType(const StructType&);
 
+    std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
 };
@@ -49,15 +63,19 @@ public:
     std::unique_ptr<Type> type;
 
     ArrayType(std::unique_ptr<Type>, unsigned int);
+    ArrayType(const ArrayType&);
 
-    void print() const override;
     void printSize() const;
-    std::string toString() const override;
     std::string sizeToString() const;
+
+    std::unique_ptr<Type> clone() const override;
+    void print() const override;
+    std::string toString() const override;
 };
 
 class VoidType : public Type {
 public:
+    std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
 };
@@ -70,7 +88,9 @@ public:
     std::string params;
 
     PointerType(std::unique_ptr<Type>);
+    PointerType(const PointerType& other);
 
+    std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
 };
@@ -81,7 +101,9 @@ public:
     bool unsignedType;
 
     IntegerType(const std::string&, bool);
+    IntegerType(const IntegerType&);
 
+    std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
 };
@@ -89,21 +111,29 @@ public:
 class CharType : public IntegerType {
 public:
     CharType(bool);
+
+    std::unique_ptr<Type> clone() const override;
 };
 
 class IntType : public IntegerType {
 public:
     IntType(bool);
+
+    std::unique_ptr<Type> clone() const override;
 };
 
 class ShortType : public IntegerType {
 public:
     ShortType(bool);
+
+    std::unique_ptr<Type> clone() const override;
 };
 
 class LongType : public IntegerType {
 public:
     LongType(bool);
+
+    std::unique_ptr<Type> clone() const override;
 };
 
 class FloatingPointType : public Type {
@@ -111,6 +141,9 @@ public:
     std::string name;
 
     FloatingPointType(const std::string&);
+    FloatingPointType(const FloatingPointType&);
+
+    std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
 };
@@ -118,14 +151,20 @@ public:
 class FloatType : public FloatingPointType {
 public:
     FloatType();
+
+    std::unique_ptr<Type> clone() const override;
 };
 
 class DoubleType : public FloatingPointType {
 public:
     DoubleType();
+
+    std::unique_ptr<Type> clone() const override;
 };
 
 class LongDoubleType : public FloatingPointType {
 public:
     LongDoubleType();
+
+    std::unique_ptr<Type> clone() const override;
 };

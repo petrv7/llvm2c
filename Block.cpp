@@ -310,8 +310,7 @@ void Block::parseShiftInstruction(const llvm::Instruction& ins) {
         func->createExpr(&ins, std::make_unique<ShlExpr>(val0, val1));
         break;
     case llvm::Instruction::LShr:
-        //TODO
-        func->createExpr(&ins, std::make_unique<LshrExpr>(val0, val1));
+        func->createExpr(&ins, std::make_unique<LshrExpr>(val0, val1, false));
         break;
     case llvm::Instruction::AShr:
         func->createExpr(&ins, std::make_unique<AshrExpr>(val0, val1));
@@ -341,13 +340,17 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
         params.push_back(func->getExpr(param));
     }
 
-    func->createExpr(&ins, std::make_unique<CallExpr>(funcName, params));
+    func->createExpr(&ins, std::make_unique<CallExpr>(funcName, params, Type::getType(callInst->getCalledFunction()->getReturnType())));
 
     abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
 }
 
 void Block::parseCastInstruction(const llvm::Instruction& ins) {
+    if (func->getExpr(ins.getOperand(0)) == nullptr) {
+        createConstantValue(ins.getOperand(0));
+    }
     Expr* expr = func->getExpr(ins.getOperand(0));
+
     const llvm::CastInst* CI = llvm::cast<const llvm::CastInst>(&ins);
 
     func->createExpr(&ins, std::make_unique<CastExpr>(expr, std::move(Type::getType(CI->getDestTy()))));
@@ -374,7 +377,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
     const llvm::GetElementPtrInst* gepInst = llvm::cast<llvm::GetElementPtrInst>(&ins);
 
     Expr* expr = func->getExpr(gepInst->getOperand(0));
-    auto gepExpr = std::make_unique<GepExpr>(expr);
+    auto gepExpr = std::make_unique<GepExpr>(expr, Type::getType(gepInst->getType()));
 
     std::string indexValue;
     llvm::Type* prevType = gepInst->getOperand(0)->getType();
@@ -496,7 +499,9 @@ void Block::parseLLVMInstruction(const llvm::Instruction& ins) {
         parseGepInstruction(ins);
         break;
     case llvm::Instruction::PHI:
-        throw std::invalid_argument("Instruction \"phi\" is not supported!");
+        llvm::outs() << "Instruction \"phi\" is not supported!";
+        llvm::outs().flush();
+        std::abort();
         break;
     default:
         throw std::invalid_argument("Instruction not supported!");
@@ -516,7 +521,7 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         std::regex varName("var[0-9]+");
         std::regex constGlobalVarName("ConstGlobalVar_.+");
         if (!std::regex_match(localVar->getName().str(), varName) && !std::regex_match(localVar->getName().str(), constGlobalVarName)) {
-            variable->val = localVar->getName();
+            variable->valueName = localVar->getName();
         }
 
         if (type && type->getName().str().compare(0, 8, "unsigned") == 0) {
@@ -552,7 +557,7 @@ void Block::createConstantValue(llvm::Value* val) {
 
 void Block::parseConstantGep(llvm::ConstantExpr *expr) const {
     Expr* gvar = func->getGlobalVar(expr->getOperand(0));
-    auto gepExpr = std::make_unique<GepExpr>(gvar);
+    auto gepExpr = std::make_unique<GepExpr>(gvar, Type::getType(expr->getType()));
 
     std::string indexValue;
     llvm::Type* prevType = expr->getOperand(0)->getType();
