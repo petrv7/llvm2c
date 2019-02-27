@@ -48,7 +48,10 @@ void Program::parseStructs() {
 void Program::parseFunctions() {
     for(llvm::Function& func : module->functions()) {
         if (func.hasName()) {
-            if (func.getName().str().compare("llvm.dbg.declare") == 0) {
+            /*if (func.getName().str().compare("llvm.dbg.declare") == 0) {
+                continue;
+            }*/
+            if (func.isDeclaration()) { // ?
                 continue;
             }
         }

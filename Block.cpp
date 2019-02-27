@@ -322,9 +322,6 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
     }
 
     for (const auto& param : callInst->arg_operands()) {
-        if (llvm::ConstantExpr* CE = llvm::dyn_cast<llvm::ConstantExpr>(param.get())) {
-            parseConstantGep(CE);
-        }
         if (func->getExpr(param) == nullptr) {
             createConstantValue(param);
         }
@@ -490,12 +487,59 @@ void Block::createConstantValue(llvm::Value* val) {
     if (llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         func->createExpr(val, std::make_unique<Value>(std::to_string(CFP->getValueAPF().convertToFloat()), std::make_unique<IntType>(false)));
     }
+    if (llvm::ConstantExpr* CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
+        parseConstantGep(CE);
+    }
 }
 
-std::string Block::parseConstantGep(llvm::ConstantExpr *expr) const {
-    llvm::outs() << func->getGlobalVar(expr->getOperand(0))->val;
-    llvm::outs().flush();
+void Block::parseConstantGep(llvm::ConstantExpr *expr) const {
+    Expr* gvar = func->getGlobalVar(expr->getOperand(0));
+    auto gepExpr = std::make_unique<GepExpr>(gvar);
 
-    return "";
+    std::string indexValue;
+    llvm::Type* prevType = expr->getOperand(0)->getType();
+
+    bool isStruct = false;
+    llvm::PointerType* PT = llvm::cast<llvm::PointerType>(expr->getOperand(0)->getType());
+    if (PT->getElementType()->isStructTy()) {
+        isStruct = true;
+        llvm::StructType* ST = llvm::cast<llvm::StructType>(PT->getElementType());
+        std::string structName = ST->getName().str().erase(0, 7);
+        std::string varName = func->getExpr(expr->getOperand(0))->toString();
+
+        if (varName.at(0) == '&') {
+            varName = func->getExpr(expr->getOperand(0))->toString().erase(0,2);
+            varName = varName.erase(varName.length() - 1, varName.length());
+        }
+
+        gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue()].second + ")");
+    }
+
+    for (auto it = llvm::gep_type_begin(expr); it != llvm::gep_type_end(expr); it++) {
+        if (isStruct) {
+            std::advance(it, 2);
+            if (it == llvm::gep_type_end(expr)) {
+                break;
+            }
+        }
+
+        if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(it.getOperand())) {
+            indexValue = std::to_string(CI->getSExtValue());
+        } else {
+            indexValue = func->getExpr(it.getOperand())->toString();
+        }
+
+
+        if (prevType->isArrayTy()) {
+            unsigned int size = prevType->getArrayNumElements();
+            gepExpr->addArg(std::move(Type::getType(prevType)), indexValue);
+        } else {
+            gepExpr->addArg(std::make_unique<PointerType>(Type::getType(prevType)), indexValue);
+        }
+        prevType = it.getIndexedType();
+    }
+
+    func->createExpr(expr, std::move(gepExpr));
+
 }
 

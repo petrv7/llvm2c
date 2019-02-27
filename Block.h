@@ -160,7 +160,6 @@ private:
     /**
      * @brief parseConstantGep Parses GetElementPtrConstantExpr.
      * @param expr GetElementPtrConstantExpr for parsing
-     * @return String containing parsed GetElementPtrConstantExpr
      */
-    std::string parseConstantGep(llvm::ConstantExpr* expr) const;
+    void parseConstantGep(llvm::ConstantExpr* expr) const;
 };
