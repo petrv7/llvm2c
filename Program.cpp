@@ -127,7 +127,15 @@ std::string Program::getValue(const llvm::Constant* val) const {
     }
 }
 
+void Program::unsetAllInit() {
+    for (const llvm::GlobalVariable& gvar : module->globals()) {
+        globalVars[&gvar]->init = false;
+    }
+}
+
 void Program::print() const {
+    unsetAllInit();
+
     for (auto it = structs.rbegin(); it != structs.rend(); it++) {
         it->get()->print();
         llvm::outs() << "\n";
@@ -147,17 +155,21 @@ void Program::print() const {
 }
 
 void Program::saveFile(const std::string& fileName) const {
+    unsetAllInit();
+
     std::ofstream file;
     file.open(fileName);
 
-    for (const auto& structExpr : structs) {
-        file << structExpr->toString() << "\n";
+    for (auto it = structs.rbegin(); it != structs.rend(); it++) {
+        file << it->get()->toString();
+        file << "\n";
     }
     file << "\n";
 
     for (auto& global : module->globals()) {
-        file << globalVars[&global]->toString() << "\n";
+        file << globalVars[&global]->toString();
         globalVars[&global]->init = true;
+        file << "\n";
     }
     file << "\n";
 

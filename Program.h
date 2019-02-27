@@ -43,6 +43,12 @@ private:
      */
     std::string getValue(const llvm::Constant* val) const;
 
+    /**
+     * @brief unsetAllInit Resets the init flag for every global variable.
+     * Used for repeated calling of print and saveFile.
+     */
+    void unsetAllInit();
+
 public:
 
     /**

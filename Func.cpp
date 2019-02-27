@@ -111,17 +111,20 @@ void Func::print() const {
 }
 
 void Func::saveFile(std::ofstream& file) const {
-    file << function->getName().str() << "(";
+    file << returnType->toString();
+    file <<  " " << function->getName().str() << "(";
     bool first = true;
 
     for (const llvm::Value& arg : function->args()) {
-        if (first) {
-            file << exprMap.find(&arg)->second->toString();
-        } else {
+        if (!first) {
             file << ", ";
-            file << exprMap.find(&arg)->second->toString();
         }
         first = false;
+
+        Value* val = static_cast<Value*>(exprMap.find(&arg)->second.get());
+        file << val->type->toString();
+        file << " ";
+        file << val->toString();
     }
 
     file << ") {\n";

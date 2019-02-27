@@ -76,21 +76,34 @@ void Block::saveFile(std::ofstream& file) {
     unsetAllInit();
 
     for (const auto expr : abstractSyntaxTree) {
-        file << "    ";
         if (auto val = dynamic_cast<Value*>(expr)) {
+            file << "    ";
             if (!val->init) {
                 file << val->type->toString();
                 file << " ";
                 file << expr->toString();
 
-                if (auto at = dynamic_cast<ArrayType*>(val->type.get())) {
-                    file << "[" << at->size << "]";
+                if (auto AT = dynamic_cast<ArrayType*>(val->type.get())) {
+                    file << AT->sizeToString();
+                }
+
+                if (auto PT = dynamic_cast<PointerType*>(val->type.get())) {
+                    if (PT->isFuncPointer) {
+                        file << PT->params;
+                    }
                 }
 
                 file << ";\n";
                 val->init = true;
             }
+        } else if (auto CE = dynamic_cast<CallExpr*>(expr)) {
+            if (!CE->isUsed) {
+                file << "    ";
+                file << expr->toString();
+                file << ";\n";
+            }
         } else {
+            file << "    ";
             file << expr->toString();
             file << "\n";
         }
@@ -481,6 +494,9 @@ void Block::unsetAllInit() {
 }
 
 void Block::createConstantValue(llvm::Value* val) {
+    if (llvm::ConstantPointerNull* CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
+        func->createExpr(val, std::make_unique<Value>("NULL", std::make_unique<VoidType>()));
+    }
     if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
         func->createExpr(val, std::make_unique<Value>(std::to_string(CI->getSExtValue()), std::make_unique<IntType>(false)));
     }
