@@ -542,13 +542,13 @@ void Block::unsetAllInit() {
 
 void Block::createConstantValue(llvm::Value* val) {
     if (llvm::ConstantPointerNull* CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
-        func->createExpr(val, std::make_unique<Value>("NULL", std::make_unique<VoidType>()));
+        func->createExpr(val, std::make_unique<Value>("0", std::make_unique<VoidType>()));
     }
     if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
         func->createExpr(val, std::make_unique<Value>(std::to_string(CI->getSExtValue()), std::make_unique<IntType>(false)));
     }
     if (llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
-        func->createExpr(val, std::make_unique<Value>(std::to_string(CFP->getValueAPF().convertToFloat()), std::make_unique<IntType>(false)));
+        func->createExpr(val, std::make_unique<Value>(std::to_string(CFP->getValueAPF().convertToDouble()), std::make_unique<IntType>(false)));
     }
     if (llvm::ConstantExpr* CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
         parseConstantGep(CE);

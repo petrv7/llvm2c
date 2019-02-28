@@ -145,6 +145,13 @@ void Func::saveFile(std::ofstream& file) const {
         file << val->toString();
     }
 
+    if (isVarArg) {
+        if (!first) {
+            file << ", ";
+        }
+        file << "...";
+    }
+
     file << ")";
 
     if (isDeclaration) {
