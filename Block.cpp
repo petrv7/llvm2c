@@ -143,7 +143,9 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins) {
     }
 
     Expr* val1 = func->getExpr(ins.getOperand(1));
-    derefs[val1] = std::make_unique<DerefExpr>(val1);
+    if (derefs.find(val1) == derefs.end()) {
+        derefs[val1] = std::make_unique<DerefExpr>(val1);
+    }
     func->createExpr(&ins, std::make_unique<EqualsExpr>(derefs[val1].get(), val0));
 
     abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
@@ -499,9 +501,7 @@ void Block::parseLLVMInstruction(const llvm::Instruction& ins) {
         parseGepInstruction(ins);
         break;
     case llvm::Instruction::PHI:
-        llvm::outs() << "Instruction \"phi\" is not supported!";
-        llvm::outs().flush();
-        std::abort();
+        throw std::invalid_argument("Instruction \"phi\" is not supported!");
         break;
     default:
         throw std::invalid_argument("Instruction not supported!");

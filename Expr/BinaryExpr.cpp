@@ -10,7 +10,7 @@ BinaryExpr::BinaryExpr(Expr* l, Expr* r) {
     left = l;
     right = r;
 
-    setType(std::move(Type::getBinaryType(left->getType(), right->getType())));
+    setType(Type::getBinaryType(left->getType(), right->getType()));
 }
 
 AddExpr::AddExpr(Expr* l, Expr* r) :

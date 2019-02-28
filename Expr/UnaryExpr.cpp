@@ -35,8 +35,7 @@ void DerefExpr::print() const {
 }
 
 std::string DerefExpr::toString() const {
-    RefExpr* refExpr = nullptr;
-    if ((refExpr = dynamic_cast<RefExpr*>(expr)) != nullptr) {
+    if (auto refExpr = dynamic_cast<RefExpr*>(expr)) {
         return refExpr->expr->toString();
     } else {
         return "*(" + expr->toString() + ")";

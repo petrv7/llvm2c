@@ -52,6 +52,7 @@ void Program::parseFunctions() {
                 continue;
             }
         }
+
         functions.push_back(std::make_unique<Func>(&func, this));
     }
 }

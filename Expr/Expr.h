@@ -29,6 +29,10 @@ public:
     void setType(std::unique_ptr<Type> type) override {
         this->type = std::move(type);
     }
+
+    ~ExprBase() {
+        llvm::outs().flush();
+    }
 };
 
 class GepExpr : public ExprBase {

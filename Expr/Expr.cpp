@@ -61,7 +61,7 @@ void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
 }
 
 Struct::Struct(const std::string & name)
-    : name(name) { }
+    : name(name) {}
 
 void Struct::print() const {
     llvm::outs() << toString();
@@ -142,7 +142,7 @@ std::string GlobalValue::toString() const {
 }
 
 JumpExpr::JumpExpr(const std::string &block)
-    : block(block) { }
+    : block(block) {}
 
 void JumpExpr::print() const {
     llvm::outs() << toString();
@@ -155,12 +155,12 @@ std::string JumpExpr::toString() const {
 IfExpr::IfExpr(Expr* cmp, const std::string& trueBlock, const std::string& falseBlock)
     : cmp(cmp),
       trueBlock(trueBlock),
-      falseBlock(falseBlock) { }
+      falseBlock(falseBlock) {}
 
 IfExpr::IfExpr(const std::string &trueBlock)
     : cmp(nullptr),
       trueBlock(trueBlock),
-      falseBlock("") { }
+      falseBlock("") {}
 
 void IfExpr::print() const {
     llvm::outs() << toString();
@@ -177,7 +177,7 @@ std::string IfExpr::toString() const {
 SwitchExpr::SwitchExpr(Expr* cmp, const std::string &def, std::map<int, std::string> cases)
     : cmp(cmp),
       def(def),
-      cases(cases) { }
+      cases(cases) {}
 
 void SwitchExpr::print() const {
     llvm::outs() << toString();
@@ -205,7 +205,7 @@ std::string SwitchExpr::toString() const {
 }
 
 AsmExpr::AsmExpr(const std::string &inst)
-    :inst(inst) { }
+    :inst(inst) {}
 
 void AsmExpr::print() const {
     llvm::outs() << toString();

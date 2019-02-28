@@ -117,6 +117,8 @@ std::unique_ptr<Type> Type::getBinaryType(const Type* left, const Type* right) {
     if (const auto CT = dynamic_cast<const CharType*>(right)) {
         return std::make_unique<CharType>(CT->unsignedType);
     }
+
+    return nullptr;
 }
 
 
