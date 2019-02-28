@@ -11,11 +11,12 @@
 #include <string>
 #include <fstream>
 
-Func::Func(llvm::Function* func, Program* program) {
+Func::Func(llvm::Function* func, Program* program, bool isDeclaration) {
     this->program = program;
     function = func;
     varCount = 0;
     blockCount = 0;
+    this->isDeclaration = isDeclaration;
     returnType = Type::getType(func->getReturnType());
 
     parseFunction();
@@ -65,9 +66,11 @@ void Func::parseFunction() {
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
-        exprMap[&arg] = std::make_unique<Value>(varName, std::move(Type::getType(arg.getType())));
+        exprMap[&arg] = std::make_unique<Value>(varName, Type::getType(arg.getType()));
         varCount++;
     }
+
+    isVarArg = function->isVarArg();
 
     for (const auto& block : *function) {
         getBlockName(&block);
@@ -95,7 +98,22 @@ void Func::print() const {
         val->print();
     }
 
-    llvm::outs() << ") {\n";
+    if (isVarArg) {
+        if (!first) {
+            llvm::outs() << ", ";
+        }
+        llvm::outs() << "...";
+    }
+
+
+    llvm::outs() << ")";
+
+    if (isDeclaration) {
+        llvm::outs() << ";\n";
+        return;
+    }
+
+    llvm::outs() << " {\n";
 
     first = true;
     for (const auto& block : *function) {
@@ -127,7 +145,14 @@ void Func::saveFile(std::ofstream& file) const {
         file << val->toString();
     }
 
-    file << ") {\n";
+    file << ")";
+
+    if (isDeclaration) {
+        file << ";\n";
+        return;
+    }
+
+    file << " {\n";
 
     first = true;
     for (const auto& block : *function) {

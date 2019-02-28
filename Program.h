@@ -18,6 +18,7 @@ private:
     std::unique_ptr<llvm::Module> module;
 
     std::vector<std::unique_ptr<Func>> functions; // vector of parsed functions
+    std::vector<std::unique_ptr<Func>> declarations; // vector of function declarations
     std::vector<std::unique_ptr<Struct>> structs; // vector of parsed structs
     llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<GlobalValue>> globalVars; //map containing global variables
 

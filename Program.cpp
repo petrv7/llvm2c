@@ -48,12 +48,14 @@ void Program::parseStructs() {
 void Program::parseFunctions() {
     for(const llvm::Function& func : module->functions()) {
         if (func.hasName()) {
-            if (func.isDeclaration()) { // ?
-                continue;
+            if (func.isDeclaration()) {
+                if (func.getName().str().substr(0, 8) != "llvm.dbg") {
+                    declarations.push_back(std::make_unique<Func>(&func, this, true));
+                }
+            } else {
+                functions.push_back(std::make_unique<Func>(&func, this, false));
             }
-        }
-
-        functions.push_back(std::make_unique<Func>(&func, this));
+        } 
     }
 }
 
@@ -134,6 +136,10 @@ void Program::unsetAllInit() {
 void Program::print() const {
     unsetAllInit();
 
+    for (const auto& func : declarations) {
+        func->print();
+    }
+
     for (auto it = structs.rbegin(); it != structs.rend(); it++) {
         it->get()->print();
         llvm::outs() << "\n";
@@ -159,6 +165,10 @@ void Program::saveFile(const std::string& fileName) const {
 
     std::ofstream file;
     file.open(fileName);
+
+    for (const auto& func : declarations) {
+        func->saveFile(file);
+    }
 
     for (auto it = structs.rbegin(); it != structs.rend(); it++) {
         file << it->get()->toString();

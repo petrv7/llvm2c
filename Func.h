@@ -29,6 +29,8 @@ private:
 
     unsigned varCount; //counter for assigning names of variables
     unsigned blockCount; // counter for assigning names of blocks
+    bool isDeclaration;
+    bool isVarArg;
 
     /**
      * @brief getBlockName Returns name of the block if the block already has an assigned name.
@@ -71,8 +73,10 @@ public:
     /**
      * @brief Func Constructor for Func.
      * @param func llvm::Function for parsing
+     * @param program Program to which function belongs
+     * @param isDeclaration bool signalizing that function is only being declared
      */
-    Func(llvm::Function* func, Program* program);
+    Func(llvm::Function* func, Program* program, bool isDeclaration);
 
     /**
      * @brief parseFunction Parses blocks of the llvm::Function.
