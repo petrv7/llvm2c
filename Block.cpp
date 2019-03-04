@@ -324,15 +324,20 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
     const llvm::CallInst* callInst = llvm::cast<const llvm::CallInst>(&ins);
     std::string funcName;
     std::vector<Expr*> params;
+    std::unique_ptr<Type> type = nullptr;
 
-    if (callInst->getCalledFunction() != nullptr) { //TODO function without name
+    if (callInst->getCalledFunction() != nullptr) {
         funcName = callInst->getCalledFunction()->getName().str();
+        type = Type::getType(callInst->getCalledFunction()->getReturnType());
         if (funcName.compare("llvm.dbg.declare") == 0) {
             setMetadataInfo(callInst);
             return;
         }
     } else {
+        llvm::PointerType* PT = llvm::cast<llvm::PointerType>(callInst->getCalledValue()->getType());
+        llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getElementType());
         funcName = func->getExpr(callInst->getCalledValue())->toString();
+        type = Type::getType(FT->getReturnType());
     }
 
     for (const auto& param : callInst->arg_operands()) {
@@ -342,7 +347,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
         params.push_back(func->getExpr(param));
     }
 
-    func->createExpr(&ins, std::make_unique<CallExpr>(funcName, params, Type::getType(callInst->getCalledFunction()->getReturnType())));
+    func->createExpr(&ins, std::make_unique<CallExpr>(funcName, params, std::move(type)));
 
     abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
 }

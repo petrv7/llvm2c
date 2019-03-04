@@ -46,15 +46,21 @@ void Value::print() const {
 }
 
 std::string Value::toString() const {
-    if (auto PT = dynamic_cast<PointerType*>(type.get())) {
-        if (PT->isFuncPointer) {
-            if (!init) {
-                std::string ret = "(";
+    if (!init) {
+        if (auto PT = dynamic_cast<PointerType*>(type.get())) {
+            std::string ret;
+            if (PT->isFuncPointer || PT->isArrayPointer) {
+                ret = "(";
                 for (unsigned i = 0; i < PT->levels; i++) {
                     ret += "*";
                 }
-                return ret + valueName + ")";
+                ret += valueName + ")";
             }
+            if (PT->isArrayPointer) {
+                ret = ret + "[" + std::to_string(PT->size) + "]";
+            }
+
+            return ret;
         }
     }
 

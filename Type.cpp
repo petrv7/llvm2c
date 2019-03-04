@@ -240,9 +240,11 @@ std::string VoidType::toString() const {
 PointerType::PointerType(std::unique_ptr<Type> type) {
     levels = 1;
     isFuncPointer = false;
+    isArrayPointer = false;
 
     if (auto PT = dynamic_cast<PointerType*>(type.get())) {
         isFuncPointer = PT->isFuncPointer;
+        isArrayPointer = PT->isArrayPointer;
         levels = PT->levels + 1;
         params = PT->params;
     }
@@ -252,14 +254,21 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
         params = FT->paramsToString();
     }
 
+    if (auto AT = dynamic_cast<ArrayType*>(type.get())) {
+        isArrayPointer = true;
+        size = AT->size;
+    }
+
     this->type = std::move(type);
 }
 
 PointerType::PointerType(const PointerType &other) {
     type = other.type->clone();
     isFuncPointer = other.isFuncPointer;
+    isArrayPointer = other.isArrayPointer;
     levels = other.levels;
     params = other.params;
+    size = other.size;
 }
 
 std::unique_ptr<Type> PointerType::clone() const  {
@@ -271,7 +280,7 @@ void PointerType::print() const {
 }
 
 std::string PointerType::toString() const {
-    if (isFuncPointer) {
+    if (isFuncPointer || isArrayPointer) {
         return type->toString();
     }
 
