@@ -3,63 +3,6 @@
 
 #include "llvm/Support/raw_ostream.h"
 
-GepExpr::GepExpr(Expr* element, std::unique_ptr<Type> type)
-    : element(element) {
-    setType(std::move(type));
-}
-
-void GepExpr::print() const {
-    llvm::outs() << this->toString();
-}
-
-std::string GepExpr::toString() const {
-    std::string print;
-    unsigned int i = 1;
-
-    if (UnaryExpr* UE = dynamic_cast<UnaryExpr*>(element)) {
-        if (Value* val = dynamic_cast<Value*>(UE->expr)) {
-            if (StructType* ST = dynamic_cast<StructType*>(val->type.get())) {
-                print = args[0].second;
-                i = 2;
-            } else {
-                print = element->toString();
-            }
-        } else {
-            if (args[0].second == "0") {
-                print = element->toString();
-            } else {
-                if (auto VT = dynamic_cast<VoidType*>(args[0].first.get())) {
-                    print = args[0].second;
-                } else {
-                    print = "(" + element->toString();
-                    print.append(" + " + args[0].second + ")");
-                }
-            }
-        }
-    } else if (GlobalValue* GV = dynamic_cast<GlobalValue*>(element)) {
-        print = GV->toString();
-    }
-
-    for (i; i < args.size(); i++) {
-        if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
-            if (auto ST = dynamic_cast<StructType*>(AT->type.get())) {
-                print = "*(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
-            } else {
-                print = "(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
-            }
-        } else {
-            print = "(((" + args[i].first->toString() + ")" + print;
-        }
-        print.append(") + " + args[i].second + ")");
-    }
-
-    return print;
-}
-
-void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
-    args.push_back(std::make_pair(std::move(type), index));
-}
-
 Struct::Struct(const std::string & name)
     : name(name) {}
 

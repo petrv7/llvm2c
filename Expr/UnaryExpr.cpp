@@ -24,6 +24,63 @@ std::string RefExpr::toString() const {
     return "&(" + expr->toString() + ")";
 }
 
+GepExpr::GepExpr(Expr* expr, std::unique_ptr<Type> type)
+    : UnaryExpr(expr) {
+    setType(std::move(type));
+}
+
+void GepExpr::print() const {
+    llvm::outs() << this->toString();
+}
+
+std::string GepExpr::toString() const {
+    std::string print;
+    unsigned int i = 1;
+
+    if (UnaryExpr* UE = dynamic_cast<UnaryExpr*>(expr)) {
+        if (Value* val = dynamic_cast<Value*>(UE->expr)) {
+            if (StructType* ST = dynamic_cast<StructType*>(val->type.get())) {
+                print = args[0].second;
+                i = 2;
+            } else {
+                print = expr->toString();
+            }
+        } else {
+            if (args[0].second == "0") {
+                print = expr->toString();
+            } else {
+                if (auto VT = dynamic_cast<VoidType*>(args[0].first.get())) {
+                    print = args[0].second;
+                } else {
+                    print = "(" + expr->toString();
+                    print.append(" + " + args[0].second + ")");
+                }
+            }
+        }
+    } else if (GlobalValue* GV = dynamic_cast<GlobalValue*>(expr)) {
+        print = GV->toString();
+    }
+
+    for (i; i < args.size(); i++) {
+        if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
+            if (auto ST = dynamic_cast<StructType*>(AT->type.get())) {
+                print = "*(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
+            } else {
+                print = "(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
+            }
+        } else {
+            print = "(((" + args[i].first->toString() + ")" + print;
+        }
+        print.append(") + " + args[i].second + ")");
+    }
+
+    return print;
+}
+
+void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
+    args.push_back(std::make_pair(std::move(type), index));
+}
+
 DerefExpr::DerefExpr(Expr* expr) :
     UnaryExpr(expr) {
     auto PT = static_cast<PointerType*>(expr->getType());

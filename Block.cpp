@@ -417,7 +417,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
 
         if (prevType->isArrayTy()) {
             unsigned int size = prevType->getArrayNumElements();
-            gepExpr->addArg(std::move(Type::getType(prevType)), indexValue);
+            gepExpr->addArg(Type::getType(prevType), indexValue);
         } else {
             gepExpr->addArg(std::make_unique<PointerType>(Type::getType(prevType)), indexValue);
         }

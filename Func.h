@@ -8,6 +8,7 @@
 class Program;
 
 #include "Expr/Expr.h"
+#include "Expr/UnaryExpr.h"
 #include "Block.h"
 #include "Program.h"
 

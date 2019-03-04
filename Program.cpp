@@ -133,20 +133,20 @@ void Program::unsetAllInit() {
     }
 }
 
-void Program::print() const {
+void Program::print() {
     unsetAllInit();
 
     for (const auto& func : declarations) {
         func->print();
     }
 
-    for (auto it = structs.rbegin(); it != structs.rend(); it++) {
-        it->get()->print();
+    for (const auto& strct : structs) {
+        strct->print();
         llvm::outs() << "\n";
     }
     llvm::outs() << "\n";
 
-    for (auto& global : module->globals()) {
+    for (const auto& global : module->globals()) {
         globalVars[&global]->print();
         globalVars[&global]->init = true;
         llvm::outs() << "\n";
@@ -160,7 +160,7 @@ void Program::print() const {
     llvm::outs().flush();
 }
 
-void Program::saveFile(const std::string& fileName) const {
+void Program::saveFile(const std::string& fileName) {
     unsetAllInit();
 
     std::ofstream file;
@@ -170,13 +170,13 @@ void Program::saveFile(const std::string& fileName) const {
         func->saveFile(file);
     }
 
-    for (auto it = structs.rbegin(); it != structs.rend(); it++) {
-        file << it->get()->toString();
+    for (const auto& strct : structs) {
+        file << strct->toString();
         file << "\n";
     }
     file << "\n";
 
-    for (auto& global : module->globals()) {
+    for (const auto& global : module->globals()) {
         file << globalVars[&global]->toString();
         globalVars[&global]->init = true;
         file << "\n";

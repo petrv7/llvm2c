@@ -81,13 +81,13 @@ public:
     /**
      * @brief print Prints the translated program in the llvm::outs() stream.
      */
-    void print() const;
+    void print();
 
     /**
      * @brief saveFile Saves the translated program to the file with given name.
      * @param fileName Name of the file.
      */
-    void saveFile(const std::string& fileName) const;
+    void saveFile(const std::string& fileName);
 
     /**
      * @brief getStruct Returns Struct expression with the given name.
