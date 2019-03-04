@@ -4,7 +4,8 @@
 #include "llvm/Support/raw_ostream.h"
 
 Struct::Struct(const std::string & name)
-    : name(name) {}
+    : name(name),
+      isPrinted(false) {}
 
 void Struct::print() const {
     llvm::outs() << toString();

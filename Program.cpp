@@ -125,11 +125,17 @@ std::string Program::getValue(const llvm::Constant* val) const {
 
         return value + "}";
     }
+
+    return "";
 }
 
 void Program::unsetAllInit() {
     for (const llvm::GlobalVariable& gvar : module->globals()) {
         globalVars[&gvar]->init = false;
+    }
+
+    for (auto& strct : structs) {
+        strct->isPrinted = false;
     }
 }
 
@@ -140,11 +146,11 @@ void Program::print() {
         func->print();
     }
 
-    for (const auto& strct : structs) {
-        strct->print();
-        llvm::outs() << "\n";
+    for (auto& strct : structs) {
+        if (!strct->isPrinted) {
+            printStruct(strct.get());
+        }
     }
-    llvm::outs() << "\n";
 
     for (const auto& global : module->globals()) {
         globalVars[&global]->print();
@@ -160,6 +166,48 @@ void Program::print() {
     llvm::outs().flush();
 }
 
+void Program::printStruct(Struct* strct) {
+    for (auto& item : strct->items) {
+        Type* type = item.first.get();
+        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
+            type = AT->type.get();
+        }
+
+        if (auto ST = dynamic_cast<StructType*>(type)) {
+            for (auto& s : structs) {
+                if (s->name == ST->name) {
+                    printStruct(s.get());
+                    llvm::outs() << "\n";
+                }
+            }
+        }
+    }
+    strct->print();
+    strct->isPrinted = true;
+    llvm::outs() << "\n";
+}
+
+void Program::saveStruct(Struct* strct, std::ofstream& file) {
+    for (auto& item : strct->items) {
+        Type* type = item.first.get();
+        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
+            type = AT->type.get();
+        }
+
+        if (auto ST = dynamic_cast<StructType*>(type)) {
+            for (auto& s : structs) {
+                if (s->name == ST->name) {
+                    saveStruct(s.get(), file);
+                    file << "\n";
+                }
+            }
+        }
+    }
+    file << strct->toString();
+    strct->isPrinted = true;
+    file << "\n";
+}
+
 void Program::saveFile(const std::string& fileName) {
     unsetAllInit();
 
@@ -170,11 +218,11 @@ void Program::saveFile(const std::string& fileName) {
         func->saveFile(file);
     }
 
-    for (const auto& strct : structs) {
-        file << strct->toString();
-        file << "\n";
+    for (auto& strct : structs) {
+        if (!strct->isPrinted) {
+            saveStruct(strct.get(), file);
+        }
     }
-    file << "\n";
 
     for (const auto& global : module->globals()) {
         file << globalVars[&global]->toString();

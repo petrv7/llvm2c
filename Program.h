@@ -7,6 +7,7 @@
 #include "llvm/ADT/DenseMap.h"
 
 #include "Func.h"
+#include "Expr/Expr.h"
 
 /**
  * @brief The Program class represents the whole parsed LLVM program.
@@ -79,9 +80,22 @@ public:
     void parseGlobalVars();
 
     /**
+     * @brief printStruct Prints parsed Struct. If Struct contains other Struct, then the other is printed first.
+     * @param strct Struct for printing
+     */
+    void printStruct(Struct* strct);
+
+    /**
      * @brief print Prints the translated program in the llvm::outs() stream.
      */
     void print();
+
+    /**
+     * @brief saveStruct Saves parsed Struct into the file. If Struct contains other Struct, then the other is saved first.
+     * @param strct Struct for saving
+     * @param file Opened file for saving the struct.
+     */
+    void saveStruct(Struct* strct, std::ofstream& file);
 
     /**
      * @brief saveFile Saves the translated program to the file with given name.

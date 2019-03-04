@@ -36,6 +36,8 @@ public:
     std::string name;
     std::vector<std::pair<std::unique_ptr<Type>, std::string>> items;
 
+    bool isPrinted;
+
     Struct(const std::string&);
     void print() const override;
     std::string toString() const override;
