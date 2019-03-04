@@ -51,13 +51,18 @@ private:
      */
     void unsetAllInit();
 
-public:
+    /**
+     * @brief saveStruct Saves parsed Struct into the file. If Struct contains other Struct, then the other is saved first.
+     * @param strct Struct for saving
+     * @param file Opened file for saving the struct.
+     */
+    void saveStruct(Struct* strct, std::ofstream& file);
 
     /**
-     * @brief Program Constructor of a Program class, parses given file into a llvm::Module.
-     * @param file Path to a file for parsing.
+     * @brief printStruct Prints parsed Struct. If Struct contains other Struct, then the other is printed first.
+     * @param strct Struct for printing
      */
-    Program(const std::string& file);
+    void printStruct(Struct* strct);
 
     /**
      * @brief parseProgram Parses the whole program (structs, functions and global variables0.
@@ -79,23 +84,18 @@ public:
      */
     void parseGlobalVars();
 
+public:
+
     /**
-     * @brief printStruct Prints parsed Struct. If Struct contains other Struct, then the other is printed first.
-     * @param strct Struct for printing
+     * @brief Program Constructor of a Program class, parses given file into a llvm::Module.
+     * @param file Path to a file for parsing.
      */
-    void printStruct(Struct* strct);
+    Program(const std::string& file);
 
     /**
      * @brief print Prints the translated program in the llvm::outs() stream.
      */
     void print();
-
-    /**
-     * @brief saveStruct Saves parsed Struct into the file. If Struct contains other Struct, then the other is saved first.
-     * @param strct Struct for saving
-     * @param file Opened file for saving the struct.
-     */
-    void saveStruct(Struct* strct, std::ofstream& file);
 
     /**
      * @brief saveFile Saves the translated program to the file with given name.

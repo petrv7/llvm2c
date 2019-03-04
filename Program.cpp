@@ -19,6 +19,8 @@ Program::Program(const std::string &file) {
     }
     structVarCount = 0;
     gvarCount = 0;
+
+    parseProgram();
 }
 
 void Program::parseProgram() {

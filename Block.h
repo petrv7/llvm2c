@@ -162,4 +162,11 @@ private:
      * @param expr GetElementPtrConstantExpr for parsing
      */
     void parseConstantGep(llvm::ConstantExpr* expr) const;
+
+    /**
+     * @brief getCFunc Takes LLVM intrinsic function and returns name of the corresponding C function.
+     * @param func LLVM intrinsic function
+     * @return string containing name of the C function
+     */
+    std::string getCFunc(const std::string& func) const;
 };

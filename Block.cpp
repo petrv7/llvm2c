@@ -113,9 +113,9 @@ void Block::saveFile(std::ofstream& file) {
 void Block::parseAllocaInstruction(const llvm::Instruction& ins) {
     const auto allocaInst = llvm::cast<const llvm::AllocaInst>(&ins);
 
-    func->valueMap[llvm::cast<const llvm::Value>(&ins)] = std::make_unique<Value>(func->getVarName(), std::move(Type::getType(allocaInst->getAllocatedType())));
-    func->createExpr(&ins, std::make_unique<RefExpr>(func->valueMap[llvm::cast<const llvm::Value>(&ins)].get()));
-    abstractSyntaxTree.push_back(func->valueMap[llvm::cast<const llvm::Value>(&ins)].get());
+    func->valueMap[&ins] = std::make_unique<Value>(func->getVarName(), Type::getType(allocaInst->getAllocatedType()));
+    func->createExpr(&ins, std::make_unique<RefExpr>(func->valueMap[&ins].get()));
+    abstractSyntaxTree.push_back(func->valueMap[&ins].get());
 }
 
 void Block::parseLoadInstruction(const llvm::Instruction& ins) {
@@ -333,6 +333,14 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
             setMetadataInfo(callInst);
             return;
         }
+        if (funcName.compare("llvm.trap") == 0 || funcName.compare("llvm.debugtrap") == 0) {
+            func->createExpr(&ins, std::make_unique<AsmExpr>("int3"));
+            abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+            return;
+        }
+        if (funcName.substr(0,4).compare("llvm") == 0) {
+            funcName = getCFunc(funcName);
+        }
     } else {
         llvm::PointerType* PT = llvm::cast<llvm::PointerType>(callInst->getCalledValue()->getType());
         llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getElementType());
@@ -347,9 +355,12 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
         params.push_back(func->getExpr(param));
     }
 
-    func->createExpr(&ins, std::make_unique<CallExpr>(funcName, params, std::move(type)));
+    func->callExprMap[&ins] = std::make_unique<CallExpr>(funcName, params, type->clone());
+    func->createExpr(&ins, std::make_unique<Value>(func->getVarName(), type->clone()));
+    func->callValueMap[&ins] = std::make_unique<EqualsExpr>(func->getExpr(&ins), func->callExprMap[&ins].get());
 
-    abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+    abstractSyntaxTree.push_back(func->getExpr(&ins));
+    abstractSyntaxTree.push_back(func->callValueMap[&ins].get());
 }
 
 void Block::parseCastInstruction(const llvm::Instruction& ins) {
@@ -611,3 +622,13 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) const {
 
 }
 
+
+std::string Block::getCFunc(const std::string& func) const {
+    std::regex function("llvm\\.(\\w+)(\\..+){0,1}");
+    std::smatch match;
+    if (std::regex_search(func, match, function)) {
+        return match[1].str();
+    }
+
+    return "";
+}

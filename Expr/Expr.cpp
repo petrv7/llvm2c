@@ -60,7 +60,9 @@ std::string Value::toString() const {
                 ret = ret + "[" + std::to_string(PT->size) + "]";
             }
 
-            return ret;
+            if (!ret.empty()) {
+                return ret;
+            }
         }
     }
 
