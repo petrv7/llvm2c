@@ -7,6 +7,7 @@ int main(int argc, char** argv) {
         Program program(argv[1]);
         program.parseProgram();
         program.print();
+        program.saveFile("stringlib.c");
     } catch (std::invalid_argument e) {
         llvm::outs() << e.what();
     }

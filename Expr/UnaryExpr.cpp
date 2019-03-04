@@ -64,9 +64,9 @@ std::string GepExpr::toString() const {
     for (i; i < args.size(); i++) {
         if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
             if (auto ST = dynamic_cast<StructType*>(AT->type.get())) {
-                print = "*(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
+                print = "*(*((" + args[i].first->toString() + "(*)" + AT->sizeToString() + ")" + print;
             } else {
-                print = "(((" + args[i].first->toString() + AT->sizeToString() + ")" + print;
+                print = "(*((" + args[i].first->toString() + "(*)" + AT->sizeToString() + ")" + print;
             }
         } else {
             print = "(((" + args[i].first->toString() + ")" + print;
