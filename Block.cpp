@@ -24,7 +24,7 @@
 using CaseHandle = const llvm::SwitchInst::CaseHandleImpl<const llvm::SwitchInst, const llvm::ConstantInt, const llvm::BasicBlock>*;
 
 const std::set<std::string> C_FUNCTIONS = {"memcpy", "memmove", "memset", "sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
-                                             "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint", "round"};
+                                           "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint", "round"};
 
 Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* func)
     : blockName(blockName),
@@ -363,12 +363,17 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
         params.push_back(func->getExpr(param));
     }
 
-    func->callExprMap[&ins] = std::make_unique<CallExpr>(funcName, params, type->clone());
-    func->createExpr(&ins, std::make_unique<Value>(func->getVarName(), type->clone()));
-    func->callValueMap[&ins] = std::make_unique<EqualsExpr>(func->getExpr(&ins), func->callExprMap[&ins].get());
+    if (VoidType* VT = dynamic_cast<VoidType*>(type.get())) {
+        func->createExpr(&ins, std::make_unique<CallExpr>(funcName, params, type->clone()));
+        abstractSyntaxTree.push_back(func->getExpr(&ins));
+    } else {
+        func->callExprMap[&ins] = std::make_unique<CallExpr>(funcName, params, type->clone());
+        func->createExpr(&ins, std::make_unique<Value>(func->getVarName(), type->clone()));
+        func->callValueMap[&ins] = std::make_unique<EqualsExpr>(func->getExpr(&ins), func->callExprMap[&ins].get());
 
-    abstractSyntaxTree.push_back(func->getExpr(&ins));
-    abstractSyntaxTree.push_back(func->callValueMap[&ins].get());
+        abstractSyntaxTree.push_back(func->getExpr(&ins));
+        abstractSyntaxTree.push_back(func->callValueMap[&ins].get());
+    }
 }
 
 void Block::parseCastInstruction(const llvm::Instruction& ins) {
@@ -637,11 +642,11 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) const {
 
 }
 
-bool Block::isCFunc(const std::string& func) const {
+bool Block::isCFunc(const std::string& func) {
     return C_FUNCTIONS.find(func) != C_FUNCTIONS.end();
 }
 
-std::string Block::getCFunc(const std::string& func) const {
+std::string Block::getCFunc(const std::string& func) {
     std::regex function("llvm\\.(\\w+)(\\..+){0,1}");
     std::smatch match;
     if (std::regex_search(func, match, function)) {

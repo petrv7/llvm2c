@@ -43,6 +43,20 @@ public:
      */
     void saveFile(std::ofstream& file);
 
+    /**
+     * @brief isCFunc Determines wether the LLVM function has equivalent in standard C library.
+     * @param func Name of the function
+     * @return True if function is standard C library function, false otherwise
+     */
+    static bool isCFunc(const std::string& func);
+
+    /**
+     * @brief getCFunc Takes LLVM intrinsic function and returns name of the corresponding C function.
+     * @param func LLVM intrinsic function
+     * @return string containing name of the C function
+     */
+    static std::string getCFunc(const std::string& func);
+
 private:
     const llvm::BasicBlock* block;
     std::vector<Expr*> abstractSyntaxTree; //vector used for saving instructions of the block in form of AST, rename
@@ -164,18 +178,4 @@ private:
      * @param expr GetElementPtrConstantExpr for parsing
      */
     void parseConstantGep(llvm::ConstantExpr* expr) const;
-
-    /**
-     * @brief isCFunc Determines wether the LLVM function has equivalent in standard C library.
-     * @param func Name of the function
-     * @return True if function is standard C library function, false otherwise
-     */
-    bool isCFunc(const std::string& func) const;
-
-    /**
-     * @brief getCFunc Takes LLVM intrinsic function and returns name of the corresponding C function.
-     * @param func LLVM intrinsic function
-     * @return string containing name of the C function
-     */
-    std::string getCFunc(const std::string& func) const;
 };

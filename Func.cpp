@@ -83,9 +83,14 @@ void Func::parseFunction() {
 
 void Func::print() const {
     returnType->print();
-    llvm::outs() <<  " " << function->getName().str() << "(";
-    bool first = true;
 
+    std::string name = function->getName().str();
+    if (Block::isCFunc(Block::getCFunc(name))) {
+        name = Block::getCFunc(name);
+    }
+    llvm::outs() <<  " " << name << "(";
+
+    bool first = true;
     for (const llvm::Value& arg : function->args()) {
         if (!first) {
             llvm::outs() << ", ";
