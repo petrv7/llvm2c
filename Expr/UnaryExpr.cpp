@@ -34,9 +34,9 @@ void GepExpr::print() const {
 }
 
 std::string GepExpr::toString() const {
-    std::string print;
-    unsigned int i = 1;
-
+    std::string print = expr->toString();
+    unsigned int i = 0;
+/*
     if (UnaryExpr* UE = dynamic_cast<UnaryExpr*>(expr)) {
         if (Value* val = dynamic_cast<Value*>(UE->expr)) {
             if (StructType* ST = dynamic_cast<StructType*>(val->type.get())) {
@@ -60,8 +60,12 @@ std::string GepExpr::toString() const {
     } else if (GlobalValue* GV = dynamic_cast<GlobalValue*>(expr)) {
         print = GV->toString();
     }
-
+*/
     for (i; i < args.size(); i++) {
+        if (i == 0) {
+            print.append(" + " + args[i].second);
+            continue;
+        }
         if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
             if (auto ST = dynamic_cast<StructType*>(AT->type.get())) {
                 print = "*(*((" + args[i].first->toString() + "(*)" + AT->sizeToString() + ")" + print;

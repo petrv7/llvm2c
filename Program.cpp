@@ -20,6 +20,8 @@ Program::Program(const std::string &file) {
     structVarCount = 0;
     gvarCount = 0;
 
+    hasVarArg = false;
+
     parseProgram();
 }
 
@@ -35,6 +37,11 @@ void Program::parseStructs() {
         if (structType->hasName()) {
             name = structType->getName().str();
             name.erase(0, 7);
+        }
+
+        if (name.compare("__va_list_tag") == 0) {
+            hasVarArg = true;
+            continue;
         }
 
         auto structExpr = std::make_unique<Struct>(name);
@@ -144,6 +151,10 @@ void Program::unsetAllInit() {
 void Program::print() {
     unsetAllInit();
 
+    if (hasVarArg) {
+        llvm::outs() << "#include <stdarg.h>\n\n";
+    }
+
     for (const auto& func : declarations) {
         func->print();
     }
@@ -216,6 +227,10 @@ void Program::saveFile(const std::string& fileName) {
     std::ofstream file;
     file.open(fileName);
 
+    if (hasVarArg) {
+        file << "#include <stdarg.h>\n\n";
+    }
+
     for (const auto& func : declarations) {
         func->saveFile(file);
     }
@@ -253,4 +268,8 @@ Struct* Program::getStruct(const std::string& name) const {
 GlobalValue* Program::getGlobalVar(llvm::Value* val) const {
     llvm::GlobalVariable* GV = llvm::cast<llvm::GlobalVariable>(val);
     return globalVars[GV].get();
+}
+
+void Program::addDeclaration(llvm::Function* func) {
+    declarations.push_back(std::make_unique<Func>(func, this, true));
 }

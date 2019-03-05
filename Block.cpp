@@ -16,11 +16,15 @@
 #include <utility>
 #include <cstdint>
 #include <string>
+#include <set>
 #include <iostream>
 #include <fstream>
 #include <regex>
 
 using CaseHandle = const llvm::SwitchInst::CaseHandleImpl<const llvm::SwitchInst, const llvm::ConstantInt, const llvm::BasicBlock>*;
+
+const std::set<std::string> C_FUNCTIONS = {"memcpy", "memmove", "memset", "sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
+                                             "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint", "round"};
 
 Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* func)
     : blockName(blockName),
@@ -340,6 +344,10 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
         }
         if (funcName.substr(0,4).compare("llvm") == 0) {
             funcName = getCFunc(funcName);
+            if (!isCFunc(funcName)) {
+                func->addDeclaration(callInst->getCalledFunction());
+                return;
+            }
         }
     } else {
         llvm::PointerType* PT = llvm::cast<llvm::PointerType>(callInst->getCalledValue()->getType());
@@ -413,7 +421,14 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
             varName = varName.erase(varName.length() - 1, varName.length());
         }
 
-        gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue()].second + ")");
+        if (structName.compare("__va_list_tag") == 0) {
+            gepExpr->addArg(std::make_unique<VoidType>(), "va_list");  //TODO
+        } else {
+            structElements[&ins] = std::make_unique<StructElement>(func->getStruct(structName), varName, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue());
+            refs[structElements[&ins].get()] = std::make_unique<RefExpr>(structElements[&ins].get());
+            gepExpr = std::make_unique<GepExpr>(refs[structElements[&ins].get()].get(), Type::getType(gepInst->getType()));
+            //gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue()].second + ")");
+        }
     }
 
     for (auto it = llvm::gep_type_begin(gepInst); it != llvm::gep_type_end(gepInst); it++) {
@@ -622,6 +637,9 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) const {
 
 }
 
+bool Block::isCFunc(const std::string& func) const {
+    return C_FUNCTIONS.find(func) != C_FUNCTIONS.end();
+}
 
 std::string Block::getCFunc(const std::string& func) const {
     std::regex function("llvm\\.(\\w+)(\\..+){0,1}");

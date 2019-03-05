@@ -26,6 +26,8 @@ private:
     unsigned structVarCount;
     unsigned gvarCount;
 
+    bool hasVarArg;
+
     /**
      * @brief getVarName Creates a new name for a variable in form of string containing "var" + structVarCount.
      * @return String containing a new variable name.
@@ -116,4 +118,10 @@ public:
      * @return GlobalValue expression
      */
     GlobalValue* getGlobalVar(llvm::Value* val) const;
+
+    /**
+     * @brief addDeclaration Adds new declaration of given function.
+     * @param func LLVM Function
+     */
+    void addDeclaration(llvm::Function* func);
 };

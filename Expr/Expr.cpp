@@ -35,6 +35,21 @@ void Struct::addItem(std::unique_ptr<Type> type, const std::string& name) {
     items.push_back(std::make_pair(std::move(type), name));
 }
 
+StructElement::StructElement(Struct* strct, const std::string& name, long element)
+    : strct(strct),
+      name(name),
+      element(element) {
+    setType(strct->items[element].first->clone());
+}
+
+void StructElement::print() const {
+    llvm::outs() << toString();
+}
+
+std::string StructElement::toString() const {
+    return "(" + name + ")." + strct->items[element].second;
+}
+
 Value::Value(const std::string& valueName, std::unique_ptr<Type> type) {
     setType(std::move(type));
     this->valueName = valueName;

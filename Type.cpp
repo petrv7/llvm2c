@@ -5,7 +5,12 @@
 
 std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
     if (type->isArrayTy()) {
-        return std::make_unique<ArrayType>(std::move(getType(type->getArrayElementType())), type->getArrayNumElements());
+        if (llvm::StructType* ST = llvm::dyn_cast<llvm::StructType>(type->getArrayElementType())) {
+            if (ST->getName().str().compare("struct.__va_list_tag") == 0) {
+                return std::make_unique<VaListType>();
+            }
+        }
+        return std::make_unique<ArrayType>(getType(type->getArrayElementType()), type->getArrayNumElements());
     }
 
     if (type->isVoidTy()) {
@@ -121,7 +126,17 @@ std::unique_ptr<Type> Type::getBinaryType(const Type* left, const Type* right) {
     return nullptr;
 }
 
+void VaListType::print() const {
+    llvm::outs() << toString();
+}
 
+std::string VaListType::toString() const {
+    return "va_list";
+}
+
+std::unique_ptr<Type> VaListType::clone() const {
+    return std::make_unique<VaListType>();
+}
 
 FunctionType::FunctionType(std::unique_ptr<Type> retType)
     : retType(std::move(retType)) { }

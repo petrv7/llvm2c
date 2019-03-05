@@ -46,7 +46,9 @@ public:
 private:
     const llvm::BasicBlock* block;
     std::vector<Expr*> abstractSyntaxTree; //vector used for saving instructions of the block in form of AST, rename
+    llvm::DenseMap<const llvm::Value*, std::unique_ptr<StructElement>> structElements;
     std::map<Expr*, std::unique_ptr<Expr>> derefs;
+    std::map<Expr*, std::unique_ptr<Expr>> refs;
     Func* func;
 
     /**
@@ -162,6 +164,13 @@ private:
      * @param expr GetElementPtrConstantExpr for parsing
      */
     void parseConstantGep(llvm::ConstantExpr* expr) const;
+
+    /**
+     * @brief isCFunc Determines wether the LLVM function has equivalent in standard C library.
+     * @param func Name of the function
+     * @return True if function is standard C library function, false otherwise
+     */
+    bool isCFunc(const std::string& func) const;
 
     /**
      * @brief getCFunc Takes LLVM intrinsic function and returns name of the corresponding C function.

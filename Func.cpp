@@ -181,3 +181,7 @@ Struct* Func::getStruct(const std::string& name) const {
 GlobalValue* Func::getGlobalVar(llvm::Value* val) const {
     return program->getGlobalVar(val);
 }
+
+void Func::addDeclaration(llvm::Function* func) {
+    program->addDeclaration(func);
+}

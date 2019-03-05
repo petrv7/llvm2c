@@ -44,6 +44,17 @@ public:
     void addItem(std::unique_ptr<Type>, const std::string&);
 };
 
+class StructElement : public ExprBase {
+public:
+    Struct* strct;
+    std::string name;
+    long element;
+
+    StructElement(Struct*, const std::string&, long);
+    void print() const override;
+    std::string toString() const override;
+};
+
 class Value : public ExprBase {
 public:
     std::string valueName;
