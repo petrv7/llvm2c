@@ -61,13 +61,13 @@ void Block::print() {
                 llvm::outs() << ";\n";
                 val->init = true;
             }
-        } else if (auto CE = dynamic_cast<CallExpr*>(expr)) {
+        } /*else if (auto CE = dynamic_cast<CallExpr*>(expr)) {
             if (!CE->isUsed) {
                 llvm::outs() << "    ";
                 expr->print();
                 llvm::outs() << ";\n";
             }
-        } else {
+        } */else {
             llvm::outs() << "    ";
             expr->print();
             llvm::outs() << "\n";
@@ -100,13 +100,13 @@ void Block::saveFile(std::ofstream& file) {
                 file << ";\n";
                 val->init = true;
             }
-        } else if (auto CE = dynamic_cast<CallExpr*>(expr)) {
+        }/* else if (auto CE = dynamic_cast<CallExpr*>(expr)) {
             if (!CE->isUsed) {
                 file << "    ";
                 file << expr->toString();
                 file << ";\n";
             }
-        } else {
+        } */else {
             file << "    ";
             file << expr->toString();
             file << "\n";
@@ -131,7 +131,7 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins) {
 }
 
 void Block::parseStoreInstruction(const llvm::Instruction& ins) {
-    auto type = std::move(Type::getType(ins.getOperand(0)->getType()));
+    auto type = Type::getType(ins.getOperand(0)->getType());
     if (auto PT = dynamic_cast<PointerType*>(type.get())) {
         if (llvm::Function* function = llvm::dyn_cast<llvm::Function>(ins.getOperand(0))) {
             func->createExpr(ins.getOperand(0), std::make_unique<Value>("&" + function->getName().str(), std::make_unique<VoidType>()));
@@ -142,9 +142,9 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins) {
     }
     Expr* val0 = func->getExpr(ins.getOperand(0));
 
-    if (auto CE = dynamic_cast<CallExpr*>(val0)) {
+    /*if (auto CE = dynamic_cast<CallExpr*>(val0)) {
         CE->isUsed = true;
-    }
+    }*/
 
     Expr* val1 = func->getExpr(ins.getOperand(1));
     if (derefs.find(val1) == derefs.end()) {
@@ -152,7 +152,7 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins) {
     }
     func->createExpr(&ins, std::make_unique<EqualsExpr>(derefs[val1].get(), val0));
 
-    abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+    abstractSyntaxTree.push_back(func->exprMap[&ins].get());
 }
 
 void Block::parseBinaryInstruction(const llvm::Instruction& ins) {
@@ -197,13 +197,13 @@ void Block::parseCmpInstruction(const llvm::Instruction& ins) {
     }
     Expr* val1 = func->getExpr(ins.getOperand(1));
 
-    if (auto CE = dynamic_cast<CallExpr*>(val0)) {
+    /*if (auto CE = dynamic_cast<CallExpr*>(val0)) {
         CE->isUsed = true;
     }
     if (auto CE = dynamic_cast<CallExpr*>(val1)) {
         CE->isUsed = true;
     }
-
+*/
     auto cmpInst = llvm::cast<const llvm::CmpInst>(&ins);
 
     if (cmpInst->getPredicate() == llvm::CmpInst::ICMP_EQ || cmpInst->getPredicate() == llvm::CmpInst::FCMP_OEQ) {
@@ -234,7 +234,7 @@ void Block::parseBrInstruction(const llvm::Instruction& ins) {
         std::string trueBlock = func->getBlockName((llvm::BasicBlock*)ins.getOperand(0));
         func->createExpr(&ins, std::make_unique<IfExpr>(trueBlock));
 
-        abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+        abstractSyntaxTree.push_back(func->exprMap[&ins].get());
         return;
     }
 
@@ -245,7 +245,7 @@ void Block::parseBrInstruction(const llvm::Instruction& ins) {
 
     func->createExpr(&ins, std::make_unique<IfExpr>(cmp, trueBlock, falseBlock));
 
-    abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+    abstractSyntaxTree.push_back(func->exprMap[&ins].get());
 }
 
 void Block::parseRetInstruction(const llvm::Instruction& ins) {
@@ -256,20 +256,20 @@ void Block::parseRetInstruction(const llvm::Instruction& ins) {
             createConstantValue(ins.getOperand(0));
         }
         Expr* expr = func->getExpr(ins.getOperand(0));
-        if (auto CE = dynamic_cast<CallExpr*>(expr)) {
+        /*if (auto CE = dynamic_cast<CallExpr*>(expr)) {
             CE->isUsed = true;
-        }
+        }*/
 
         func->createExpr(&ins, std::make_unique<RetExpr>(expr));
     }
 
-    abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+    abstractSyntaxTree.push_back(func->exprMap[&ins].get());
 }
 
 void Block::parseSwitchInstruction(const llvm::Instruction& ins) {
     std::map<int, std::string> cases;
     Expr* cmp = func->getExpr(ins.getOperand(0));
-    std::string def = func->getBlockName((llvm::BasicBlock*)ins.getOperand(1));
+    std::string def = func->getBlockName(llvm::cast<llvm::BasicBlock>(ins.getOperand(1)));
     const llvm::SwitchInst* switchIns = llvm::cast<const llvm::SwitchInst>(&ins);
 
     for (const auto& switchCase : switchIns->cases()) {
@@ -279,7 +279,7 @@ void Block::parseSwitchInstruction(const llvm::Instruction& ins) {
 
     func->createExpr(&ins, std::make_unique<SwitchExpr>(cmp, def, cases));
 
-    abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+    abstractSyntaxTree.push_back(func->exprMap[&ins].get());
 }
 
 void Block::parseAsmInst(const llvm::Instruction& ins) {
@@ -297,7 +297,7 @@ void Block::parseAsmInst(const llvm::Instruction& ins) {
     }
     func->createExpr(&ins, std::make_unique<AsmExpr>(inst));
 
-    abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+    abstractSyntaxTree.push_back(func->exprMap[&ins].get());
 }
 
 void Block::parseShiftInstruction(const llvm::Instruction& ins) {
@@ -330,7 +330,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
     std::vector<Expr*> params;
     std::unique_ptr<Type> type = nullptr;
 
-    if (callInst->getCalledFunction() != nullptr) {
+    if (callInst->getCalledFunction()) {
         funcName = callInst->getCalledFunction()->getName().str();
         type = Type::getType(callInst->getCalledFunction()->getReturnType());
         if (funcName.compare("llvm.dbg.declare") == 0) {
@@ -339,7 +339,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
         }
         if (funcName.compare("llvm.trap") == 0 || funcName.compare("llvm.debugtrap") == 0) {
             func->createExpr(&ins, std::make_unique<AsmExpr>("int3"));
-            abstractSyntaxTree.push_back(func->exprMap[llvm::cast<const llvm::Value>(&ins)].get());
+            abstractSyntaxTree.push_back(func->exprMap[&ins].get());
             return;
         }
         if (funcName.substr(0,4).compare("llvm") == 0) {
@@ -384,7 +384,7 @@ void Block::parseCastInstruction(const llvm::Instruction& ins) {
 
     const llvm::CastInst* CI = llvm::cast<const llvm::CastInst>(&ins);
 
-    func->createExpr(&ins, std::make_unique<CastExpr>(expr, std::move(Type::getType(CI->getDestTy()))));
+    func->createExpr(&ins, std::make_unique<CastExpr>(expr, Type::getType(CI->getDestTy())));
 }
 
 void Block::parseSelectInstruction(const llvm::Instruction& ins) {
@@ -553,6 +553,7 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         llvm::Metadata* varMD = llvm::dyn_cast<llvm::MetadataAsValue>(ins->getOperand(1))->getMetadata();
         llvm::DILocalVariable* localVar = llvm::dyn_cast<llvm::DILocalVariable>(varMD);
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());
+        //llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(type);
 
         std::regex varName("var[0-9]+");
         std::regex constGlobalVarName("ConstGlobalVar_.+");
@@ -591,7 +592,7 @@ void Block::createConstantValue(llvm::Value* val) {
     }
 }
 
-void Block::parseConstantGep(llvm::ConstantExpr *expr) const {
+void Block::parseConstantGep(llvm::ConstantExpr *expr) {
     Expr* gvar = func->getGlobalVar(expr->getOperand(0));
     auto gepExpr = std::make_unique<GepExpr>(gvar, Type::getType(expr->getType()));
 
@@ -611,7 +612,10 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) const {
             varName = varName.erase(varName.length() - 1, varName.length());
         }
 
-        gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue()].second + ")");
+        structElements[expr] = std::make_unique<StructElement>(func->getStruct(structName), varName, llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue());
+        refs[structElements[expr].get()] = std::make_unique<RefExpr>(structElements[expr].get());
+        gepExpr = std::make_unique<GepExpr>(refs[structElements[expr].get()].get(), Type::getType(expr->getType()));
+        //gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue()].second + ")");
     }
 
     for (auto it = llvm::gep_type_begin(expr); it != llvm::gep_type_end(expr); it++) {
@@ -631,7 +635,7 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) const {
 
         if (prevType->isArrayTy()) {
             unsigned int size = prevType->getArrayNumElements();
-            gepExpr->addArg(std::move(Type::getType(prevType)), indexValue);
+            gepExpr->addArg(Type::getType(prevType), indexValue);
         } else {
             gepExpr->addArg(std::make_unique<PointerType>(Type::getType(prevType)), indexValue);
         }

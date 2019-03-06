@@ -33,8 +33,8 @@ private:
 
     unsigned varCount; //counter for assigning names of variables
     unsigned blockCount; // counter for assigning names of blocks
-    bool isDeclaration;
-    bool isVarArg;
+    bool isDeclaration; //function is only being declared
+    bool isVarArg; //function has variable number of arguments
 
     /**
      * @brief getBlockName Returns name of the block if the block already has an assigned name.

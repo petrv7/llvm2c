@@ -36,7 +36,7 @@ public:
     std::string name;
     std::vector<std::pair<std::unique_ptr<Type>, std::string>> items;
 
-    bool isPrinted;
+    bool isPrinted; //used for printing structs in the right order
 
     Struct(const std::string&);
     void print() const override;
@@ -58,7 +58,7 @@ public:
 class Value : public ExprBase {
 public:
     std::string valueName;
-    bool init;
+    bool init; //used for declaration printing
 
     Value(const std::string&, std::unique_ptr<Type>);
     void print() const override;
@@ -118,7 +118,6 @@ class CallExpr : public ExprBase {
 public:
     std::string funcName;
     std::vector<Expr*> params;
-    bool isUsed;
 
     CallExpr(const std::string&, std::vector<Expr*>, std::unique_ptr<Type>);
     void print() const override;

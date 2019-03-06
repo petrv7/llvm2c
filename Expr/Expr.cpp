@@ -134,7 +134,7 @@ void IfExpr::print() const {
 }
 
 std::string IfExpr::toString() const {
-    if (cmp != nullptr) {
+    if (cmp) {
         return "if (" + cmp->toString() + ") {\n        goto " + trueBlock + ";\n    } else {\n        goto " + falseBlock + ";\n    }";
     }
 
@@ -153,22 +153,16 @@ void SwitchExpr::print() const {
 std::string SwitchExpr::toString() const {
     std::string ret;
 
-    ret += "switch(";
-    ret += cmp->toString();
+    ret += "switch(" + cmp->toString();
     ret += ") {\n";
 
     for (const auto &iter : cases) {
-        ret += "   case ";
-        ret += iter.first;
-        ret += ":\n";
-        ret += "        goto ";
-        ret += iter.second;
+        ret += "   case " + iter.first;
+        ret += ":\n        goto " + iter.second;
         ret += ";\n";
     }
 
-    ret += "}";
-
-    return ret;
+    return ret + "}";
 }
 
 AsmExpr::AsmExpr(const std::string &inst)
@@ -184,8 +178,9 @@ std::string AsmExpr::toString() const {
 
 CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type)
     : funcName(funcName),
-      params(params),
-      isUsed(false) {
+      params(params)
+      //isUsed(false)
+{
     setType(std::move(type));
 }
 
@@ -203,13 +198,10 @@ std::string CallExpr::toString() const {
         if (first) {
             ret += param->toString();
         } else {
-            ret += ", ";
-            ret += param->toString();
+            ret += ", " + param->toString();
         }
         first = false;
     }
 
-    ret += ")";
-
-    return ret;
+    return ret + ")";
 }

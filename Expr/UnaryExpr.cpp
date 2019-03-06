@@ -8,7 +8,9 @@
 
 UnaryExpr::UnaryExpr(Expr *expr) {
     this->expr = expr;
-    setType(expr->getType()->clone());
+    if (expr) {
+        setType(expr->getType()->clone());
+    }
 }
 
 RefExpr::RefExpr(Expr* expr) :
@@ -36,7 +38,7 @@ void GepExpr::print() const {
 std::string GepExpr::toString() const {
     std::string print = expr->toString();
     unsigned int i = 0;
-/*
+    /*
     if (UnaryExpr* UE = dynamic_cast<UnaryExpr*>(expr)) {
         if (Value* val = dynamic_cast<Value*>(UE->expr)) {
             if (StructType* ST = dynamic_cast<StructType*>(val->type.get())) {
@@ -117,7 +119,7 @@ std::string RetExpr::toString() const {
     std::string ret;
 
     ret += "return";
-    if (expr != nullptr) {
+    if (expr) {
         ret += " " + expr->toString();
     }
 
@@ -137,7 +139,7 @@ std::string CastExpr::toString() const {
     std::string ret;
 
     ret += "(" + getType()->toString() + ")";
-    if (expr != nullptr) {
+    if (expr) {
         ret += expr->toString();
     }
 

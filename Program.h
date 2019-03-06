@@ -26,7 +26,7 @@ private:
     unsigned structVarCount;
     unsigned gvarCount;
 
-    bool hasVarArg;
+    bool hasVarArg; //program uses "stdarg.h"
 
     /**
      * @brief getVarName Creates a new name for a variable in form of string containing "var" + structVarCount.

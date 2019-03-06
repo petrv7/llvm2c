@@ -59,11 +59,13 @@ public:
 
 private:
     const llvm::BasicBlock* block;
-    std::vector<Expr*> abstractSyntaxTree; //vector used for saving instructions of the block in form of AST, rename
-    llvm::DenseMap<const llvm::Value*, std::unique_ptr<StructElement>> structElements;
-    std::map<Expr*, std::unique_ptr<Expr>> derefs;
-    std::map<Expr*, std::unique_ptr<Expr>> refs;
+
     Func* func;
+
+    std::vector<Expr*> abstractSyntaxTree; //vector used for saving instructions of the block in form of AST
+    llvm::DenseMap<const llvm::Value*, std::unique_ptr<StructElement>> structElements; //DenseMap used for storing unique pointers to StructElements (used in parsing getelementptr instruction and constant expressions)
+    std::map<Expr*, std::unique_ptr<Expr>> derefs; //Map used for storing unique pointers to DerefExpr (used in store instruction parsing)
+    std::map<Expr*, std::unique_ptr<Expr>> refs; //Map used for storing unique pointers to RefExpr (used in parsing getelementptr instruction and constant expressions)
 
     /**
      * @brief parseAllocaInstruction Parses alloca instruction into Value and RefExpr.
@@ -177,5 +179,5 @@ private:
      * @brief parseConstantGep Parses GetElementPtrConstantExpr.
      * @param expr GetElementPtrConstantExpr for parsing
      */
-    void parseConstantGep(llvm::ConstantExpr* expr) const;
+    void parseConstantGep(llvm::ConstantExpr* expr);
 };
