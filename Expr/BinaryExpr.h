@@ -78,8 +78,9 @@ public:
 class CmpExpr : public BinaryExpr {
 public:
     std::string comparsion;
+    bool isUnsigned;
 
-    CmpExpr(Expr*, Expr*, std::string);
+    CmpExpr(Expr*, Expr*, const std::string&, bool);
     void print() const override;
     std::string toString() const override;
 };
@@ -93,7 +94,7 @@ public:
 
 class LshrExpr : public BinaryExpr {
 public:
-    LshrExpr(Expr*, Expr*, bool);
+    LshrExpr(Expr*, Expr*);
     void print() const override;
     std::string toString() const override;
 };

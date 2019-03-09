@@ -63,13 +63,16 @@ std::string Func::getVarName() {
 }
 
 void Func::parseFunction() {
+    const llvm::Value* larg;
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
         exprMap[&arg] = std::make_unique<Value>(varName, Type::getType(arg.getType()));
         varCount++;
+        larg = &arg;
     }
 
+    lastArg = exprMap[larg].get();
     isVarArg = function->isVarArg();
 
     for (const auto& block : *function) {
@@ -82,12 +85,18 @@ void Func::parseFunction() {
 }
 
 void Func::print() const {
-    returnType->print();
-
     std::string name = function->getName().str();
     if (Block::isCFunc(Block::getCFunc(name))) {
         name = Block::getCFunc(name);
+        if (name.compare("va_start") == 0 || name.compare("va_end") == 0) {
+            return;
+        }
     }
+    if (name.substr(0, 4).compare("llvm") == 0) {
+        std::replace(name.begin(), name.end(), '.', '_');
+    }
+
+    returnType->print();
     llvm::outs() <<  " " << name << "(";
 
     bool first = true;
@@ -124,7 +133,7 @@ void Func::print() const {
     for (const auto& block : *function) {
         if (!first) {
             llvm::outs() << blockMap.find(&block)->second->blockName;
-            llvm::outs() << ":\n";
+            llvm::outs() << ":\n    ;\n";
         }
         blockMap.find(&block)->second->print();
         first = false;
@@ -134,8 +143,19 @@ void Func::print() const {
 }
 
 void Func::saveFile(std::ofstream& file) const {
+    std::string name = function->getName().str();
+    if (Block::isCFunc(Block::getCFunc(name))) {
+        name = Block::getCFunc(name);
+        if (name.compare("va_start") == 0 || name.compare("va_end") == 0) {
+            return;
+        }
+    }
+    if (name.substr(0, 4).compare("llvm") == 0) {
+        std::replace(name.begin(), name.end(), '.', '_');
+    }
+
     file << returnType->toString();
-    file <<  " " << function->getName().str() << "(";
+    file <<  " " << name << "(";
     bool first = true;
 
     for (const llvm::Value& arg : function->args()) {
@@ -170,7 +190,7 @@ void Func::saveFile(std::ofstream& file) const {
     for (const auto& block : *function) {
         if (!first) {
             file << blockMap.find(&block)->second->blockName;
-            file << ":\n";
+            file << ":\n    ;\n";
         }
         blockMap.find(&block)->second->saveFile(file);
         first = false;

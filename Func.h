@@ -36,6 +36,8 @@ private:
     bool isDeclaration; //function is only being declared
     bool isVarArg; //function has variable number of arguments
 
+    Expr* lastArg; //last argument before variable arguments
+
     /**
      * @brief getBlockName Returns name of the block if the block already has an assigned name.
      * Otherwise assigns new name for the block in form of string containing block + blockCount,

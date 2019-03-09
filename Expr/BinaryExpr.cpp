@@ -112,9 +112,10 @@ std::string XorExpr::toString() const {
     return "(" + left->toString() + " ^ " + right->toString() + ")";
 }
 
-CmpExpr::CmpExpr(Expr* l, Expr* r, std::string cmp) :
+CmpExpr::CmpExpr(Expr* l, Expr* r, const std::string& cmp, bool isUnsigned) :
     BinaryExpr(l,r) {
     comparsion = cmp;
+    this->isUnsigned = isUnsigned;
 }
 
 void CmpExpr::print() const {
@@ -122,7 +123,16 @@ void CmpExpr::print() const {
 }
 
 std::string CmpExpr::toString() const {
-    return left->toString() + " " + comparsion + " " + right->toString();
+    std::string ret;
+    if (isUnsigned) {
+        auto ITL = static_cast<IntegerType*>(left->getType());
+        auto ITR = static_cast<IntegerType*>(right->getType());
+
+        if (!ITL->unsignedType && !ITR->unsignedType) {
+            ret = "(unsigned " + ITL->toString() + ")";
+        }
+    }
+    return ret + left->toString() + " " + comparsion + " " + right->toString();
 }
 
 AshrExpr::AshrExpr(Expr* l, Expr* r) :
@@ -136,7 +146,7 @@ std::string AshrExpr::toString() const {
     return "(" + left->toString() + " >> " + right->toString() + ")";
 }
 
-LshrExpr::LshrExpr(Expr* l, Expr* r, bool isUnsigned) :
+LshrExpr::LshrExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
 void LshrExpr::print() const {

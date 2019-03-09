@@ -5,11 +5,6 @@
 
 std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
     if (type->isArrayTy()) {
-        if (llvm::StructType* ST = llvm::dyn_cast<llvm::StructType>(type->getArrayElementType())) {
-            if (ST->getName().str().compare("struct.__va_list_tag") == 0) {
-                return std::make_unique<VaListType>();
-            }
-        }
         return std::make_unique<ArrayType>(getType(type->getArrayElementType()), type->getArrayNumElements());
     }
 
@@ -48,22 +43,25 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
 
     if (type->isPointerTy()) {
         const auto ptr = static_cast<const llvm::PointerType*>(type);
-        return std::make_unique<PointerType>(std::move(getType(ptr->getElementType())));
+        return std::make_unique<PointerType>(getType(ptr->getElementType()));
     }
 
     if (type->isStructTy()) {
         const llvm::StructType* structType = llvm::dyn_cast<const llvm::StructType>(type);
+        if (structType->getName().str().compare("struct.__va_list_tag") == 0) {
+            return std::make_unique<StructType>("__va_list_tag");
+        }
         return std::make_unique<StructType>(structType->getName().str().erase(0, 7));
     }
 
     if (type->isFunctionTy()) {
         const llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(type);
-        auto functionType = std::make_unique<FunctionType>(std::move(getType(FT->getReturnType())));
+        auto functionType = std::make_unique<FunctionType>(getType(FT->getReturnType()));
         if (FT->getNumParams() == 0) {
             functionType->addParam(std::make_unique<VoidType>());
         } else {
             for (unsigned i = 0; i < FT->getNumParams(); i++) {
-                functionType->addParam(std::move(getType(FT->getParamType(0))));
+                functionType->addParam(getType(FT->getParamType(0)));
             }
         }
 
@@ -124,18 +122,6 @@ std::unique_ptr<Type> Type::getBinaryType(const Type* left, const Type* right) {
     }
 
     return nullptr;
-}
-
-void VaListType::print() const {
-    llvm::outs() << toString();
-}
-
-std::string VaListType::toString() const {
-    return "va_list";
-}
-
-std::unique_ptr<Type> VaListType::clone() const {
-    return std::make_unique<VaListType>();
 }
 
 FunctionType::FunctionType(std::unique_ptr<Type> retType)

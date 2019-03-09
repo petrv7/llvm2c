@@ -28,12 +28,6 @@ public:
     static std::unique_ptr<Type> getBinaryType(const Type* left, const Type* right);
 };
 
-class VaListType : public Type {
-    std::unique_ptr<Type> clone() const override;
-    void print() const override;
-    std::string toString() const override;
-};
-
 class FunctionType : public Type {
 public:
     std::unique_ptr<Type> retType;

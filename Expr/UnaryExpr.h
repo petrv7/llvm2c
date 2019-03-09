@@ -21,6 +21,7 @@ public:
 class GepExpr : public UnaryExpr {
 public:
     std::vector<std::pair<std::unique_ptr<Type>, std::string>> args;
+    bool isMovedStruct; //used when accessing struct member of struct that was moved by another GepExpr
 
     GepExpr(Expr*, std::unique_ptr<Type>);
     void print() const override;

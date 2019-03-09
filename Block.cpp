@@ -24,7 +24,8 @@
 using CaseHandle = const llvm::SwitchInst::CaseHandleImpl<const llvm::SwitchInst, const llvm::ConstantInt, const llvm::BasicBlock>*;
 
 const std::set<std::string> C_FUNCTIONS = {"memcpy", "memmove", "memset", "sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
-                                           "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint", "round"};
+                                           "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
+                                           "round", "va_start", "va_end"};
 
 Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* func)
     : blockName(blockName),
@@ -201,31 +202,39 @@ void Block::parseCmpInstruction(const llvm::Instruction& ins) {
     switch(cmpInst->getPredicate()) {
     case llvm::CmpInst::ICMP_EQ:
     case llvm::CmpInst::FCMP_OEQ:
-        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "=="));
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "==", false));
         break;
     case llvm::CmpInst::ICMP_NE:
     case llvm::CmpInst::FCMP_ONE:
-        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "!="));
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "!=", false));
         break;
     case llvm::CmpInst::ICMP_UGT:
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, ">", true));
+        break;
     case llvm::CmpInst::ICMP_SGT:
     case llvm::CmpInst::FCMP_OGT:
-        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, ">"));
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, ">", false));
         break;
     case llvm::CmpInst::ICMP_UGE:
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, ">=", true));
+        break;
     case llvm::CmpInst::ICMP_SGE:
     case llvm::CmpInst::FCMP_OGE:
-        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, ">="));
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, ">=", false));
         break;
     case llvm::CmpInst::ICMP_ULT:
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "<", true));
+        break;
     case llvm::CmpInst::ICMP_SLT:
     case llvm::CmpInst::FCMP_OLT:
-        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "<"));
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "<", false));
         break;
     case llvm::CmpInst::ICMP_ULE:
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "<=", true));
+        break;
     case llvm::CmpInst::ICMP_SLE:
     case llvm::CmpInst::FCMP_OLE:
-        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "<="));
+        func->createExpr(&ins, std::make_unique<CmpExpr>(val0, val1, "<=", false));
         break;
     case llvm::CmpInst::FCMP_FALSE:
         func->createExpr(&ins, std::make_unique<Value>("0", std::make_unique<IntegerType>("int", false)));
@@ -320,7 +329,7 @@ void Block::parseShiftInstruction(const llvm::Instruction& ins) {
         func->createExpr(&ins, std::make_unique<ShlExpr>(val0, val1));
         break;
     case llvm::Instruction::LShr:
-        func->createExpr(&ins, std::make_unique<LshrExpr>(val0, val1, false));
+        func->createExpr(&ins, std::make_unique<LshrExpr>(val0, val1));
         break;
     case llvm::Instruction::AShr:
         func->createExpr(&ins, std::make_unique<AshrExpr>(val0, val1));
@@ -347,10 +356,10 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
             return;
         }
         if (funcName.substr(0,4).compare("llvm") == 0) {
-            funcName = getCFunc(funcName);
-            if (!isCFunc(funcName)) {
-                func->addDeclaration(callInst->getCalledFunction());
-                return;
+            if (isCFunc(getCFunc(funcName))) {
+                funcName = getCFunc(funcName);
+            } else {
+                std::replace(funcName.begin(), funcName.end(), '.', '_');
             }
         }
     } else {
@@ -365,6 +374,10 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
             createConstantValue(param);
         }
         params.push_back(func->getExpr(param));
+    }
+
+    if (funcName.compare("va_start") == 0) {
+        params.push_back(func->lastArg);
     }
 
     if (VoidType* VT = dynamic_cast<VoidType*>(type.get())) {
@@ -418,6 +431,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
     llvm::Type* prevType = gepInst->getOperand(0)->getType();
 
     bool isStruct = false;
+    bool advance = 0;
     llvm::PointerType* PT = llvm::cast<llvm::PointerType>(gepInst->getOperand(0)->getType());
     if (PT->getElementType()->isStructTy()) {
         isStruct = true;
@@ -430,19 +444,34 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
             varName = varName.erase(varName.length() - 1, varName.length());
         }
 
-        if (structName.compare("__va_list_tag") == 0) {
-            gepExpr->addArg(std::make_unique<VoidType>(), "va_list");  //TODO
-        } else {
-            structElements[&ins] = std::make_unique<StructElement>(func->getStruct(structName), varName, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue());
+        if (ins.getNumOperands() > 2) {
+            advance = 2;
+            structElements[&ins] = std::make_unique<StructElement>(func->getStruct(structName), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue());
+
+            if (auto GE = dynamic_cast<GepExpr*>(func->getExpr(gepInst->getOperand(0)))) {
+                if (GE->isMovedStruct) {
+                    structElements[&ins] = std::make_unique<StructElement>(func->getStruct(structName), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue());
+                }
+            }
+
             refs[structElements[&ins].get()] = std::make_unique<RefExpr>(structElements[&ins].get());
             gepExpr = std::make_unique<GepExpr>(refs[structElements[&ins].get()].get(), Type::getType(gepInst->getType()));
-            //gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue()].second + ")");
+        } else {
+            gepExpr->isMovedStruct = true;
+            advance = 1;
+            if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(gepInst->getOperand(1))) {
+                indexValue = std::to_string(CI->getSExtValue());
+            } else {
+                indexValue = func->getExpr(gepInst->getOperand(1))->toString();
+            }
+
+            gepExpr->addArg(Type::getType(prevType), indexValue);
         }
     }
 
     for (auto it = llvm::gep_type_begin(gepInst); it != llvm::gep_type_end(gepInst); it++) {
         if (isStruct) {
-            std::advance(it, 2);
+            std::advance(it, advance);
             if (it == llvm::gep_type_end(gepInst)) {
                 break;
             }
@@ -616,9 +645,9 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) {
             varName = varName.erase(varName.length() - 1, varName.length());
         }
 
-        structElements[expr] = std::make_unique<StructElement>(func->getStruct(structName), varName, llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue());
-        refs[structElements[expr].get()] = std::make_unique<RefExpr>(structElements[expr].get());
-        gepExpr = std::make_unique<GepExpr>(refs[structElements[expr].get()].get(), Type::getType(expr->getType()));
+        //structElements[expr] = std::make_unique<StructElement>(func->getStruct(structName), expr, llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue());
+        //refs[structElements[expr].get()] = std::make_unique<RefExpr>(structElements[expr].get());
+        //gepExpr = std::make_unique<GepExpr>(refs[structElements[expr].get()].get(), Type::getType(expr->getType()));
         //gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue()].second + ")");
     }
 

@@ -47,10 +47,10 @@ public:
 class StructElement : public ExprBase {
 public:
     Struct* strct;
-    std::string name;
+    Expr* expr;
     long element;
 
-    StructElement(Struct*, const std::string&, long);
+    StructElement(Struct*, Expr*, long);
     void print() const override;
     std::string toString() const override;
 };

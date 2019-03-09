@@ -41,13 +41,19 @@ void Program::parseStructs() {
 
         if (name.compare("__va_list_tag") == 0) {
             hasVarArg = true;
+            auto structExpr = std::make_unique<Struct>(name);
+            structExpr->addItem(std::make_unique<IntType>(true), "gp_offset");
+            structExpr->addItem(std::make_unique<IntType>(true), "fp_offset");
+            structExpr->addItem(std::make_unique<PointerType>(std::make_unique<VoidType>()), "overflow_arg_area");
+            structExpr->addItem(std::make_unique<PointerType>(std::make_unique<VoidType>()), "reg_save_area");
+            structs.push_back(std::move(structExpr));
             continue;
         }
 
         auto structExpr = std::make_unique<Struct>(name);
 
         for (llvm::Type* type : structType->elements()) {
-            structExpr->addItem(std::move(Type::getType(type)), getStructVarName());
+            structExpr->addItem(Type::getType(type), getStructVarName());
         }
 
         structs.push_back(std::move(structExpr));

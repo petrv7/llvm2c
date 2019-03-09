@@ -12,16 +12,43 @@ void Struct::print() const {
 }
 
 std::string Struct::toString() const {
+    if (name.compare("va_list") == 0) {
+        return "";
+    }
+
     std::string ret;
 
     ret += "struct " + name + " {\n";
     for (const auto& item : items) {
+        std::string faPointer;
+
         ret += "    ";
         ret += item.first->toString();
-        ret += " " + item.second;
 
-        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
-            ret += AT->sizeToString();
+        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
+            if (PT->isFuncPointer || PT->isArrayPointer) {
+                faPointer = " (";
+                for (unsigned i = 0; i < PT->levels; i++) {
+                    faPointer += "*";
+                }
+                faPointer += item.second + ")";
+            }
+            if (PT->isArrayPointer) {
+                faPointer = faPointer + "[" + std::to_string(PT->size) + "]";
+            }
+            if (PT->isFuncPointer) {
+                faPointer += PT->params;
+            }
+        }
+
+        if (faPointer.empty()) {
+            ret += " " + item.second;
+
+            if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
+                ret += AT->sizeToString();
+            }
+        } else {
+            ret += faPointer;
         }
 
         ret += ";\n";
@@ -35,9 +62,9 @@ void Struct::addItem(std::unique_ptr<Type> type, const std::string& name) {
     items.push_back(std::make_pair(std::move(type), name));
 }
 
-StructElement::StructElement(Struct* strct, const std::string& name, long element)
+StructElement::StructElement(Struct* strct, Expr* expr, long element)
     : strct(strct),
-      name(name),
+      expr(expr),
       element(element) {
     setType(strct->items[element].first->clone());
 }
@@ -47,7 +74,15 @@ void StructElement::print() const {
 }
 
 std::string StructElement::toString() const {
-    return "(" + name + ")." + strct->items[element].second;
+    /*if (strct->name.compare("__va_list_tag") == 0) {
+        return "(*" + expr->toString() + ")." + strct->items[element].second;
+    }
+    return "(" + expr->toString() + ")." + strct->items[element].second;*/
+    if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
+        return "(*(" + expr->toString() + "))." + strct->items[element].second;
+    }
+
+    return "(" + expr->toString() + ")." + strct->items[element].second;
 }
 
 Value::Value(const std::string& valueName, std::unique_ptr<Type> type) {
@@ -157,7 +192,7 @@ std::string SwitchExpr::toString() const {
     ret += ") {\n";
 
     for (const auto &iter : cases) {
-        ret += "   case " + iter.first;
+        ret += "    case " + std::to_string(iter.first);
         ret += ":\n        goto " + iter.second;
         ret += ";\n";
     }
@@ -179,7 +214,6 @@ std::string AsmExpr::toString() const {
 CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type)
     : funcName(funcName),
       params(params)
-      //isUsed(false)
 {
     setType(std::move(type));
 }
@@ -191,17 +225,26 @@ void CallExpr::print() const {
 std::string CallExpr::toString() const {
     std::string ret;
 
-    ret += funcName + "(";
+    ret += "(" + funcName + ")(";
+    if (funcName.compare("va_start") == 0 || funcName.compare("va_end") == 0) {
+        ret += "(void*)(";
+    }
 
     bool first = true;
     for (auto param : params) {
         if (first) {
             ret += param->toString();
+            if (funcName.compare("va_start") == 0 || funcName.compare("va_end") == 0) {
+                ret += ")";
+            }
         } else {
             ret += ", " + param->toString();
         }
         first = false;
     }
 
+    if (auto VT = dynamic_cast<VoidType*>(type.get())) {
+        return ret + ");";
+    }
     return ret + ")";
 }
