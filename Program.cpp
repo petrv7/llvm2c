@@ -12,6 +12,12 @@
 #include <algorithm>
 
 Program::Program(const std::string &file) {
+    fileName = file;
+    unsigned idx = fileName.find_last_of("\\/");
+    fileName.erase(0, idx + 1);
+    idx = fileName.find_last_of("\\.");
+    fileName.erase(idx, fileName.size());
+
     error = llvm::SMDiagnostic();
     module = llvm::parseIRFile(file, error, context);
     if(!module) {
@@ -70,7 +76,7 @@ void Program::parseFunctions() {
             } else {
                 functions.push_back(std::make_unique<Func>(&func, this, false));
             }
-        } 
+        }
     }
 }
 
@@ -79,7 +85,7 @@ void Program::parseGlobalVars() {
         std::string gvarName;
         if (gvar.hasName()) {
             if (gvar.hasPrivateLinkage()) {
-                gvarName = "ConstGlobalVar";
+                gvarName = "ConstGlobalVar_" + fileName;
             }
             std::string replacedName = gvar.getName().str();
             std::replace(replacedName.begin(), replacedName.end(), '.', '_');
@@ -188,7 +194,7 @@ void Program::print() {
 void Program::printStruct(Struct* strct) {
     for (auto& item : strct->items) {
         Type* type = item.first.get();
-        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
+        if (auto AT = dynamic_cast<ArrayType*>(type)) {
             type = AT->type.get();
         }
 
@@ -201,8 +207,10 @@ void Program::printStruct(Struct* strct) {
             }
         }
     }
-    strct->print();
-    strct->isPrinted = true;
+    if (!strct->isPrinted) {
+        strct->print();
+        strct->isPrinted = true;
+    }
     llvm::outs() << "\n";
 }
 
@@ -222,8 +230,10 @@ void Program::saveStruct(Struct* strct, std::ofstream& file) {
             }
         }
     }
-    file << strct->toString();
-    strct->isPrinted = true;
+    if (!strct->isPrinted) {
+        file << strct->toString();
+        strct->isPrinted = true;
+    }
     file << "\n";
 }
 

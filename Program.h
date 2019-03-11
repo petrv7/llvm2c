@@ -87,6 +87,7 @@ private:
     void parseGlobalVars();
 
 public:
+    std::string fileName;
 
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.

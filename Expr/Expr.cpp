@@ -208,7 +208,7 @@ void AsmExpr::print() const {
 }
 
 std::string AsmExpr::toString() const {
-    return "asm(\"" + inst + "\");";
+    return "__asm__(\"" + inst + "\");";
 }
 
 CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type)
