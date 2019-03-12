@@ -342,6 +342,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
     std::string funcName;
     std::vector<Expr*> params;
     std::unique_ptr<Type> type = nullptr;
+    bool isFuncPointer = false;
 
     if (callInst->getCalledFunction()) {
         funcName = callInst->getCalledFunction()->getName().str();
@@ -367,6 +368,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
         llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getElementType());
         funcName = func->getExpr(callInst->getCalledValue())->toString();
         type = Type::getType(FT->getReturnType());
+        isFuncPointer = true;
     }
 
     for (const auto& param : callInst->arg_operands()) {
@@ -381,10 +383,10 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
     }
 
     if (VoidType* VT = dynamic_cast<VoidType*>(type.get())) {
-        func->createExpr(&ins, std::make_unique<CallExpr>(funcName, params, type->clone()));
+        func->createExpr(&ins, std::make_unique<CallExpr>(funcName, params, type->clone(), isFuncPointer));
         abstractSyntaxTree.push_back(func->getExpr(&ins));
     } else {
-        func->callExprMap[&ins] = std::make_unique<CallExpr>(funcName, params, type->clone());
+        func->callExprMap[&ins] = std::make_unique<CallExpr>(funcName, params, type->clone(), isFuncPointer);
         func->createExpr(&ins, std::make_unique<Value>(func->getVarName(), type->clone()));
         func->callValueMap[&ins] = std::make_unique<EqualsExpr>(func->getExpr(&ins), func->callExprMap[&ins].get());
 
@@ -431,7 +433,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
     llvm::Type* prevType = gepInst->getOperand(0)->getType();
 
     bool isStruct = false;
-    bool advance = 0;
+    int advance = 0;
     llvm::PointerType* PT = llvm::cast<llvm::PointerType>(gepInst->getOperand(0)->getType());
     if (PT->getElementType()->isStructTy()) {
         isStruct = true;

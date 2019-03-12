@@ -242,10 +242,13 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
     levels = 1;
     isFuncPointer = false;
     isArrayPointer = false;
+    isStructPointer = false;
 
     if (auto PT = dynamic_cast<PointerType*>(type.get())) {
         isFuncPointer = PT->isFuncPointer;
         isArrayPointer = PT->isArrayPointer;
+        isStructPointer = PT->isStructPointer;
+        structName = PT->structName;
         levels = PT->levels + 1;
         params = PT->params;
     }
@@ -258,6 +261,11 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
     if (auto AT = dynamic_cast<ArrayType*>(type.get())) {
         isArrayPointer = true;
         size = AT->size;
+    }
+
+    if (auto ST = dynamic_cast<StructType*>(type.get())) {
+        isStructPointer = true;
+        structName = ST->name;
     }
 
     this->type = std::move(type);

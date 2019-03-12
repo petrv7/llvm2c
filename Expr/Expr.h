@@ -119,7 +119,9 @@ public:
     std::string funcName;
     std::vector<Expr*> params;
 
-    CallExpr(const std::string&, std::vector<Expr*>, std::unique_ptr<Type>);
+    bool isFuncPointer;
+
+    CallExpr(const std::string&, std::vector<Expr*>, std::unique_ptr<Type>, bool);
     void print() const override;
     std::string toString() const override;
 };

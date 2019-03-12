@@ -197,6 +197,11 @@ void Program::printStruct(Struct* strct) {
         if (auto AT = dynamic_cast<ArrayType*>(type)) {
             type = AT->type.get();
         }
+        /*if (auto PT = dynamic_cast<PointerType*>(type)) {
+            if (PT->isStructPointer) {
+                printStruct(getStruct(PT->structName));
+            }
+        }*/
 
         if (auto ST = dynamic_cast<StructType*>(type)) {
             for (auto& s : structs) {
@@ -217,9 +222,14 @@ void Program::printStruct(Struct* strct) {
 void Program::saveStruct(Struct* strct, std::ofstream& file) {
     for (auto& item : strct->items) {
         Type* type = item.first.get();
-        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
+        if (auto AT = dynamic_cast<ArrayType*>(type)) {
             type = AT->type.get();
         }
+        /*if (auto PT = dynamic_cast<PointerType*>(type)) {
+            if (PT->isStructPointer) {
+                saveStruct(getStruct(PT->structName), file);
+            }
+        }*/
 
         if (auto ST = dynamic_cast<StructType*>(type)) {
             for (auto& s : structs) {

@@ -114,12 +114,5 @@ void CastExpr::print() const {
 }
 
 std::string CastExpr::toString() const {
-    std::string ret;
-
-    ret += "(" + getType()->toString() + ")";
-    if (expr) {
-        ret += expr->toString();
-    }
-
-    return ret;
+    return "(" + getType()->toString() + ")" + "(" + expr->toString() + ")";
 }

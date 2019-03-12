@@ -83,8 +83,12 @@ public:
 class PointerType : public Type {
 public:
     std::unique_ptr<Type> type;
+
     bool isFuncPointer;
     bool isArrayPointer;
+    bool isStructPointer;
+
+    std::string structName;
     unsigned levels;
     std::string params;
     unsigned int size;

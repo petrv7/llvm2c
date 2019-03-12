@@ -211,9 +211,10 @@ std::string AsmExpr::toString() const {
     return "__asm__(\"" + inst + "\");";
 }
 
-CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type)
+CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type, bool isFuncPointer)
     : funcName(funcName),
-      params(params)
+      params(params),
+      isFuncPointer(isFuncPointer)
 {
     setType(std::move(type));
 }
@@ -225,7 +226,11 @@ void CallExpr::print() const {
 std::string CallExpr::toString() const {
     std::string ret;
 
-    ret += "(" + funcName + ")(";
+    if (isFuncPointer) {
+        ret += "(" + funcName + ")(";
+    } else {
+        ret += funcName + "(";
+    }
     if (funcName.compare("va_start") == 0 || funcName.compare("va_end") == 0) {
         ret += "(void*)(";
     }
