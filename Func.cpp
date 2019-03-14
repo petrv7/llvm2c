@@ -210,3 +210,7 @@ GlobalValue* Func::getGlobalVar(llvm::Value* val) const {
 void Func::addDeclaration(llvm::Function* func) {
     program->addDeclaration(func);
 }
+
+void Func::stackIgnored() {
+    program->stackIgnored = true;
+}

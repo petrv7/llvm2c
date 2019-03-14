@@ -190,11 +190,30 @@ std::string StructType::toString() const {
 
 ArrayType::ArrayType(std::unique_ptr<Type> type, unsigned int size)
     : size(size),
-      type(std::move(type)) { }
+      type(std::move(type)) {
+    isStructArray = false;
+
+    if (auto AT = dynamic_cast<ArrayType*>(this->type.get())) {
+        isStructArray = AT->isStructArray;
+        structName = AT->structName;
+    }
+
+    if (auto PT = dynamic_cast<PointerType*>(this->type.get())) {
+        isStructArray = PT->isStructPointer;
+        structName = PT->structName;
+    }
+
+    if (auto ST = dynamic_cast<StructType*>(this->type.get())) {
+        isStructArray = true;
+        structName = ST->name;
+    }
+}
 
 ArrayType::ArrayType(const ArrayType& other) {
     size = other.size;
     type = other.type->clone();
+    isStructArray = other.isStructArray;
+    structName = other.structName;
 }
 
 std::unique_ptr<Type> ArrayType::clone() const  {
@@ -261,6 +280,9 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
     if (auto AT = dynamic_cast<ArrayType*>(type.get())) {
         isArrayPointer = true;
         size = AT->size;
+
+        isStructPointer = AT->isStructArray;
+        structName = AT->structName;
     }
 
     if (auto ST = dynamic_cast<StructType*>(type.get())) {

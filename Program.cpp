@@ -21,20 +21,32 @@ Program::Program(const std::string &file) {
     error = llvm::SMDiagnostic();
     module = llvm::parseIRFile(file, error, context);
     if(!module) {
-        throw std::invalid_argument("Error loading module!");
+        throw std::invalid_argument("Error loading module - invalid input file!\n");
     }
     structVarCount = 0;
     gvarCount = 0;
-
     hasVarArg = false;
+    stackIgnored = false;
+
+    llvm::outs() << "IR file successfuly parsed.\n";
 
     parseProgram();
 }
 
 void Program::parseProgram() {
+    llvm::outs() << "Translating module...\n";
+
     parseGlobalVars();
     parseStructs();
     parseFunctions();
+
+    llvm::outs() << "Module successfuly translated.\n";
+
+    if (stackIgnored) {
+        llvm::outs() << "Intrinsic stacksave/stackrestore ignored!\n";
+    }
+
+    llvm::outs() << "\n";
 }
 
 void Program::parseStructs() {
@@ -172,6 +184,11 @@ void Program::print() {
     }
 
     for (auto& strct : structs) {
+        //print declarations first
+        llvm::outs() << "struct " << strct->name << ";\n";
+    }
+    llvm::outs() << "\n";
+    for (auto& strct : structs) {
         if (!strct->isPrinted) {
             printStruct(strct.get());
         }
@@ -193,17 +210,19 @@ void Program::print() {
 
 void Program::printStruct(Struct* strct) {
     for (auto& item : strct->items) {
-        Type* type = item.first.get();
-        if (auto AT = dynamic_cast<ArrayType*>(type)) {
-            type = AT->type.get();
+        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
+            if (AT->isStructArray) {
+                printStruct(getStruct(AT->structName));
+            }
         }
-        /*if (auto PT = dynamic_cast<PointerType*>(type)) {
-            if (PT->isStructPointer) {
+
+        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
+            if (PT->isStructPointer && PT->isArrayPointer) {
                 printStruct(getStruct(PT->structName));
             }
-        }*/
+        }
 
-        if (auto ST = dynamic_cast<StructType*>(type)) {
+        if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
             for (auto& s : structs) {
                 if (s->name == ST->name) {
                     printStruct(s.get());
@@ -221,17 +240,19 @@ void Program::printStruct(Struct* strct) {
 
 void Program::saveStruct(Struct* strct, std::ofstream& file) {
     for (auto& item : strct->items) {
-        Type* type = item.first.get();
-        if (auto AT = dynamic_cast<ArrayType*>(type)) {
-            type = AT->type.get();
+        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
+            if (AT->isStructArray) {
+                saveStruct(getStruct(AT->structName), file);
+            }
         }
-        /*if (auto PT = dynamic_cast<PointerType*>(type)) {
-            if (PT->isStructPointer) {
+
+        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
+            if (PT->isStructPointer && PT->isArrayPointer) {
                 saveStruct(getStruct(PT->structName), file);
             }
-        }*/
+        }
 
-        if (auto ST = dynamic_cast<StructType*>(type)) {
+        if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
             for (auto& s : structs) {
                 if (s->name == ST->name) {
                     saveStruct(s.get(), file);
@@ -261,6 +282,11 @@ void Program::saveFile(const std::string& fileName) {
         func->saveFile(file);
     }
 
+    for (auto& strct : structs) {
+        //save declarations first
+        file << "struct " << strct->name << ";\n";
+    }
+    file << "\n";
     for (auto& strct : structs) {
         if (!strct->isPrinted) {
             saveStruct(strct.get(), file);

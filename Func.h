@@ -22,7 +22,7 @@ private:
     std::unique_ptr<Type> returnType;
 
     const llvm::Function* function;
-    const Program* program;
+    Program* program;
 
     llvm::DenseMap<const llvm::BasicBlock*, std::unique_ptr<Block>> blockMap; //DenseMap used for mapping llvm::BasicBlock to Block
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> exprMap; // DenseMap used for mapping llvm::Value to Expr
@@ -119,4 +119,9 @@ public:
      * @param func LLVM Function
      */
     void addDeclaration(llvm::Function* func);
+
+    /**
+     * @brief stackIgnored Indicated that intrinsic stacksave/stackrestore was ignored.
+     */
+    void stackIgnored();
 };

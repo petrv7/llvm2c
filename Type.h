@@ -62,6 +62,9 @@ public:
     unsigned int size;
     std::unique_ptr<Type> type;
 
+    bool isStructArray;
+    std::string structName;
+
     ArrayType(std::unique_ptr<Type>, unsigned int);
     ArrayType(const ArrayType&);
 

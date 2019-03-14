@@ -88,6 +88,7 @@ private:
 
 public:
     std::string fileName;
+    bool stackIgnored;
 
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.

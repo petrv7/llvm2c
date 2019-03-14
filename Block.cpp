@@ -126,6 +126,15 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins) {
             func->createExpr(ins.getOperand(0), std::make_unique<Value>("&" + function->getName().str(), std::make_unique<VoidType>()));
         }
     }
+
+    if (llvm::CallInst* CI = llvm::dyn_cast<llvm::CallInst>(ins.getOperand(0))) {
+        if (CI->getCalledFunction()) {
+            if (CI->getCalledFunction()->getName().str().compare("llvm.stacksave") == 0) {
+                return;
+            }
+        }
+    }
+
     if (func->getExpr(ins.getOperand(0)) == nullptr) {
         createConstantValue(ins.getOperand(0));
     }
@@ -347,15 +356,23 @@ void Block::parseCallInstruction(const llvm::Instruction& ins) {
     if (callInst->getCalledFunction()) {
         funcName = callInst->getCalledFunction()->getName().str();
         type = Type::getType(callInst->getCalledFunction()->getReturnType());
+
         if (funcName.compare("llvm.dbg.declare") == 0) {
             setMetadataInfo(callInst);
             return;
         }
+
         if (funcName.compare("llvm.trap") == 0 || funcName.compare("llvm.debugtrap") == 0) {
             func->createExpr(&ins, std::make_unique<AsmExpr>("int3"));
             abstractSyntaxTree.push_back(func->exprMap[&ins].get());
             return;
         }
+
+        if (funcName.compare("llvm.stacksave") == 0 || funcName.compare("llvm.stackrestore") == 0) {
+            func->stackIgnored();
+            return;
+        }
+
         if (funcName.substr(0,4).compare("llvm") == 0) {
             if (isCFunc(getCFunc(funcName))) {
                 funcName = getCFunc(funcName);
@@ -571,11 +588,10 @@ void Block::parseLLVMInstruction(const llvm::Instruction& ins) {
     case llvm::Instruction::GetElementPtr:
         parseGepInstruction(ins);
         break;
-    case llvm::Instruction::PHI:
-        throw std::invalid_argument("Instruction \"phi\" is not supported!");
-        break;
     default:
-        throw std::invalid_argument("Instruction not supported!");
+        llvm::outs() << "File contains unsupported instruction!\n";
+        llvm::outs() << ins << "\n";
+        throw std::invalid_argument("");
         break;
     }
 }
@@ -588,7 +604,10 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         llvm::Metadata* varMD = llvm::dyn_cast<llvm::MetadataAsValue>(ins->getOperand(1))->getMetadata();
         llvm::DILocalVariable* localVar = llvm::dyn_cast<llvm::DILocalVariable>(varMD);
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());
-        //llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(type);
+
+        if (llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(localVar->getType())) {
+
+        }
 
         std::regex varName("var[0-9]+");
         std::regex constGlobalVarName("ConstGlobalVar_.+");
