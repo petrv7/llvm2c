@@ -95,9 +95,12 @@ void Program::parseFunctions() {
 void Program::parseGlobalVars() {
     for (const llvm::GlobalVariable& gvar : module->globals()) {
         std::string gvarName;
+        bool isPrivate = false;
+
         if (gvar.hasName()) {
             if (gvar.hasPrivateLinkage()) {
-                gvarName = "ConstGlobalVar_" + fileName;
+                gvarName = "GlobalVar";
+                isPrivate = true;
             }
             std::string replacedName = gvar.getName().str();
             std::replace(replacedName.begin(), replacedName.end(), '.', '_');
@@ -112,7 +115,8 @@ void Program::parseGlobalVars() {
         }
 
         llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
-        globalVars[&gvar] = std::make_unique<GlobalValue>(gvarName, value, std::move(Type::getType(PI->getElementType())));
+        globalVars[&gvar] = std::make_unique<GlobalValue>(gvarName, value, Type::getType(PI->getElementType()));
+        globalVars[&gvar]->getType()->isStatic = isPrivate;
     }
 }
 

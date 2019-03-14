@@ -169,10 +169,7 @@ void FunctionType::print() const {
 }
 
 std::string FunctionType::toString() const {
-    std::string ret;
-    if (isConst) {
-        ret += "const ";
-    }
+    std::string ret = getConstStaticString();
 
     return ret + retType->toString();
 }
@@ -193,10 +190,7 @@ void StructType::print() const {
 }
 
 std::string StructType::toString() const {
-    std::string ret;
-    if (isConst) {
-        ret += "const ";
-    }
+    std::string ret = getConstStaticString();
 
     return ret + "struct " + name;
 }
@@ -242,10 +236,7 @@ void ArrayType::printSize() const {
 }
 
 std::string ArrayType::toString() const {
-    std::string ret;
-    if (isConst) {
-        ret += "const ";
-    }
+    std::string ret = getConstStaticString();
 
     return ret + type->toString();
 }
@@ -329,10 +320,7 @@ void PointerType::print() const {
 }
 
 std::string PointerType::toString() const {
-    std::string ret;
-    if (isConst) {
-        ret += "const ";
-    }
+    std::string ret = getConstStaticString();
 
     if (isFuncPointer || isArrayPointer) {
         return ret + type->toString();
@@ -359,11 +347,7 @@ void IntegerType::print() const {
 }
 
 std::string IntegerType::toString() const {
-    std::string ret;
-
-    if (isConst) {
-        ret += "const ";
-    }
+    std::string ret = getConstStaticString();
 
     if (unsignedType) {
         ret += "unsigned ";
@@ -417,10 +401,7 @@ void FloatingPointType::print() const {
 }
 
 std::string FloatingPointType::toString() const {
-    std::string ret;
-    if (isConst) {
-        ret += "const ";
-    }
+    std::string ret = getConstStaticString();
 
     return ret + name;
 }

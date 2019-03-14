@@ -74,10 +74,6 @@ void StructElement::print() const {
 }
 
 std::string StructElement::toString() const {
-    /*if (strct->name.compare("__va_list_tag") == 0) {
-        return "(*" + expr->toString() + ")." + strct->items[element].second;
-    }
-    return "(" + expr->toString() + ")." + strct->items[element].second;*/
     if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
         return "(*(" + expr->toString() + "))." + strct->items[element].second;
     }
