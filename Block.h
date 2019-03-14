@@ -5,6 +5,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/DebugInfoMetadata.h"
 
 #include "Expr/Expr.h"
 
@@ -180,4 +181,11 @@ private:
      * @param expr GetElementPtrConstantExpr for parsing
      */
     void parseConstantGep(llvm::ConstantExpr* expr);
+
+    /**
+     * @brief isVoidType Parses metadata about variable type. Returns wether the type is void or not.
+     * @param type Metadata information about type
+     * @return True if type is void, false otherwise.
+     */
+    bool isVoidType(llvm::DITypeRef type);
 };

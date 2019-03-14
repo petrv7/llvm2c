@@ -3,9 +3,9 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/Support/raw_ostream.h"
 
-std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
+std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool voidType) {
     if (type->isArrayTy()) {
-        return std::make_unique<ArrayType>(getType(type->getArrayElementType()), type->getArrayNumElements());
+        return std::make_unique<ArrayType>(getType(type->getArrayElementType(), voidType), type->getArrayNumElements());
     }
 
     if (type->isVoidTy()) {
@@ -16,6 +16,9 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
         const auto intType = static_cast<const llvm::IntegerType*>(type);
         switch(intType->getBitWidth()) {
         case 8:
+            if (voidType) {
+                return std::make_unique<VoidType>();
+            }
             return std::make_unique<CharType>(false);
         case 16:
             return std::make_unique<ShortType>(false);
@@ -43,7 +46,7 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
 
     if (type->isPointerTy()) {
         const auto ptr = static_cast<const llvm::PointerType*>(type);
-        return std::make_unique<PointerType>(getType(ptr->getElementType()));
+        return std::make_unique<PointerType>(getType(ptr->getElementType(), voidType));
     }
 
     if (type->isStructTy()) {
@@ -56,12 +59,12 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type) {
 
     if (type->isFunctionTy()) {
         const llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(type);
-        auto functionType = std::make_unique<FunctionType>(getType(FT->getReturnType()));
+        auto functionType = std::make_unique<FunctionType>(getType(FT->getReturnType(), voidType));
         if (FT->getNumParams() == 0) {
             functionType->addParam(std::make_unique<VoidType>());
         } else {
             for (unsigned i = 0; i < FT->getNumParams(); i++) {
-                functionType->addParam(getType(FT->getParamType(0)));
+                functionType->addParam(getType(FT->getParamType(0), voidType));
             }
         }
 
@@ -166,7 +169,12 @@ void FunctionType::print() const {
 }
 
 std::string FunctionType::toString() const {
-    return retType->toString();
+    std::string ret;
+    if (isConst) {
+        ret += "const ";
+    }
+
+    return ret + retType->toString();
 }
 
 StructType::StructType(const std::string& name)
@@ -185,7 +193,12 @@ void StructType::print() const {
 }
 
 std::string StructType::toString() const {
-    return "struct " + name;
+    std::string ret;
+    if (isConst) {
+        ret += "const ";
+    }
+
+    return ret + "struct " + name;
 }
 
 ArrayType::ArrayType(std::unique_ptr<Type> type, unsigned int size)
@@ -229,7 +242,12 @@ void ArrayType::printSize() const {
 }
 
 std::string ArrayType::toString() const {
-    return type->toString();
+    std::string ret;
+    if (isConst) {
+        ret += "const ";
+    }
+
+    return ret + type->toString();
 }
 
 std::string ArrayType::sizeToString() const {
@@ -311,11 +329,16 @@ void PointerType::print() const {
 }
 
 std::string PointerType::toString() const {
-    if (isFuncPointer || isArrayPointer) {
-        return type->toString();
+    std::string ret;
+    if (isConst) {
+        ret += "const ";
     }
 
-    return type->toString() + "*";
+    if (isFuncPointer || isArrayPointer) {
+        return ret + type->toString();
+    }
+
+    return ret + type->toString() + "*";
 }
 
 IntegerType::IntegerType(const std::string& name, bool unsignedType)
@@ -337,6 +360,10 @@ void IntegerType::print() const {
 
 std::string IntegerType::toString() const {
     std::string ret;
+
+    if (isConst) {
+        ret += "const ";
+    }
 
     if (unsignedType) {
         ret += "unsigned ";
@@ -390,7 +417,12 @@ void FloatingPointType::print() const {
 }
 
 std::string FloatingPointType::toString() const {
-    return name;
+    std::string ret;
+    if (isConst) {
+        ret += "const ";
+    }
+
+    return ret + name;
 }
 
 FloatType::FloatType()

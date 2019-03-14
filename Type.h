@@ -12,12 +12,14 @@ public:
     virtual void print() const = 0;
     virtual std::string toString() const = 0;
 
+    bool isConst = false;
+
     /**
      * @brief getType Transforms llvm::Type into corresponding Type object
      * @param type llvm::Type for transformation
      * @return unique_ptr to corresponding Type object
      */
-    static std::unique_ptr<Type> getType(const llvm::Type* type);
+    static std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
 
     /**
      * @brief getBinaryType Returns type that would be result of a binary operation

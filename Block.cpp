@@ -5,8 +5,8 @@
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/GetElementPtrTypeIterator.h"
+#include "llvm/BinaryFormat/Dwarf.h"
 
 #include "Func.h"
 #include "Type.h"
@@ -606,7 +606,21 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());
 
         if (llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(localVar->getType())) {
+            if (dtype->getTag() == llvm::dwarf::DW_TAG_const_type) {
+                variable->type->isConst = true;
+            }
 
+            if (isVoidType(dtype)) {
+                llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
+                variable->type = Type::getType(PT->getElementType(), true);
+            }
+        }
+
+        if (llvm::DICompositeType* ctype = llvm::dyn_cast<llvm::DICompositeType>(localVar->getType())) {
+            if (isVoidType(ctype)) {
+                llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
+                variable->type = Type::getType(PT->getElementType(), true);
+            }
         }
 
         std::regex varName("var[0-9]+");
@@ -654,6 +668,7 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) {
     llvm::Type* prevType = expr->getOperand(0)->getType();
 
     bool isStruct = false;
+    int advance = 0;
     llvm::PointerType* PT = llvm::cast<llvm::PointerType>(expr->getOperand(0)->getType());
     if (PT->getElementType()->isStructTy()) {
         isStruct = true;
@@ -666,15 +681,34 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) {
             varName = varName.erase(varName.length() - 1, varName.length());
         }
 
-        //structElements[expr] = std::make_unique<StructElement>(func->getStruct(structName), expr, llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue());
-        //refs[structElements[expr].get()] = std::make_unique<RefExpr>(structElements[expr].get());
-        //gepExpr = std::make_unique<GepExpr>(refs[structElements[expr].get()].get(), Type::getType(expr->getType()));
-        //gepExpr->addArg(std::make_unique<VoidType>(), "&((" + varName + ")." + func->getStruct(structName)->items[llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue()].second + ")");
+        if (expr->getNumOperands() > 2) {
+            advance = 2;
+            structElements[expr] = std::make_unique<StructElement>(func->getStruct(structName), gvar, llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue());
+
+            if (auto GE = dynamic_cast<GepExpr*>(func->getExpr(expr->getOperand(0)))) {
+                if (GE->isMovedStruct) {
+                    structElements[expr] = std::make_unique<StructElement>(func->getStruct(structName),gvar, llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue());
+                }
+            }
+
+            refs[structElements[expr].get()] = std::make_unique<RefExpr>(structElements[expr].get());
+            gepExpr = std::make_unique<GepExpr>(refs[structElements[expr].get()].get(), Type::getType(expr->getType()));
+        } else {
+            gepExpr->isMovedStruct = true;
+            advance = 1;
+            if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(expr->getOperand(1))) {
+                indexValue = std::to_string(CI->getSExtValue());
+            } else {
+                indexValue = func->getExpr(expr->getOperand(1))->toString();
+            }
+
+            gepExpr->addArg(Type::getType(prevType), indexValue);
+        }
     }
 
     for (auto it = llvm::gep_type_begin(expr); it != llvm::gep_type_end(expr); it++) {
         if (isStruct) {
-            std::advance(it, 2);
+            std::advance(it, advance);
             if (it == llvm::gep_type_end(expr)) {
                 break;
             }
@@ -712,4 +746,24 @@ std::string Block::getCFunc(const std::string& func) {
     }
 
     return "";
+}
+
+bool Block::isVoidType(llvm::DITypeRef type) {
+    if (llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(type)) {
+        if (!dtype->getBaseType()) {
+            return true;
+        }
+
+        return isVoidType(dtype->getBaseType());
+    }
+
+    if (llvm::DICompositeType* ctype = llvm::dyn_cast<llvm::DICompositeType>(type)) {
+        if (!ctype->getBaseType()) {
+            return true;
+        }
+
+        return isVoidType(ctype->getBaseType());
+    }
+
+    return false;
 }
