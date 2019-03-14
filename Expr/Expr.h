@@ -49,8 +49,9 @@ public:
     Struct* strct;
     Expr* expr;
     long element;
+    unsigned int move;
 
-    StructElement(Struct*, Expr*, long);
+    StructElement(Struct*, Expr*, long, unsigned int move);
     void print() const override;
     std::string toString() const override;
 };

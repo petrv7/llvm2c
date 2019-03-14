@@ -62,10 +62,11 @@ void Struct::addItem(std::unique_ptr<Type> type, const std::string& name) {
     items.push_back(std::make_pair(std::move(type), name));
 }
 
-StructElement::StructElement(Struct* strct, Expr* expr, long element)
+StructElement::StructElement(Struct* strct, Expr* expr, long element, unsigned int move)
     : strct(strct),
       expr(expr),
-      element(element) {
+      element(element),
+      move(move) {
     setType(strct->items[element].first->clone());
 }
 
@@ -75,10 +76,10 @@ void StructElement::print() const {
 
 std::string StructElement::toString() const {
     if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
-        return "(*(" + expr->toString() + "))." + strct->items[element].second;
+        return "(*(" + expr->toString() + " + " + std::to_string(move) + "))." + strct->items[element].second;
     }
 
-    return "(" + expr->toString() + ")." + strct->items[element].second;
+    return "(" + expr->toString() + " + " + std::to_string(move) + ")." + strct->items[element].second;
 }
 
 Value::Value(const std::string& valueName, std::unique_ptr<Type> type) {
