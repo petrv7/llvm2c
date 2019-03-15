@@ -21,7 +21,7 @@ Program::Program(const std::string &file) {
     error = llvm::SMDiagnostic();
     module = llvm::parseIRFile(file, error, context);
     if(!module) {
-        throw std::invalid_argument("Error loading module - invalid input file!\n");
+        throw std::invalid_argument("Error loading module - invalid input file \"" + fileName + "\"!\n");
     }
     structVarCount = 0;
     gvarCount = 0;
@@ -309,6 +309,8 @@ void Program::saveFile(const std::string& fileName) {
     }
 
     file.close();
+
+    llvm::outs() << "Translated program successfuly saved into " << fileName << "\n";
 }
 
 Struct* Program::getStruct(const std::string& name) const {

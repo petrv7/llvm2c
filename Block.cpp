@@ -466,17 +466,9 @@ void Block::parseGepInstruction(const llvm::Instruction& ins) {
         if (ins.getNumOperands() > 2) {
             advance = 2;
             structElements[&ins] = std::make_unique<StructElement>(func->getStruct(structName), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue(), llvm::cast<llvm::ConstantInt>(gepInst->getOperand(1))->getSExtValue());
-
-            /*if (auto GE = dynamic_cast<GepExpr*>(func->getExpr(gepInst->getOperand(0)))) {
-                if (GE->isMovedStruct) {
-                    structElements[&ins] = std::make_unique<StructElement>(func->getStruct(structName), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue());
-                }
-            }*/
-
             refs[structElements[&ins].get()] = std::make_unique<RefExpr>(structElements[&ins].get());
             gepExpr = std::make_unique<GepExpr>(refs[structElements[&ins].get()].get(), Type::getType(gepInst->getType()));
         } else {
-            //gepExpr->isMovedStruct = true;
             advance = 1;
             if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(gepInst->getOperand(1))) {
                 indexValue = std::to_string(CI->getSExtValue());
@@ -653,7 +645,7 @@ void Block::createConstantValue(llvm::Value* val) {
         func->createExpr(val, std::make_unique<Value>(std::to_string(CI->getSExtValue()), std::make_unique<IntType>(false)));
     }
     if (llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
-        func->createExpr(val, std::make_unique<Value>(std::to_string(CFP->getValueAPF().convertToDouble()), std::make_unique<IntType>(false)));
+        func->createExpr(val, std::make_unique<Value>(std::to_string(CFP->getValueAPF().convertToDouble()), std::make_unique<FloatType>()));
     }
     if (llvm::ConstantExpr* CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
         parseConstantGep(CE);
@@ -684,17 +676,9 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) {
         if (expr->getNumOperands() > 2) {
             advance = 2;
             structElements[expr] = std::make_unique<StructElement>(func->getStruct(structName), gvar, llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue(), llvm::cast<llvm::ConstantInt>(expr->getOperand(1))->getSExtValue());
-
-            /*if (auto GE = dynamic_cast<GepExpr*>(func->getExpr(expr->getOperand(0)))) {
-                if (GE->isMovedStruct) {
-                    structElements[expr] = std::make_unique<StructElement>(func->getStruct(structName), gvar, llvm::cast<llvm::ConstantInt>(expr->getOperand(2))->getSExtValue());
-                }
-            }*/
-
             refs[structElements[expr].get()] = std::make_unique<RefExpr>(structElements[expr].get());
             gepExpr = std::make_unique<GepExpr>(refs[structElements[expr].get()].get(), Type::getType(expr->getType()));
         } else {
-            //gepExpr->isMovedStruct = true;
             advance = 1;
             if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(expr->getOperand(1))) {
                 indexValue = std::to_string(CI->getSExtValue());
