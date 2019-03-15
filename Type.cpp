@@ -54,7 +54,12 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool voidType) {
         if (structType->getName().str().compare("struct.__va_list_tag") == 0) {
             return std::make_unique<StructType>("__va_list_tag");
         }
-        return std::make_unique<StructType>(structType->getName().str().erase(0, 7));
+        if (structType->getName().str().substr(0, 6).compare("struct") == 0) {
+            return std::make_unique<StructType>(structType->getName().str().erase(0, 7));
+        } else {
+            //union
+            return std::make_unique<StructType>(structType->getName().str().erase(0, 6));
+        }
     }
 
     if (type->isFunctionTy()) {

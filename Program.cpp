@@ -54,7 +54,12 @@ void Program::parseStructs() {
         std::string name = "";
         if (structType->hasName()) {
             name = structType->getName().str();
-            name.erase(0, 7);
+            if (name.substr(0, 6).compare("struct") == 0) {
+                name.erase(0, 7);
+            } else {
+                //union
+                name.erase(0, 6);
+            }
         }
 
         if (name.compare("__va_list_tag") == 0) {
