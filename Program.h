@@ -21,7 +21,8 @@ private:
     std::vector<std::unique_ptr<Func>> functions; // vector of parsed functions
     std::vector<std::unique_ptr<Func>> declarations; // vector of function declarations
     std::vector<std::unique_ptr<Struct>> structs; // vector of parsed structs
-    llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<GlobalValue>> globalVars; //map containing global variables
+    std::vector<std::unique_ptr<GlobalValue>> globalVars; // vector of parsed global variables
+    llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<RefExpr>> globalRefs; //map containing references to global variables
 
     unsigned structVarCount;
     unsigned gvarCount;
@@ -35,7 +36,7 @@ private:
     std::string getStructVarName();
 
     /**
-     * @brief getGvarName Creates a new name for a global variable in form of string containing "gvar" + gvarCount.
+     * @brief getGvarName Creates a new name for a global variable
      * @return String containing a new variable name.
      */
     std::string getGvarName();
@@ -115,11 +116,11 @@ public:
     Struct* getStruct(const std::string& name) const;
 
     /**
-     * @brief getGlobalVar Returns corresponding GlobalValue expression.
+     * @brief getGlobalVar Returns corresponding refference to GlobalValue expression.
      * @param val llvm global variable
-     * @return GlobalValue expression
+     * @return RefExpr expression
      */
-    GlobalValue* getGlobalVar(llvm::Value* val) const;
+    RefExpr* getGlobalVar(llvm::Value* val) const;
 
     /**
      * @brief addDeclaration Adds new declaration of given function.

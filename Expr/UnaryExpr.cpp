@@ -39,8 +39,15 @@ std::string GepExpr::toString() const {
     std::string print = expr->toString();
 
     for (unsigned i = 0; i < args.size(); i++) {
+        bool move = true;
+        if (args[i].second.compare("0") == 0) {
+            move = false;
+        }
+
         if (i == 0) {
-            print.append(" + " + args[i].second);
+            if (move) {
+                print.append(" + " + args[i].second);
+            }
             continue;
         }
         if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
@@ -55,7 +62,12 @@ std::string GepExpr::toString() const {
         } else {
             print = "(((" + args[i].first->toString() + ")" + print;
         }
-        print.append(") + " + args[i].second + ")");
+
+        if (move) {
+            print.append(") + " + args[i].second + ")");
+        } else {
+            print.append("))");
+        }
     }
 
     return print;

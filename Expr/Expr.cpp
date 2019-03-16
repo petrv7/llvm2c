@@ -75,11 +75,20 @@ void StructElement::print() const {
 }
 
 std::string StructElement::toString() const {
+    std::string ret = "(";
     if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
-        return "(*(" + expr->toString() + " + " + std::to_string(move) + "))." + strct->items[element].second;
+        ret += expr->toString();
+        //return "(" + expr->toString() + " + " + std::to_string(move) + ")->" + strct->items[element].second;
+    } else {
+        ret += "&" + expr->toString();
     }
 
-    return "(" + expr->toString() + " + " + std::to_string(move) + ")." + strct->items[element].second;
+    if (move == 0) {
+        return ret + ")->" + strct->items[element].second;
+    } else {
+        return ret + " + " + std::to_string(move) + ")->" + strct->items[element].second;
+    }
+    //return "(&" + expr->toString() + " + " + std::to_string(move) + ")->" + strct->items[element].second;
 }
 
 Value::Value(const std::string& valueName, std::unique_ptr<Type> type) {
@@ -126,7 +135,7 @@ void GlobalValue::print() const {
 
 std::string GlobalValue::toString() const {
     if (!init) {
-        std::string ret = type->toString() + " " + valueName.substr(1, valueName.length());
+        std::string ret = type->toString() + " " + valueName;
         if (ArrayType* AT = dynamic_cast<ArrayType*>(type.get())) {
             ret += AT->sizeToString();
         }
@@ -138,6 +147,15 @@ std::string GlobalValue::toString() const {
     }
 
     return valueName;
+}
+
+std::string GlobalValue::declToString() const {
+    std::string ret = type->toString() + " " + valueName;
+    if (ArrayType* AT = dynamic_cast<ArrayType*>(type.get())) {
+        ret += AT->sizeToString();
+    }
+
+    return ret + ";";
 }
 
 JumpExpr::JumpExpr(const std::string &block)

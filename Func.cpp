@@ -203,7 +203,7 @@ Struct* Func::getStruct(const std::string& name) const {
     return program->getStruct(name);
 }
 
-GlobalValue* Func::getGlobalVar(llvm::Value* val) const {
+RefExpr* Func::getGlobalVar(llvm::Value* val) const {
     return program->getGlobalVar(val);
 }
 

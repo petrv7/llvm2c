@@ -113,7 +113,12 @@ void Block::parseAllocaInstruction(const llvm::Instruction& ins) {
 
 void Block::parseLoadInstruction(const llvm::Instruction& ins) {
     if (func->exprMap.find(ins.getOperand(0)) == func->exprMap.end()) {
-        func->createExpr(&ins, std::make_unique<DerefExpr>(func->getGlobalVar(ins.getOperand(0))));
+        if (llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(ins.getOperand(0))) {
+            func->createExpr(&ins, std::make_unique<DerefExpr>(func->getGlobalVar(ins.getOperand(0))));
+        } else {
+            createConstantValue(ins.getOperand(0));
+            func->createExpr(&ins, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
+        }
     } else {
         func->createExpr(&ins, std::make_unique<DerefExpr>(func->exprMap[ins.getOperand(0)].get()));
     }
@@ -140,6 +145,9 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins) {
     }
     Expr* val0 = func->getExpr(ins.getOperand(0));
 
+    if (func->getExpr(ins.getOperand(1)) == nullptr) {
+        createConstantValue(ins.getOperand(1));
+    }
     Expr* val1 = func->getExpr(ins.getOperand(1));
     if (derefs.find(val1) == derefs.end()) {
         derefs[val1] = std::make_unique<DerefExpr>(val1);
@@ -663,15 +671,21 @@ void Block::parseConstantGep(llvm::ConstantExpr *expr) {
     int advance = 0;
     llvm::PointerType* PT = llvm::cast<llvm::PointerType>(expr->getOperand(0)->getType());
     if (PT->getElementType()->isStructTy()) {
+        Expr* strct;
+        if (func->getExpr(expr->getOperand(0)) == nullptr) {
+            strct = func->getGlobalVar(expr->getOperand(0));
+        } else {
+            strct = func->getExpr(expr->getOperand(0));
+        }
         isStruct = true;
         llvm::StructType* ST = llvm::cast<llvm::StructType>(PT->getElementType());
         std::string structName = ST->getName().str().erase(0, 7);
-        std::string varName = func->getExpr(expr->getOperand(0))->toString();
+        std::string varName = strct->toString();
 
-        if (varName.at(0) == '&') {
-            varName = func->getExpr(expr->getOperand(0))->toString().erase(0,2);
+        /*if (varName.at(0) == '&') {
+            varName = strct->toString().erase(0,2);
             varName = varName.erase(varName.length() - 1, varName.length());
-        }
+        }*/
 
         if (expr->getNumOperands() > 2) {
             advance = 2;

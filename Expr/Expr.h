@@ -73,6 +73,12 @@ public:
     GlobalValue(const std::string&, const std::string&, std::unique_ptr<Type>);
     void print() const override;
     std::string toString() const override;
+
+    /**
+     * @brief declToString Returns string containing declaration only.
+     * @return String containing declaration of the global variable;
+     */
+    std::string declToString() const;
 };
 
 class JumpExpr : public ExprBase {

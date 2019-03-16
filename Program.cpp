@@ -99,20 +99,24 @@ void Program::parseFunctions() {
 
 void Program::parseGlobalVars() {
     for (const llvm::GlobalVariable& gvar : module->globals()) {
-        std::string gvarName;
         bool isPrivate = false;
 
-        if (gvar.hasName()) {
+        /*if (gvar.hasName()) {
             if (gvar.hasPrivateLinkage()) {
-                gvarName = "GlobalVar";
                 isPrivate = true;
             }
             std::string replacedName = gvar.getName().str();
             std::replace(replacedName.begin(), replacedName.end(), '.', '_');
-            gvarName = "&" + gvarName + replacedName;
+            gvarName = replacedName;
         } else {
             gvarName = getGvarName();
+        }*/
+
+        if (gvar.hasPrivateLinkage()) {
+            isPrivate = true;
         }
+        std::string gvarName = gvar.getName().str();
+        std::replace(gvarName.begin(), gvarName.end(), '.', '_');
 
         std::string value = "";
         if (gvar.hasInitializer()) {
@@ -120,8 +124,9 @@ void Program::parseGlobalVars() {
         }
 
         llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
-        globalVars[&gvar] = std::make_unique<GlobalValue>(gvarName, value, Type::getType(PI->getElementType()));
-        globalVars[&gvar]->getType()->isStatic = isPrivate;
+        globalVars.push_back(std::make_unique<GlobalValue>(gvarName, value, Type::getType(PI->getElementType())));
+        globalVars.at(globalVars.size() - 1)->getType()->isStatic = isPrivate;
+        globalRefs[&gvar] = std::make_unique<RefExpr>(globalVars.at(globalVars.size() - 1).get());
     }
 }
 
@@ -133,25 +138,33 @@ std::string Program::getStructVarName() {
     return varName;
 }
 
-std::string Program::getGvarName() {
-    std::string varName = "&gvar";
+/*std::string Program::getGvarName() {
+    std::string varName = "gvar";
     varName += std::to_string(gvarCount);
     structVarCount++;
 
     return varName;
-}
+}*/
 
 std::string Program::getValue(const llvm::Constant* val) const {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(val->getType())) {
-        return "&" + val->getName().str();
+        if (llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val->getOperand(0))) {
+            std::string replacedName = GV->getName().str();
+            std::replace(replacedName.begin(), replacedName.end(), '.', '_');
+            return replacedName;
+        } else {
+            return "&" + val->getName().str();
+        }
     }
 
     if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
         return std::to_string(CI->getSExtValue());
     }
+
     if (llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         return std::to_string(CFP->getValueAPF().convertToFloat());
     }
+
     if (llvm::ConstantDataArray* CDA = llvm::dyn_cast<llvm::ConstantDataArray>(val)) {
         std::string value = "{";
         bool first = true;
@@ -168,12 +181,27 @@ std::string Program::getValue(const llvm::Constant* val) const {
         return value + "}";
     }
 
+    if (llvm::ConstantStruct* CS = llvm::dyn_cast<llvm::ConstantStruct>(val)) {
+        std::string value = "{";
+        bool first = true;
+        for (unsigned i = 0; i < CS->getNumOperands(); i++) {
+            if (!first) {
+                value += ", ";
+            }
+            first = false;
+
+            value += getValue(val->getOperand(i));
+        }
+
+        return value + "}";
+    }
+
     return "";
 }
 
 void Program::unsetAllInit() {
-    for (const llvm::GlobalVariable& gvar : module->globals()) {
-        globalVars[&gvar]->init = false;
+    for (auto& gvar : globalVars) {
+        gvar->init = false;
     }
 
     for (auto& strct : structs) {
@@ -188,32 +216,51 @@ void Program::print() {
         llvm::outs() << "#include <stdarg.h>\n\n";
     }
 
-    for (const auto& func : declarations) {
-        func->print();
-    }
-
-    for (auto& strct : structs) {
-        //print declarations first
-        llvm::outs() << "struct " << strct->name << ";\n";
-    }
-    llvm::outs() << "\n";
-    for (auto& strct : structs) {
-        if (!strct->isPrinted) {
-            printStruct(strct.get());
+    if (!declarations.empty()) {
+        llvm::outs() << "\/\/Function declarations\n";
+        for (const auto& func : declarations) {
+            func->print();
         }
-    }
-
-    for (const auto& global : module->globals()) {
-        globalVars[&global]->print();
-        globalVars[&global]->init = true;
         llvm::outs() << "\n";
     }
-    llvm::outs() << "\n";
 
-    for (const auto& func : functions) {
-        func->print();
+    if (!structs.empty()) {
+        llvm::outs() << "\/\/Struct declarations\n";
+        for (auto& strct : structs) {
+            llvm::outs() << "struct " << strct->name << ";\n";
+        }
+        llvm::outs() << "\n";
+        llvm::outs() << "\/\/Struct definitions\n";
+        for (auto& strct : structs) {
+            if (!strct->isPrinted) {
+                printStruct(strct.get());
+            }
+        }
+        llvm::outs() << "\n";
     }
 
+    if (!globalVars.empty()) {
+        llvm::outs() << "\/\/Global variable declarations\n";
+        for (auto& gvar : globalVars) {
+            llvm::outs() << gvar->declToString();
+            llvm::outs() << "\n";
+        }
+        llvm::outs() << "\n";
+        llvm::outs() << "\/\/Global variable definitions\n";
+        for (auto& gvar : globalVars) {
+            llvm::outs() << gvar->toString();
+            gvar->init = true;
+            llvm::outs() << "\n";
+        }
+        llvm::outs() << "\n";
+    }
+
+    if (!functions.empty()) {
+        llvm::outs() << "\/\/Functions\n";
+        for (const auto& func : functions) {
+            func->print();
+        }
+    }
     llvm::outs().flush();
 }
 
@@ -287,28 +334,46 @@ void Program::saveFile(const std::string& fileName) {
         file << "#include <stdarg.h>\n\n";
     }
 
-    for (const auto& func : declarations) {
-        func->saveFile(file);
-    }
-
-    for (auto& strct : structs) {
-        //save declarations first
-        file << "struct " << strct->name << ";\n";
-    }
-    file << "\n";
-    for (auto& strct : structs) {
-        if (!strct->isPrinted) {
-            saveStruct(strct.get(), file);
+    if (!declarations.empty()) {
+        file << "\/\/Function declarations\n";
+        for (const auto& func : declarations) {
+            func->saveFile(file);
         }
-    }
-
-    for (const auto& global : module->globals()) {
-        file << globalVars[&global]->toString();
-        globalVars[&global]->init = true;
         file << "\n";
     }
-    file << "\n";
 
+    if (!structs.empty()) {
+        file << "\/\/Struct declarations\n";
+        for (auto& strct : structs) {
+            file << "struct " << strct->name << ";\n";
+        }
+        file << "\n";
+        file << "\/\/Struct definitions\n";
+        for (auto& strct : structs) {
+            if (!strct->isPrinted) {
+                saveStruct(strct.get(), file);
+            }
+        }
+        file << "\n";
+    }
+
+    if (!globalVars.empty()) {
+        file << "\/\/Global variable declarations\n";
+        for (auto& gvar : globalVars) {
+            file << gvar->declToString();
+            file << "\n";
+        }
+        file << "\n";
+        file << "\/\/Global variable definitions\n";
+        for (auto& gvar : globalVars) {
+            file << gvar->toString();
+            gvar->init = true;
+            file << "\n";
+        }
+        file << "\n";
+    }
+
+    file << "\/\/Functions\n";
     for (const auto& func : functions) {
         func->saveFile(file);
     }
@@ -328,9 +393,9 @@ Struct* Program::getStruct(const std::string& name) const {
     return nullptr;
 }
 
-GlobalValue* Program::getGlobalVar(llvm::Value* val) const {
+RefExpr* Program::getGlobalVar(llvm::Value* val) const {
     llvm::GlobalVariable* GV = llvm::cast<llvm::GlobalVariable>(val);
-    return globalVars[GV].get();
+    return globalRefs[GV].get();
 }
 
 void Program::addDeclaration(llvm::Function* func) {

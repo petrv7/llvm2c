@@ -108,11 +108,11 @@ public:
     Struct* getStruct(const std::string& name) const;
 
     /**
-     * @brief getGlobalVar Returns corresponding GlobalValue expression.
+     * @brief getGlobalVar Returns corresponding refference to GlobalValue expression.
      * @param val llvm global variable
-     * @return GlobalValue expression
+     * @return RefExpr expression
      */
-    GlobalValue* getGlobalVar(llvm::Value* val) const;
+    RefExpr* getGlobalVar(llvm::Value* val) const;
 
     /**
      * @brief addDeclaration Adds new declaration of given function.
