@@ -86,7 +86,7 @@ void Program::parseStructs() {
 void Program::parseFunctions() {
     for(const llvm::Function& func : module->functions()) {
         if (func.hasName()) {
-            if (func.isDeclaration() || llvm::Function::isInternalLinkage(func.getLinkage())) { //???
+            if (func.isDeclaration() /*|| llvm::Function::isInternalLinkage(func.getLinkage())*/) {
                 if (func.getName().str().substr(0, 8) != "llvm.dbg") {
                     declarations.push_back(std::make_unique<Func>(&func, this, true));
                 }
