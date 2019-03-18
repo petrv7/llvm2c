@@ -45,20 +45,21 @@ public:
 };
 
 class FunctionType : public Type {
-public:
+private:
     std::unique_ptr<Type> retType;
     std::vector<std::unique_ptr<Type>> params;
 
+public:
     FunctionType(std::unique_ptr<Type>);
     FunctionType(const FunctionType&);
-
-    void addParam(std::unique_ptr<Type>);
-    void printParams() const;
-    std::string paramsToString() const;
 
     std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
+
+    void addParam(std::unique_ptr<Type>);
+    void printParams() const;
+    std::string paramsToString() const;
 };
 
 class StructType : public Type {
@@ -75,8 +76,8 @@ public:
 
 class ArrayType : public Type {
 public:
-    unsigned int size;
     std::unique_ptr<Type> type;
+    unsigned int size;
 
     bool isStructArray;
     std::string structName;
@@ -84,12 +85,12 @@ public:
     ArrayType(std::unique_ptr<Type>, unsigned int);
     ArrayType(const ArrayType&);
 
-    void printSize() const;
-    std::string sizeToString() const;
-
     std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
+
+    void printSize() const;
+    std::string sizeToString() const;
 };
 
 class VoidType : public Type {
@@ -102,15 +103,16 @@ public:
 class PointerType : public Type {
 public:
     std::unique_ptr<Type> type;
+    unsigned levels;
+
+    bool isArrayPointer;
+    unsigned int size;
+
+    bool isStructPointer;
+    std::string structName;
 
     bool isFuncPointer;
-    bool isArrayPointer;
-    bool isStructPointer;
-
-    std::string structName;
-    unsigned levels;
     std::string params;
-    unsigned int size;
 
     PointerType(std::unique_ptr<Type>);
     PointerType(const PointerType& other);
@@ -121,8 +123,10 @@ public:
 };
 
 class IntegerType : public Type {
-public:
+private:
     std::string name;
+
+public:
     bool unsignedType;
 
     IntegerType(const std::string&, bool);
@@ -162,9 +166,10 @@ public:
 };
 
 class FloatingPointType : public Type {
-public:
+private:
     std::string name;
 
+public:
     FloatingPointType(const std::string&);
     FloatingPointType(const FloatingPointType&);
 

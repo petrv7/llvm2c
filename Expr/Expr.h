@@ -7,7 +7,7 @@
 
 #include "llvm/Support/raw_ostream.h"
 
-#include "../Type.h"
+#include "../Type/Type.h"
 
 class Expr {
 public:
@@ -19,9 +19,10 @@ public:
 };
 
 class ExprBase : public Expr {
-public:
+private:
     std::unique_ptr<Type> type;
 
+public:
     Type* getType() override {
         return type.get();
     }
@@ -39,19 +40,28 @@ public:
     bool isPrinted; //used for printing structs in the right order
 
     Struct(const std::string&);
+
     void print() const override;
     std::string toString() const override;
-    void addItem(std::unique_ptr<Type>, const std::string&);
+
+    /**
+     * @brief addItem Adds new struct element to the vector items.
+     * @param type Type of the element
+     * @param name Name of the element
+     */
+    void addItem(std::unique_ptr<Type> type, const std::string& name);
 };
 
 class StructElement : public ExprBase {
-public:
+private:
     Struct* strct;
     Expr* expr;
     long element;
     unsigned int move;
 
+public:
     StructElement(Struct*, Expr*, long, unsigned int move);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -62,15 +72,18 @@ public:
     bool init; //used for declaration printing
 
     Value(const std::string&, std::unique_ptr<Type>);
+
     void print() const override;
     std::string toString() const override;
 };
 
 class GlobalValue : public Value {
-public:
+private:
     std::string value;
 
+public:
     GlobalValue(const std::string&, const std::string&, std::unique_ptr<Type>);
+
     void print() const override;
     std::string toString() const override;
 
@@ -82,53 +95,63 @@ public:
 };
 
 class JumpExpr : public ExprBase {
+private:
+    std::string block;
+
 public:
     JumpExpr(const std::string&);
-    std::string block;
+
     void print() const override;
     std::string toString() const override;
 };
 
 class IfExpr : public ExprBase {
-public:
+private:
     Expr* cmp;
     std::string trueBlock;
     std::string falseBlock;
 
+public:
     IfExpr(Expr*, const std::string&, const std::string&);
     IfExpr(const std::string& trueBlock);
+
     void print() const override;
     std::string toString() const override;
 };
 
 class SwitchExpr : public ExprBase {
-public:
+private:
     Expr* cmp;
     std::string def;
     std::map<int, std::string> cases;
 
+public:
     SwitchExpr(Expr*, const std::string&, std::map<int, std::string>);
+
     void print() const override;
     std::string toString() const override;
 };
 
 class AsmExpr : public ExprBase {
-public:
+private:
     std::string inst;
 
+public:
     AsmExpr(const std::string&);
+
     void print() const override;
     std::string toString() const override;
 };
 
 class CallExpr : public ExprBase {
-public:
+private:
     std::string funcName;
     std::vector<Expr*> params;
-
     bool isFuncPointer;
 
+public:
     CallExpr(const std::string&, std::vector<Expr*>, std::unique_ptr<Type>, bool);
+
     void print() const override;
     std::string toString() const override;
 };

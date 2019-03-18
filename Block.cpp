@@ -9,7 +9,7 @@
 #include "llvm/BinaryFormat/Dwarf.h"
 
 #include "Func.h"
-#include "Type.h"
+#include "Type/Type.h"
 #include "Expr/BinaryExpr.h"
 #include "Expr/UnaryExpr.h"
 
@@ -45,15 +45,15 @@ void Block::print() {
         if (auto val = dynamic_cast<Value*>(expr)) {
             llvm::outs() << "    ";
             if (!val->init) {
-                val->type->print();
+                val->getType()->print();
                 llvm::outs() << " ";
                 expr->print();
 
-                if (auto AT = dynamic_cast<ArrayType*>(val->type.get())) {
+                if (auto AT = dynamic_cast<ArrayType*>(val->getType())) {
                     AT->printSize();
                 }
 
-                if (auto PT = dynamic_cast<PointerType*>(val->type.get())) {
+                if (auto PT = dynamic_cast<PointerType*>(val->getType())) {
                     if (PT->isFuncPointer) {
                         llvm::outs() << PT->params;
                     }
@@ -78,15 +78,15 @@ void Block::saveFile(std::ofstream& file) {
         if (auto val = dynamic_cast<Value*>(expr)) {
             file << "    ";
             if (!val->init) {
-                file << val->type->toString();
+                file << val->getType()->toString();
                 file << " ";
                 file << expr->toString();
 
-                if (auto AT = dynamic_cast<ArrayType*>(val->type.get())) {
+                if (auto AT = dynamic_cast<ArrayType*>(val->getType())) {
                     file << AT->sizeToString();
                 }
 
-                if (auto PT = dynamic_cast<PointerType*>(val->type.get())) {
+                if (auto PT = dynamic_cast<PointerType*>(val->getType())) {
                     if (PT->isFuncPointer) {
                         file << PT->params;
                     }
@@ -607,19 +607,19 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
 
         if (llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(localVar->getType())) {
             if (dtype->getTag() == llvm::dwarf::DW_TAG_const_type) {
-                variable->type->isConst = true;
+                variable->getType()->isConst = true;
             }
 
             if (isVoidType(dtype)) {
                 llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
-                variable->type = Type::getType(PT->getElementType(), true);
+                variable->setType(Type::getType(PT->getElementType(), true));
             }
         }
 
         if (llvm::DICompositeType* ctype = llvm::dyn_cast<llvm::DICompositeType>(localVar->getType())) {
             if (isVoidType(ctype)) {
                 llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
-                variable->type = Type::getType(PT->getElementType(), true);
+                variable->setType(Type::getType(PT->getElementType(), true));
             }
         }
 
@@ -630,7 +630,7 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         }
 
         if (type && type->getName().str().compare(0, 8, "unsigned") == 0) {
-            if (IntegerType* IT = dynamic_cast<IntegerType*>(variable->type.get())) {
+            if (IntegerType* IT = dynamic_cast<IntegerType*>(variable->getType())) {
                 IT->unsignedType = true;
             }
         }

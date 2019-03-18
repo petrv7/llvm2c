@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.5.2, 2019-03-16T15:23:48. -->
+<!-- Written by QtCreator 4.5.2, 2019-03-18T13:50:16. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -339,7 +339,7 @@
      <value type="int">14</value>
     </valuelist>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguation.Title">llvm2c</value>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">/home/xvitovs2/Projects/pb071/hw03/main.ll --o main.c</value>
+    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">/home/xvitovs2/Projects/pb071/hw03/main.ll --p</value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory"></value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory.default">/home/xvitovs2/Projects/build-llvm2c-Desktop-Default</value>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>

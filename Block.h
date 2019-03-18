@@ -16,48 +16,6 @@ class Func;
  */
 class Block {
 friend class Func;
-
-public:
-    std::string blockName;
-
-    /**
-     * @brief Block Constructor for Block.
-     * @param blockName Name of the block
-     * @param block llvm::BasicBlock for parsing
-     * @param func Func where the block is located
-     */
-    Block(const std::string &blockName, const llvm::BasicBlock* block, Func* func);
-
-    /**
-     * @brief parseLLVMBlock Parses instructions of the block.
-     */
-    void parseLLVMBlock();
-
-    /**
-     * @brief print Prints the translated block in the llvm::outs() stream.
-     */
-    void print();
-
-    /**
-     * @brief saveFile Saves the translated block to the given file.
-     * @param file Opened file for saving the block.
-     */
-    void saveFile(std::ofstream& file);
-
-    /**
-     * @brief isCFunc Determines wether the LLVM function has equivalent in standard C library.
-     * @param func Name of the function
-     * @return True if function is standard C library function, false otherwise
-     */
-    static bool isCFunc(const std::string& func);
-
-    /**
-     * @brief getCFunc Takes LLVM intrinsic function and returns name of the corresponding C function.
-     * @param func LLVM intrinsic function
-     * @return string containing name of the C function
-     */
-    static std::string getCFunc(const std::string& func);
-
 private:
     const llvm::BasicBlock* block;
 
@@ -188,4 +146,45 @@ private:
      * @return True if type is void, false otherwise.
      */
     bool isVoidType(llvm::DITypeRef type);
+
+public:
+    std::string blockName;
+
+    /**
+     * @brief Block Constructor for Block.
+     * @param blockName Name of the block
+     * @param block llvm::BasicBlock for parsing
+     * @param func Func where the block is located
+     */
+    Block(const std::string &blockName, const llvm::BasicBlock* block, Func* func);
+
+    /**
+     * @brief parseLLVMBlock Parses instructions of the block.
+     */
+    void parseLLVMBlock();
+
+    /**
+     * @brief print Prints the translated block in the llvm::outs() stream.
+     */
+    void print();
+
+    /**
+     * @brief saveFile Saves the translated block to the given file.
+     * @param file Opened file for saving the block.
+     */
+    void saveFile(std::ofstream& file);
+
+    /**
+     * @brief isCFunc Determines wether the LLVM function has equivalent in standard C library.
+     * @param func Name of the function
+     * @return True if function is standard C library function, false otherwise
+     */
+    static bool isCFunc(const std::string& func);
+
+    /**
+     * @brief getCFunc Takes LLVM intrinsic function and returns name of the corresponding C function.
+     * @param func LLVM intrinsic function
+     * @return string containing name of the C function
+     */
+    static std::string getCFunc(const std::string& func);
 };

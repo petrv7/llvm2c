@@ -15,6 +15,7 @@ public:
 class AddExpr : public BinaryExpr {
 public:
     AddExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -22,6 +23,7 @@ public:
 class SubExpr : public BinaryExpr {
 public:
     SubExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -29,6 +31,7 @@ public:
 class EqualsExpr : public BinaryExpr {
 public:
     EqualsExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -36,6 +39,7 @@ public:
 class MulExpr : public BinaryExpr {
 public:
     MulExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -43,6 +47,7 @@ public:
 class DivExpr : public BinaryExpr {
 public:
     DivExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -50,6 +55,7 @@ public:
 class RemExpr : public BinaryExpr {
 public:
     RemExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -57,6 +63,7 @@ public:
 class AndExpr : public BinaryExpr {
 public:
     AndExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -64,6 +71,7 @@ public:
 class OrExpr : public BinaryExpr {
 public:
     OrExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -76,10 +84,11 @@ public:
 };
 
 class CmpExpr : public BinaryExpr {
-public:
+private:
     std::string comparsion;
     bool isUnsigned;
 
+public:
     CmpExpr(Expr*, Expr*, const std::string&, bool);
     void print() const override;
     std::string toString() const override;
@@ -88,6 +97,7 @@ public:
 class AshrExpr : public BinaryExpr {
 public:
     AshrExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -95,6 +105,7 @@ public:
 class LshrExpr : public BinaryExpr {
 public:
     LshrExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
@@ -102,15 +113,18 @@ public:
 class ShlExpr : public BinaryExpr {
 public:
     ShlExpr(Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };
 
 class SelectExpr : public BinaryExpr {
-public:
+private:
     Expr* comp;
 
+public:
     SelectExpr(Expr*, Expr*, Expr*);
+
     void print() const override;
     std::string toString() const override;
 };

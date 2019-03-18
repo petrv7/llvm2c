@@ -103,7 +103,7 @@ void Value::print() const {
 
 std::string Value::toString() const {
     if (!init) {
-        if (auto PT = dynamic_cast<PointerType*>(type.get())) {
+        if (auto PT = dynamic_cast<PointerType*>(getType())) {
             std::string ret;
             if (PT->isFuncPointer || PT->isArrayPointer) {
                 ret = "(";
@@ -135,8 +135,8 @@ void GlobalValue::print() const {
 
 std::string GlobalValue::toString() const {
     if (!init) {
-        std::string ret = type->toString() + " " + valueName;
-        if (ArrayType* AT = dynamic_cast<ArrayType*>(type.get())) {
+        std::string ret = getType()->toString() + " " + valueName;
+        if (ArrayType* AT = dynamic_cast<ArrayType*>(getType())) {
             ret += AT->sizeToString();
         }
         if (!value.empty()) {
@@ -150,8 +150,8 @@ std::string GlobalValue::toString() const {
 }
 
 std::string GlobalValue::declToString() const {
-    std::string ret = type->toString() + " " + valueName;
-    if (ArrayType* AT = dynamic_cast<ArrayType*>(type.get())) {
+    std::string ret = getType()->toString() + " " + valueName;
+    if (ArrayType* AT = dynamic_cast<ArrayType*>(getType())) {
         ret += AT->sizeToString();
     }
 
@@ -263,7 +263,7 @@ std::string CallExpr::toString() const {
         first = false;
     }
 
-    if (auto VT = dynamic_cast<VoidType*>(type.get())) {
+    if (auto VT = dynamic_cast<VoidType*>(getType())) {
         return ret + ");";
     }
     return ret + ")";

@@ -4,7 +4,7 @@
 #include <llvm/IR/Metadata.h>
 #include <llvm/Support/raw_ostream.h>
 
-#include "Type.h"
+#include "Type/Type.h"
 
 #include <utility>
 #include <cstdint>
@@ -107,7 +107,7 @@ void Func::print() const {
         first = false;
 
         Value* val = static_cast<Value*>(exprMap.find(&arg)->second.get());
-        val->type->print();
+        val->getType()->print();
         llvm::outs() << " ";
         val->print();
     }
@@ -165,7 +165,7 @@ void Func::saveFile(std::ofstream& file) const {
         first = false;
 
         Value* val = static_cast<Value*>(exprMap.find(&arg)->second.get());
-        file << val->type->toString();
+        file << val->getType()->toString();
         file << " ";
         file << val->toString();
     }

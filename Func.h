@@ -75,7 +75,6 @@ private:
     std::string getVarName();
 
 public:
-
     /**
      * @brief Func Constructor for Func.
      * @param func llvm::Function for parsing

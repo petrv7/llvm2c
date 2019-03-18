@@ -201,8 +201,8 @@ std::string StructType::toString() const {
 }
 
 ArrayType::ArrayType(std::unique_ptr<Type> type, unsigned int size)
-    : size(size),
-      type(std::move(type)) {
+    : type(std::move(type)),
+      size(size) {
     isStructArray = false;
 
     if (auto AT = dynamic_cast<ArrayType*>(this->type.get())) {
