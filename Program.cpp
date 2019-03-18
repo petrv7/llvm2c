@@ -217,7 +217,7 @@ void Program::print() {
     }
 
     if (!declarations.empty()) {
-        llvm::outs() << "////Function declarations\n";
+        llvm::outs() << "//Function declarations\n";
         for (const auto& func : declarations) {
             func->print();
         }
@@ -225,12 +225,12 @@ void Program::print() {
     }
 
     if (!structs.empty()) {
-        llvm::outs() << "////Struct declarations\n";
+        llvm::outs() << "//Struct declarations\n";
         for (auto& strct : structs) {
             llvm::outs() << "struct " << strct->name << ";\n";
         }
         llvm::outs() << "\n";
-        llvm::outs() << "////Struct definitions\n";
+        llvm::outs() << "//Struct definitions\n";
         for (auto& strct : structs) {
             if (!strct->isPrinted) {
                 printStruct(strct.get());
@@ -240,13 +240,13 @@ void Program::print() {
     }
 
     if (!globalVars.empty()) {
-        llvm::outs() << "////Global variable declarations\n";
+        llvm::outs() << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
             llvm::outs() << gvar->declToString();
             llvm::outs() << "\n";
         }
         llvm::outs() << "\n";
-        llvm::outs() << "////Global variable definitions\n";
+        llvm::outs() << "//Global variable definitions\n";
         for (auto& gvar : globalVars) {
             llvm::outs() << gvar->toString();
             gvar->init = true;
@@ -256,7 +256,7 @@ void Program::print() {
     }
 
     if (!functions.empty()) {
-        llvm::outs() << "////Functions\n";
+        llvm::outs() << "//Functions\n";
         for (const auto& func : functions) {
             func->print();
         }
@@ -335,7 +335,7 @@ void Program::saveFile(const std::string& fileName) {
     }
 
     if (!declarations.empty()) {
-        file << "'////Function declarations\n";
+        file << "//Function declarations\n";
         for (const auto& func : declarations) {
             func->saveFile(file);
         }
@@ -343,12 +343,12 @@ void Program::saveFile(const std::string& fileName) {
     }
 
     if (!structs.empty()) {
-        file << "////Struct declarations\n";
+        file << "//Struct declarations\n";
         for (auto& strct : structs) {
             file << "struct " << strct->name << ";\n";
         }
         file << "\n";
-        file << "////Struct definitions\n";
+        file << "//Struct definitions\n";
         for (auto& strct : structs) {
             if (!strct->isPrinted) {
                 saveStruct(strct.get(), file);
@@ -358,13 +358,13 @@ void Program::saveFile(const std::string& fileName) {
     }
 
     if (!globalVars.empty()) {
-        file << "////Global variable declarations\n";
+        file << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
             file << gvar->declToString();
             file << "\n";
         }
         file << "\n";
-        file << "////Global variable definitions\n";
+        file << "//Global variable definitions\n";
         for (auto& gvar : globalVars) {
             file << gvar->toString();
             gvar->init = true;
@@ -373,7 +373,7 @@ void Program::saveFile(const std::string& fileName) {
         file << "\n";
     }
 
-    file << "////Functions\n";
+    file << "//Functions\n";
     for (const auto& func : functions) {
         func->saveFile(file);
     }
