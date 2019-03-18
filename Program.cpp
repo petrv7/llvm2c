@@ -86,7 +86,7 @@ void Program::parseStructs() {
 void Program::parseFunctions() {
     for(const llvm::Function& func : module->functions()) {
         if (func.hasName()) {
-            if (func.isDeclaration()) {
+            if (func.isDeclaration() || llvm::Function::isInternalLinkage(func.getLinkage())) { //???
                 if (func.getName().str().substr(0, 8) != "llvm.dbg") {
                     declarations.push_back(std::make_unique<Func>(&func, this, true));
                 }
@@ -216,14 +216,6 @@ void Program::print() {
         llvm::outs() << "#include <stdarg.h>\n\n";
     }
 
-    if (!declarations.empty()) {
-        llvm::outs() << "//Function declarations\n";
-        for (const auto& func : declarations) {
-            func->print();
-        }
-        llvm::outs() << "\n";
-    }
-
     if (!structs.empty()) {
         llvm::outs() << "//Struct declarations\n";
         for (auto& strct : structs) {
@@ -255,8 +247,16 @@ void Program::print() {
         llvm::outs() << "\n";
     }
 
+    if (!declarations.empty()) {
+        llvm::outs() << "//Function declarations\n";
+        for (const auto& func : declarations) {
+            func->print();
+        }
+        llvm::outs() << "\n";
+    }
+
     if (!functions.empty()) {
-        llvm::outs() << "//Functions\n";
+        llvm::outs() << "//Function definitions\n";
         for (const auto& func : functions) {
             func->print();
         }
@@ -334,14 +334,6 @@ void Program::saveFile(const std::string& fileName) {
         file << "#include <stdarg.h>\n\n";
     }
 
-    if (!declarations.empty()) {
-        file << "//Function declarations\n";
-        for (const auto& func : declarations) {
-            func->saveFile(file);
-        }
-        file << "\n";
-    }
-
     if (!structs.empty()) {
         file << "//Struct declarations\n";
         for (auto& strct : structs) {
@@ -373,7 +365,15 @@ void Program::saveFile(const std::string& fileName) {
         file << "\n";
     }
 
-    file << "//Functions\n";
+    if (!declarations.empty()) {
+        file << "//Function declarations\n";
+        for (const auto& func : declarations) {
+            func->saveFile(file);
+        }
+        file << "\n";
+    }
+
+    file << "//Function definitions\n";
     for (const auto& func : functions) {
         func->saveFile(file);
     }

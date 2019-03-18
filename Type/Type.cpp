@@ -46,7 +46,7 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool voidType) {
 
     if (type->isPointerTy()) {
         const auto ptr = static_cast<const llvm::PointerType*>(type);
-        return std::make_unique<PointerType>(getType(ptr->getElementType(), voidType));
+        return std::make_unique<PointerType>(getType(ptr->getPointerElementType(), voidType));
     }
 
     if (type->isStructTy()) {
