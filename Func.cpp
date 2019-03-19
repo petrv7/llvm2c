@@ -37,21 +37,15 @@ std::string Func::getBlockName(const llvm::BasicBlock* block) {
 }
 
 Expr* Func::getExpr(const llvm::Value* val) {
-    auto iter = exprMap.find(val);
-
-    if (iter != exprMap.end()) {
+    if (exprMap.find(val) != exprMap.end()) {
         return exprMap.find(val)->second.get();
     }
 
-    return nullptr;
+    return program->getGlobalVar(val);
 }
 
 void Func::createExpr(const llvm::Value* val, std::unique_ptr<Expr> expr) {
     exprMap[val] = std::move(expr);
-}
-
-void Func::createExpr(const llvm::Instruction* ins, std::unique_ptr<Expr> expr) {
-    createExpr(static_cast<const llvm::Value*>(ins), std::move(expr));
 }
 
 std::string Func::getVarName() {

@@ -118,9 +118,9 @@ public:
     /**
      * @brief getGlobalVar Returns corresponding refference to GlobalValue expression.
      * @param val llvm global variable
-     * @return RefExpr expression
+     * @return RefExpr expression or nullptr
      */
-    RefExpr* getGlobalVar(llvm::Value* val) const;
+    RefExpr* getGlobalVar(const llvm::Value* val) const;
 
     /**
      * @brief addDeclaration Adds new declaration of given function.

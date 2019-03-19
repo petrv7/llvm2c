@@ -15,7 +15,7 @@ class Func;
  * @brief The Block class represents one of the block of the LLVM function.
  */
 class Block {
-friend class Func;
+    friend class Func;
 private:
     const llvm::BasicBlock* block;
 
@@ -29,92 +29,122 @@ private:
     /**
      * @brief parseAllocaInstruction Parses alloca instruction into Value and RefExpr.
      * @param ins alloca instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseAllocaInstruction(const llvm::Instruction& ins);
+    void parseAllocaInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseLoadInstruction Parses load instruction into DerefExpr.
      * @param ins load instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseLoadInstruction(const llvm::Instruction& ins);
+    void parseLoadInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseStoreInstruction Parses store instruction into EqualsExpr.
      * @param ins store instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseStoreInstruction(const llvm::Instruction& ins);
+    void parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseBinaryInstruction Parses binary instruction into corresponding Expr (e.g. llvm::Instruction::Add into AddExpr)
      * @param ins binary instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseBinaryInstruction(const llvm::Instruction& ins);
+    void parseBinaryInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseCmpInstruction Parses cmp instruction into CmpExpr
      * @param ins cmp instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseCmpInstruction(const llvm::Instruction& ins);
+    void parseCmpInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseBrInstruction Parses br instruction into IfExpr.
      * @param ins br instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseBrInstruction(const llvm::Instruction& ins);
+    void parseBrInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseRetInstruction Parses ret instruction into RetExpr.
      * @param ins ret instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseRetInstruction(const llvm::Instruction& ins);
+    void parseRetInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseSwitchInstruction Parses switch instruction into SwitchExpr.
      * @param ins switch instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseSwitchInstruction(const llvm::Instruction& ins);
+    void parseSwitchInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseAsmInst Parses assembler instruction into AsmExpr.
      * @param ins unreachable instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseAsmInst(const llvm::Instruction& ins);
+    void parseAsmInst(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseShiftInstruction Parses shift instruction into corresponding Expr (e.g. llvm::Instruction::Shl into ShlExpr)
      * @param ins shift instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseShiftInstruction(const llvm::Instruction& ins);
+    void parseShiftInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseCallInstruction Parses call instruction into CallExpr.
      * @param ins call instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseCallInstruction(const llvm::Instruction& ins);
+    void parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseCastInstruction Parses cast instructions into CastExpr.
      * @param ins cast instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseCastInstruction(const llvm::Instruction& ins);
+    void parseCastInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseSelectInstruction Parses select instruction into SelectExpr.
      * @param ins select instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseSelectInstruction(const llvm::Instruction& ins);
+    void parseSelectInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseGepInstruction Parses getelementptr instruction into GepExpr.
      * @param ins getelementptr instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseGepInstruction(const llvm::Instruction& ins);
+    void parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief parseLLVMInstruction Calls corresponding parse method for given instruction.
      * @param ins Instruction for parsing
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
-    void parseLLVMInstruction(const llvm::Instruction& ins);
+    void parseLLVMInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
      * @brief setMetadataInfo Sets original variable name and unsigned flag for the variable type if its metadata is found.
@@ -132,13 +162,7 @@ private:
      * @brief createConstantValue Creates Value for given ConstantInt or ConstantFP and inserts it into exprMap.
      * @param val constant value
      */
-    void createConstantValue(llvm::Value* val);
-
-    /**
-     * @brief parseConstantGep Parses GetElementPtrConstantExpr.
-     * @param expr GetElementPtrConstantExpr for parsing
-     */
-    void parseConstantGep(llvm::ConstantExpr* expr);
+    void createConstantValue(const llvm::Value* val);
 
     /**
      * @brief isVoidType Parses metadata about variable type. Returns wether the type is void or not.

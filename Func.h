@@ -48,7 +48,7 @@ private:
     std::string getBlockName(const llvm::BasicBlock* block); //RENAME
 
     /**
-     * @brief getExpr Finds Expr in exprMap with key val.
+     * @brief getExpr Finds Expr in exprMap or globalRefs with key val.
      * @param val Key of the Expr
      * @return Pointer to the Expr if val is found, nullptr otherwise.
      */
@@ -60,13 +60,6 @@ private:
      * @param expr Mapped Value
      */
     void createExpr(const llvm::Value* val, std::unique_ptr<Expr> expr);
-
-    /**
-     * @brief createExpr Casts ins to const llvm::Value* and calls createExpr
-     * @param ins llvm::Instruction
-     * @param expr Mapped Value
-     */
-    void createExpr(const llvm::Instruction* ins, std::unique_ptr<Expr> expr);
 
     /**
      * @brief getVarName Creates a new name for a variable in form of string containing "var" + varCount.
