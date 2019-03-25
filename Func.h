@@ -28,7 +28,7 @@ private:
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> exprMap; // DenseMap used for mapping llvm::Value to Expr
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<Value>> valueMap; //DenseMap used in parsing alloca instruction for mapping llvm::Value to Value
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<GepExpr>> gepExprMap; //DenseMap used in parsing getelementptr instruction for mapping llvm::Value to GepExpr
-    llvm::DenseMap<const llvm::Value*, std::unique_ptr<CallExpr>> callExprMap; //DenseMap used in parsing call instruction for mapping llvm::Value to CallExpr
+    llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> callExprMap; //DenseMap used in parsing call instruction for mapping llvm::Value to CallExpr
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<EqualsExpr>> callValueMap; //DenseMap used in parsing call instruction for mapping llvm::Value to EqualsExpr
 
     unsigned varCount; //counter for assigning names of variables
@@ -48,7 +48,7 @@ private:
     std::string getBlockName(const llvm::BasicBlock* block); //RENAME
 
     /**
-     * @brief getExpr Finds Expr in exprMap or globalRefs with key val.
+     * @brief getExpr Finds Expr in exprMap or globalRefs with key val. If val is function, creates Value containing refference to the function and returns pointer to this Value.
      * @param val Key of the Expr
      * @return Pointer to the Expr if val is found, nullptr otherwise.
      */

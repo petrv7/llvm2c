@@ -232,10 +232,10 @@ ArrayType::ArrayType(std::unique_ptr<Type> type, unsigned int size)
         structName = AT->structName;
     }
 
-    if (auto PT = dynamic_cast<PointerType*>(this->type.get())) {
+    /*if (auto PT = dynamic_cast<PointerType*>(this->type.get())) {
         isStructArray = PT->isStructPointer;
         structName = PT->structName;
-    }
+    }*/
 
     if (auto ST = dynamic_cast<StructType*>(this->type.get())) {
         isStructArray = true;
