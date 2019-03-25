@@ -122,6 +122,7 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins, bool isConstExpr,
     }
 
     if (!isConstExpr) {
+        auto test = func->getExpr(ins.getOperand(0));
         func->createExpr(&ins, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
     } else {
         func->createExpr(val, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
@@ -420,6 +421,10 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
             }
         }
     } else {
+        if (llvm::InlineAsm* IA = llvm::dyn_cast<llvm::InlineAsm>(callInst->getCalledValue())) {
+            throw std::invalid_argument("Inline ASM not supported!");
+        }
+
         llvm::PointerType* PT = llvm::cast<llvm::PointerType>(callInst->getCalledValue()->getType());
         llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getElementType());
         funcName = func->getExpr(callInst->getCalledValue())->toString();

@@ -101,6 +101,10 @@ void Program::parseFunctions() {
 
 void Program::parseGlobalVars() {
     for (const llvm::GlobalVariable& gvar : module->globals()) {
+        if (const llvm::Function* F = llvm::dyn_cast<llvm::Function>(&gvar)) {
+            continue;
+        }
+
         bool isPrivate = false;
 
         /*if (gvar.hasName()) {
@@ -150,6 +154,18 @@ std::string Program::getStructVarName() {
 
 std::string Program::getValue(const llvm::Constant* val) const {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(val->getType())) {
+        if (llvm::ConstantPointerNull* CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
+            return "0";
+        }
+
+        if (llvm::FunctionType* FT = llvm::dyn_cast<llvm::FunctionType>(PT->getElementType())) {
+            return  "&" + val->getName().str();
+        }
+
+        if (llvm::StructType* ST = llvm::dyn_cast<llvm::StructType>(PT->getElementType())) {
+            return "&" + val->getName().str();
+        }
+
         if (llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val->getOperand(0))) {
             std::string replacedName = GV->getName().str();
             std::replace(replacedName.begin(), replacedName.end(), '.', '_');
@@ -387,7 +403,7 @@ void Program::saveFile(const std::string& fileName) {
 
 Struct* Program::getStruct(const std::string& name) const {
     for (const auto& strct : structs) {
-        if (strct->name == name) {
+        if (strct->name.compare(name) == 0) {
             return strct.get();
         }
     }

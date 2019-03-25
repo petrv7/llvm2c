@@ -116,6 +116,7 @@ CmpExpr::CmpExpr(Expr* l, Expr* r, const std::string& cmp, bool isUnsigned) :
     BinaryExpr(l,r) {
     comparsion = cmp;
     this->isUnsigned = isUnsigned;
+    setType(std::make_unique<IntType>(false));
 }
 
 void CmpExpr::print() const {

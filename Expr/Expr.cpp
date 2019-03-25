@@ -5,7 +5,9 @@
 
 Struct::Struct(const std::string & name)
     : name(name),
-      isPrinted(false) {}
+      isPrinted(false) {
+    setType(std::make_unique<StructType>(this->name));
+}
 
 void Struct::print() const {
     llvm::outs() << toString();

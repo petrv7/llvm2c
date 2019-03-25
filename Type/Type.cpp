@@ -14,7 +14,29 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool voidType) {
 
     if (type->isIntegerTy()) {
         const auto intType = static_cast<const llvm::IntegerType*>(type);
-        switch(intType->getBitWidth()) {
+        if (intType->getBitWidth() == 1) {
+            return std::make_unique<IntType>(false);
+        }
+
+        if (intType->getBitWidth() <= 8) {
+            if (voidType) {
+                return std::make_unique<VoidType>();
+            }
+            return std::make_unique<CharType>(false);
+        }
+
+        if (intType->getBitWidth() <= 16) {
+            return std::make_unique<ShortType>(false);
+        }
+
+        if (intType->getBitWidth() <= 32) {
+            return std::make_unique<IntType>(false);
+        }
+
+        if (intType->getBitWidth() <= 64) {
+            return std::make_unique<LongType>(false);
+        }
+        /*switch(intType->getBitWidth()) {
         case 8:
             if (voidType) {
                 return std::make_unique<VoidType>();
@@ -29,7 +51,7 @@ std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool voidType) {
             return std::make_unique<LongType>(false);
         default:
             return nullptr;
-        }
+        }*/
     }
 
     if (type->isFloatTy()) {
@@ -304,7 +326,7 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
         structName = ST->name;
     }
 
-    this->type = std::move(type);
+    this->type = type->clone();
 }
 
 PointerType::PointerType(const PointerType &other) {
