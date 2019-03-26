@@ -3,9 +3,10 @@
 
 #include "llvm/Support/raw_ostream.h"
 
-Struct::Struct(const std::string & name)
+Struct::Struct(const std::string& name, bool isUnnamed)
     : name(name),
-      isPrinted(false) {
+      isPrinted(false),
+      isUnnamed(isUnnamed) {
     setType(std::make_unique<StructType>(this->name));
 }
 
@@ -20,7 +21,12 @@ std::string Struct::toString() const {
 
     std::string ret;
 
-    ret += "struct " + name + " {\n";
+    ret += "struct";
+    if (!isUnnamed) {
+        ret += " ";
+    }
+    ret += name + " {\n";
+
     for (const auto& item : items) {
         std::string faPointer;
 
@@ -53,7 +59,12 @@ std::string Struct::toString() const {
             ret += faPointer;
         }
 
-        ret += ";\n";
+        ret += ";";
+        if (!isUnnamed) {
+            ret += "\n";
+        } else {
+            ret += " ";
+        }
     }
     ret += "};";
 

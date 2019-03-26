@@ -11,7 +11,8 @@
 #include <exception>
 #include <algorithm>
 
-Program::Program(const std::string &file) {
+Program::Program(const std::string &file)
+    : typeHandler(TypeHandler(this)) {
     fileName = file;
     unsigned idx = fileName.find_last_of("\\/");
     fileName.erase(0, idx + 1);
@@ -64,7 +65,7 @@ void Program::parseStructs() {
 
         if (name.compare("__va_list_tag") == 0) {
             hasVarArg = true;
-            auto structExpr = std::make_unique<Struct>(name);
+            auto structExpr = std::make_unique<Struct>(name, false);
             structExpr->addItem(std::make_unique<IntType>(true), "gp_offset");
             structExpr->addItem(std::make_unique<IntType>(true), "fp_offset");
             structExpr->addItem(std::make_unique<PointerType>(std::make_unique<VoidType>()), "overflow_arg_area");
@@ -73,10 +74,10 @@ void Program::parseStructs() {
             continue;
         }
 
-        auto structExpr = std::make_unique<Struct>(name);
+        auto structExpr = std::make_unique<Struct>(name, false);
 
         for (llvm::Type* type : structType->elements()) {
-            structExpr->addItem(Type::getType(type), getStructVarName());
+            structExpr->addItem(getType(type), getStructVarName());
         }
 
         structs.push_back(std::move(structExpr));
@@ -130,7 +131,7 @@ void Program::parseGlobalVars() {
         }
 
         llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
-        globalVars.push_back(std::make_unique<GlobalValue>(gvarName, value, Type::getType(PI->getElementType())));
+        globalVars.push_back(std::make_unique<GlobalValue>(gvarName, value, getType(PI->getElementType())));
         globalVars.at(globalVars.size() - 1)->getType()->isStatic = isPrivate;
         globalRefs[&gvar] = std::make_unique<RefExpr>(globalVars.at(globalVars.size() - 1).get());
     }
@@ -401,17 +402,37 @@ void Program::saveFile(const std::string& fileName) {
     llvm::outs() << "Translated program successfuly saved into " << fileName << "\n";
 }
 
-Struct* Program::getStruct(const std::string& name) const {
-    for (const auto& strct : structs) {
-        if (strct->name.compare(name) == 0) {
-            return strct.get();
+Struct* Program::getStruct(const llvm::StructType* strct) const {
+    std::string structName = strct->getName().str();
+    if (structName.substr(0, 6).compare("struct") == 0) {
+        structName.erase(0, 7);
+    } else {
+        //union
+        structName.erase(0, 6);
+    }
+
+    for (const auto& structElem : structs) {
+        if (structElem->name.compare(structName) == 0) {
+            return structElem.get();
         }
+    }
+
+    if (unnamedStructs.find(strct) != unnamedStructs.end()) {
+        return unnamedStructs[strct].get();
     }
 
     return nullptr;
 }
 
-RefExpr* Program::getGlobalVar(const llvm::Value* val) const {
+Struct* Program::getStruct(const std::string& name) const {
+    for (const auto& structElem : structs) {
+        if (structElem->name.compare(name) == 0) {
+            return structElem.get();
+        }
+    }
+}
+
+const RefExpr* Program::getGlobalVar(const llvm::Value* val) const {
     if (llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
         if (globalRefs.count(GV)) {
             return globalRefs[GV].get();
@@ -423,4 +444,22 @@ RefExpr* Program::getGlobalVar(const llvm::Value* val) const {
 
 void Program::addDeclaration(llvm::Function* func) {
     declarations.push_back(std::make_unique<Func>(func, this, true));
+}
+
+void Program::createNewUnnamedStruct(const llvm::StructType *strct) {
+    if (unnamedStructs.find(strct) != unnamedStructs.end()) {
+        return;
+    }
+
+    auto structExpr = std::make_unique<Struct>("", true);
+
+    for (llvm::Type* type : strct->elements()) {
+        structExpr->addItem(getType(type), getStructVarName());
+    }
+
+    unnamedStructs[strct] = std::move(structExpr);
+}
+
+std::unique_ptr<Type> Program::getType(const llvm::Type* type, bool voidType) {
+    return typeHandler.getType(type, voidType);
 }

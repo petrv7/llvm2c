@@ -67,6 +67,12 @@ private:
      */
     std::string getVarName();
 
+    /**
+     * @brief createNewUnnamedStruct
+     * @param strct
+     */
+    void createNewUnnamedStruct(const llvm::StructType* strct);
+
 public:
     /**
      * @brief Func Constructor for Func.
@@ -93,11 +99,11 @@ public:
     void saveFile(std::ofstream& file) const;
 
     /**
-     * @brief getStruct Returns Struct expression with the given name.
-     * @param name Name of the struct
-     * @return Struct expression if the struct is found, nullptr otherwise
+     * @brief getStruct Returns pointer to the Struct corresponding to the given LLVM StructType.
+     * @param strct LLVM StructType
+     * @return Pointer to Struct expression if the struct is found, nullptr otherwise
      */
-    Struct* getStruct(const std::string& name) const;
+    Struct* getStruct(const llvm::StructType* strct) const;
 
     /**
      * @brief getGlobalVar Returns corresponding refference to GlobalValue expression.
@@ -116,4 +122,11 @@ public:
      * @brief stackIgnored Indicated that intrinsic stacksave/stackrestore was ignored.
      */
     void stackIgnored();
+
+    /**
+     * @brief getType Transforms llvm::Type into corresponding Type object
+     * @param type llvm::Type for transformation
+     * @return unique_ptr to corresponding Type object
+     */
+    std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
 };

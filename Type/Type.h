@@ -27,21 +27,6 @@ public:
 
         return ret;
     }
-
-    /**
-     * @brief getType Transforms llvm::Type into corresponding Type object
-     * @param type llvm::Type for transformation
-     * @return unique_ptr to corresponding Type object
-     */
-    static std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
-
-    /**
-     * @brief getBinaryType Returns type that would be result of a binary operation
-     * @param left left argument of the operation
-     * @param right right argument of the operation
-     * @return unique_ptr to Type object
-     */
-    static std::unique_ptr<Type> getBinaryType(const Type* left, const Type* right);
 };
 
 class FunctionType : public Type {
@@ -68,6 +53,18 @@ public:
 
     StructType(const std::string&);
     StructType(const StructType&);
+
+    std::unique_ptr<Type> clone() const override;
+    void print() const override;
+    std::string toString() const override;
+};
+
+class UnnamedStructType : public Type {
+public:
+    std::string structString;
+
+    UnnamedStructType(const std::string&);
+    UnnamedStructType(const UnnamedStructType&);
 
     std::unique_ptr<Type> clone() const override;
     void print() const override;
@@ -161,6 +158,13 @@ public:
 class LongType : public IntegerType {
 public:
     LongType(bool);
+
+    std::unique_ptr<Type> clone() const override;
+};
+
+class UInt128 : public IntegerType {
+public:
+    UInt128();
 
     std::unique_ptr<Type> clone() const override;
 };

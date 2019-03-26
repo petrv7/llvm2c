@@ -8,21 +8,26 @@
 
 #include "Func.h"
 #include "Expr/Expr.h"
+#include "Type/TypeHandler.h"
 
 /**
  * @brief The Program class represents the whole parsed LLVM program.
  */
 class Program {
+friend class TypeHandler;
 private:
     llvm::LLVMContext context;
     llvm::SMDiagnostic error;
     std::unique_ptr<llvm::Module> module;
+
+    TypeHandler typeHandler;
 
     std::vector<std::unique_ptr<Func>> functions; // vector of parsed functions
     std::vector<std::unique_ptr<Func>> declarations; // vector of function declarations
     std::vector<std::unique_ptr<Struct>> structs; // vector of parsed structs
     std::vector<std::unique_ptr<GlobalValue>> globalVars; // vector of parsed global variables
     llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<RefExpr>> globalRefs; //map containing references to global variables
+    llvm::DenseMap<const llvm::StructType*, std::unique_ptr<Struct>> unnamedStructs; // map containing unnamed structs
 
     unsigned structVarCount;
     unsigned gvarCount;
@@ -109,9 +114,16 @@ public:
     void saveFile(const std::string& fileName);
 
     /**
-     * @brief getStruct Returns Struct expression with the given name.
+     * @brief getStruct Returns pointer to the Struct corresponding to the given LLVM StructType.
+     * @param strct LLVM StructType
+     * @return Pointer to Struct expression if the struct is found, nullptr otherwise
+     */
+    Struct* getStruct(const llvm::StructType* strct) const;
+
+    /**
+     * @brief getStruct Returns pointer to the Struct with the given name.
      * @param name Name of the struct
-     * @return Struct expression if the struct is found, nullptr otherwise
+     * @return Pointer to Struct expression if the struct is found, nullptr otherwise
      */
     Struct* getStruct(const std::string& name) const;
 
@@ -120,11 +132,24 @@ public:
      * @param val llvm global variable
      * @return RefExpr expression or nullptr
      */
-    RefExpr* getGlobalVar(const llvm::Value* val) const;
+    const RefExpr* getGlobalVar(const llvm::Value* val) const;
 
     /**
      * @brief addDeclaration Adds new declaration of given function.
      * @param func LLVM Function
      */
     void addDeclaration(llvm::Function* func);
+
+    /**
+     * @brief createNewUnnamedStruct Adds new unnamed struct to the unnamedStructs map.
+     * @param strct Unnamed struct
+     */
+    void createNewUnnamedStruct(const llvm::StructType* strct);
+
+    /**
+     * @brief getType Transforms llvm::Type into corresponding Type object
+     * @param type llvm::Type for transformation
+     * @return unique_ptr to corresponding Type object
+     */
+    std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
 };

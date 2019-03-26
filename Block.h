@@ -139,6 +139,14 @@ private:
     void parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
+     * @brief parseExtractValueInstruction Parses extractvalue instruction into GepExpr. ?????????????????????????????????????
+     * @param ins extractvalue instruction
+     * @param isConstExpr indicated that ConstantExpr is being parsed
+     * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
+     */
+    void parseExtractValueInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
+
+    /**
      * @brief parseLLVMInstruction Calls corresponding parse method for given instruction.
      * @param ins Instruction for parsing
      * @param isConstExpr indicated that ConstantExpr is being parsed

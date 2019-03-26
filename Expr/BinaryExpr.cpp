@@ -2,6 +2,8 @@
 
 #include "llvm/Support/raw_ostream.h"
 
+#include "../Type/TypeHandler.h"
+
 /*
  * BinaryExpr classes
  */
@@ -10,7 +12,7 @@ BinaryExpr::BinaryExpr(Expr* l, Expr* r) {
     left = l;
     right = r;
 
-    setType(Type::getBinaryType(left->getType(), right->getType()));
+    setType(TypeHandler::getBinaryType(left->getType(), right->getType()));
 }
 
 AddExpr::AddExpr(Expr* l, Expr* r) :

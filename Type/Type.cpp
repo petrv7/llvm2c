@@ -3,157 +3,6 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/Support/raw_ostream.h"
 
-std::unique_ptr<Type> Type::getType(const llvm::Type* type, bool voidType) {
-    if (type->isArrayTy()) {
-        return std::make_unique<ArrayType>(getType(type->getArrayElementType(), voidType), type->getArrayNumElements());
-    }
-
-    if (type->isVoidTy()) {
-        return std::make_unique<VoidType>();
-    }
-
-    if (type->isIntegerTy()) {
-        const auto intType = static_cast<const llvm::IntegerType*>(type);
-        if (intType->getBitWidth() == 1) {
-            return std::make_unique<IntType>(false);
-        }
-
-        if (intType->getBitWidth() <= 8) {
-            if (voidType) {
-                return std::make_unique<VoidType>();
-            }
-            return std::make_unique<CharType>(false);
-        }
-
-        if (intType->getBitWidth() <= 16) {
-            return std::make_unique<ShortType>(false);
-        }
-
-        if (intType->getBitWidth() <= 32) {
-            return std::make_unique<IntType>(false);
-        }
-
-        if (intType->getBitWidth() <= 64) {
-            return std::make_unique<LongType>(false);
-        }
-        /*switch(intType->getBitWidth()) {
-        case 8:
-            if (voidType) {
-                return std::make_unique<VoidType>();
-            }
-            return std::make_unique<CharType>(false);
-        case 16:
-            return std::make_unique<ShortType>(false);
-        case 1:
-        case 32:
-            return std::make_unique<IntType>(false);
-        case 64:
-            return std::make_unique<LongType>(false);
-        default:
-            return nullptr;
-        }*/
-    }
-
-    if (type->isFloatTy()) {
-        return std::make_unique<FloatType>();
-    }
-
-    if (type->isDoubleTy()) {
-        return std::make_unique<DoubleType>();
-    }
-
-    if (type->isX86_FP80Ty()) {
-        return std::make_unique<LongDoubleType>();
-    }
-
-    if (type->isPointerTy()) {
-        const auto ptr = static_cast<const llvm::PointerType*>(type);
-        return std::make_unique<PointerType>(getType(ptr->getPointerElementType(), voidType));
-    }
-
-    if (type->isStructTy()) {
-        const llvm::StructType* structType = llvm::dyn_cast<const llvm::StructType>(type);
-        if (structType->getName().str().compare("struct.__va_list_tag") == 0) {
-            return std::make_unique<StructType>("__va_list_tag");
-        }
-        if (structType->getName().str().substr(0, 6).compare("struct") == 0) {
-            return std::make_unique<StructType>(structType->getName().str().erase(0, 7));
-        } else {
-            //union
-            return std::make_unique<StructType>(structType->getName().str().erase(0, 6));
-        }
-    }
-
-    if (type->isFunctionTy()) {
-        const llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(type);
-        auto functionType = std::make_unique<FunctionType>(getType(FT->getReturnType(), voidType));
-        if (FT->getNumParams() == 0) {
-            functionType->addParam(std::make_unique<VoidType>());
-        } else {
-            for (unsigned i = 0; i < FT->getNumParams(); i++) {
-                functionType->addParam(getType(FT->getParamType(0), voidType));
-            }
-        }
-
-        return functionType;
-    }
-
-    return nullptr;
-}
-
-std::unique_ptr<Type> Type::getBinaryType(const Type* left, const Type* right) {
-    if (const auto LDT = dynamic_cast<const LongDoubleType*>(left)) {
-        return std::make_unique<LongDoubleType>();
-    }
-    if (const auto LDT = dynamic_cast<const LongDoubleType*>(right)) {
-        return std::make_unique<LongDoubleType>();
-    }
-
-    if (const auto DT = dynamic_cast<const DoubleType*>(left)) {
-        return std::make_unique<DoubleType>();
-    }
-    if (const auto DT = dynamic_cast<const DoubleType*>(right)) {
-        return std::make_unique<DoubleType>();
-    }
-
-    if (const auto FT = dynamic_cast<const FloatType*>(left)) {
-        return std::make_unique<FloatType>();
-    }
-    if (const auto FT = dynamic_cast<const FloatType*>(right)) {
-        return std::make_unique<FloatType>();
-    }
-
-    if (const auto LT = dynamic_cast<const LongType*>(left)) {
-        return std::make_unique<LongType>(LT->unsignedType);
-    }
-    if (const auto LT = dynamic_cast<const LongType*>(right)) {
-        return std::make_unique<LongType>(LT->unsignedType);
-    }
-
-    if (const auto IT = dynamic_cast<const IntType*>(left)) {
-        return std::make_unique<IntType>(IT->unsignedType);
-    }
-    if (const auto IT = dynamic_cast<const IntType*>(right)) {
-        return std::make_unique<IntType>(IT->unsignedType);
-    }
-
-    if (const auto ST = dynamic_cast<const ShortType*>(left)) {
-        return std::make_unique<ShortType>(ST->unsignedType);
-    }
-    if (const auto ST = dynamic_cast<const ShortType*>(right)) {
-        return std::make_unique<ShortType>(ST->unsignedType);
-    }
-
-    if (const auto CT = dynamic_cast<const CharType*>(left)) {
-        return std::make_unique<CharType>(CT->unsignedType);
-    }
-    if (const auto CT = dynamic_cast<const CharType*>(right)) {
-        return std::make_unique<CharType>(CT->unsignedType);
-    }
-
-    return nullptr;
-}
-
 FunctionType::FunctionType(std::unique_ptr<Type> retType)
     : retType(std::move(retType)) { }
 
@@ -220,6 +69,25 @@ std::string StructType::toString() const {
     std::string ret = getConstStaticString();
 
     return ret + "struct " + name;
+}
+
+UnnamedStructType::UnnamedStructType(const std::string& structString)
+    : structString(structString) { }
+
+UnnamedStructType::UnnamedStructType(const UnnamedStructType& other) {
+    structString = other.structString;
+}
+
+std::unique_ptr<Type> UnnamedStructType::clone() const {
+    return std::make_unique<UnnamedStructType>(structString);
+}
+
+void UnnamedStructType::print() const {
+    llvm::outs() << toString();
+}
+
+std::string UnnamedStructType::toString() const {
+    return structString;
 }
 
 ArrayType::ArrayType(std::unique_ptr<Type> type, unsigned int size)
@@ -410,6 +278,13 @@ LongType::LongType(bool unsignedType)
 
 std::unique_ptr<Type> LongType::clone() const  {
     return std::make_unique<LongType>(*this);
+}
+
+UInt128::UInt128()
+    : IntegerType("__uint128_t", false) { }
+
+std::unique_ptr<Type> UInt128::clone() const {
+    return std::make_unique<UInt128>();
 }
 
 FloatingPointType::FloatingPointType(const std::string& name)

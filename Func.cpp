@@ -17,7 +17,7 @@ Func::Func(llvm::Function* func, Program* program, bool isDeclaration) {
     varCount = 0;
     blockCount = 0;
     this->isDeclaration = isDeclaration;
-    returnType = Type::getType(func->getReturnType());
+    returnType = getType(func->getReturnType());
 
     parseFunction();
 }
@@ -39,7 +39,7 @@ std::string Func::getBlockName(const llvm::BasicBlock* block) {
 Expr* Func::getExpr(const llvm::Value* val) {
     if (exprMap.find(val)== exprMap.end()) {
         if (llvm::Function* F = llvm::dyn_cast<llvm::Function>(val)) {
-            createExpr(val, std::make_unique<Value>("&" + F->getName().str(), Type::getType(F->getReturnType())));
+            createExpr(val, std::make_unique<Value>("&" + F->getName().str(), getType(F->getReturnType())));
             return exprMap.find(val)->second.get();
         }
     } else {
@@ -66,7 +66,7 @@ void Func::parseFunction() {
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
-        exprMap[&arg] = std::make_unique<Value>(varName, Type::getType(arg.getType()));
+        exprMap[&arg] = std::make_unique<Value>(varName, getType(arg.getType()));
         varCount++;
         larg = &arg;
     }
@@ -198,8 +198,8 @@ void Func::saveFile(std::ofstream& file) const {
     file << "}\n\n";
 }
 
-Struct* Func::getStruct(const std::string& name) const {
-    return program->getStruct(name);
+Struct* Func::getStruct(const llvm::StructType* strct) const {
+    return program->getStruct(strct);
 }
 
 RefExpr* Func::getGlobalVar(llvm::Value* val) const {
@@ -212,4 +212,12 @@ void Func::addDeclaration(llvm::Function* func) {
 
 void Func::stackIgnored() {
     program->stackIgnored = true;
+}
+
+void Func::createNewUnnamedStruct(const llvm::StructType* strct) {
+    program->createNewUnnamedStruct(strct);
+}
+
+std::unique_ptr<Type> Func::getType(const llvm::Type* type, bool voidType) {
+    return program->getType(type, voidType);
 }
