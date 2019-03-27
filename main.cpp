@@ -13,7 +13,8 @@ int main(int argc, char** argv) {
     desc.add_options()
             ("h", "Help message")
             ("p", "Print translated program")
-            ("o", value<std::string>(), "Output translated program into file specified by arg");
+            ("o", value<std::string>(), "Output translated program into file specified by arg")
+            ("debug", "Prints only information about translation");
     variables_map vars;
     try {
         store(parse_command_line(argc, argv, desc), vars);
@@ -24,7 +25,7 @@ int main(int argc, char** argv) {
             return 0;
         }
 
-        if (!vars.count("o") && !vars.count("p")) {
+        if (!vars.count("o") && !vars.count("p") && !vars.count("debug")) {
             std::cout << "Output method not specified!\n\n";
             std::cout << desc << "\n";
             return 0;

@@ -25,12 +25,16 @@ std::string Struct::toString() const {
     if (!isUnnamed) {
         ret += " ";
     }
-    ret += name + " {\n";
-
+    ret += name + " {";
+    if (!isUnnamed) {
+        ret += "\n";
+    }
     for (const auto& item : items) {
         std::string faPointer;
 
-        ret += "    ";
+        if (!isUnnamed) {
+            ret += "    ";
+        }
         ret += item.first->toString();
 
         if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
@@ -66,7 +70,11 @@ std::string Struct::toString() const {
             ret += " ";
         }
     }
-    ret += "};";
+
+    ret += "}";
+    if (!isUnnamed) {
+        ret += ";";
+    }
 
     return ret;
 }

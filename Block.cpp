@@ -233,11 +233,6 @@ void Block::parseCmpInstruction(const llvm::Instruction& ins, bool isConstExpr, 
     }
     Expr* val1 = func->getExpr(ins.getOperand(1));
 
-    if (!val1) {
-        llvm::outs() << ins << "\n";
-        llvm::outs().flush();
-    }
-
     auto cmpInst = llvm::cast<const llvm::CmpInst>(&ins);
     const llvm::Value* value = isConstExpr ? val : &ins;
 
@@ -334,7 +329,12 @@ void Block::parseRetInstruction(const llvm::Instruction& ins, bool isConstExpr, 
 
 void Block::parseSwitchInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
     std::map<int, std::string> cases;
+
+    if (!func->getExpr(ins.getOperand(0))) {
+        createConstantValue(ins.getOperand(0));
+    }
     Expr* cmp = func->getExpr(ins.getOperand(0));
+
     std::string def = func->getBlockName(llvm::cast<llvm::BasicBlock>(ins.getOperand(1)));
     const llvm::SwitchInst* switchIns = llvm::cast<const llvm::SwitchInst>(&ins);
 
@@ -458,6 +458,10 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
             return;
         }
 
+        llvm::outs() << ins << "\n";
+        llvm::outs() << *callInst->getCalledValue() << "\n";
+        llvm::outs().flush();
+
         funcName = func->getExpr(callInst->getCalledValue())->toString();
     }
 
@@ -526,11 +530,6 @@ void Block::parseSelectInstruction(const llvm::Instruction& ins, bool isConstExp
         createConstantValue(ins.getOperand(2));
     }
     Expr* val1 = func->getExpr(ins.getOperand(2));
-
-    if (!val0 || !val1) {
-        llvm::outs() << ins << "\n";
-        llvm::outs().flush();
-    }
 
     if (!isConstExpr) {
         func->createExpr(&ins, std::make_unique<SelectExpr>(cond, val0, val1));

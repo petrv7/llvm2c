@@ -178,7 +178,9 @@ std::string ShlExpr::toString() const {
 
 SelectExpr::SelectExpr(Expr* comp, Expr* l, Expr* r) :
     BinaryExpr(l, r),
-    comp(comp) { }
+    comp(comp) {
+    setType(l->getType()->clone());
+}
 
 void SelectExpr::print() const {
     llvm::outs() << toString();
