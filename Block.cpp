@@ -510,9 +510,6 @@ void Block::parseCastInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
     const llvm::CastInst* CI = llvm::cast<const llvm::CastInst>(&ins);
 
-    llvm::outs() << *CI->getDestTy() << "\n";
-    llvm::outs().flush();
-
     if (!isConstExpr) {
         func->createExpr(&ins, std::make_unique<CastExpr>(expr, func->getType(CI->getDestTy())));
     } else {

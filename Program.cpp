@@ -52,8 +52,8 @@ void Program::parseProgram() {
 
 void Program::parseStructs() {
     for (llvm::StructType* structType : module->getIdentifiedStructTypes()) {
-        std::string name = "";
-        if (structType->hasName()) {
+        std::string name = structType->getName().str();
+        /*if (structType->hasName()) {
             name = structType->getName().str();
             if (name.substr(0, 6).compare("struct") == 0) {
                 name.erase(0, 7);
@@ -61,7 +61,8 @@ void Program::parseStructs() {
                 //union
                 name.erase(0, 6);
             }
-        }
+        }*/
+        std::replace(name.begin(),name.end(), '.', '_');
 
         if (name.compare("__va_list_tag") == 0) {
             hasVarArg = true;
@@ -106,22 +107,7 @@ void Program::parseGlobalVars() {
             continue;
         }
 
-        bool isPrivate = false;
-
-        /*if (gvar.hasName()) {
-            if (gvar.hasPrivateLinkage()) {
-                isPrivate = true;
-            }
-            std::string replacedName = gvar.getName().str();
-            std::replace(replacedName.begin(), replacedName.end(), '.', '_');
-            gvarName = replacedName;
-        } else {
-            gvarName = getGvarName();
-        }*/
-
-        if (gvar.hasPrivateLinkage()) {
-            isPrivate = true;
-        }
+        bool isPrivate = gvar.hasPrivateLinkage();
         std::string gvarName = gvar.getName().str();
         std::replace(gvarName.begin(), gvarName.end(), '.', '_');
 
@@ -144,14 +130,6 @@ std::string Program::getStructVarName() {
 
     return varName;
 }
-
-/*std::string Program::getGvarName() {
-    std::string varName = "gvar";
-    varName += std::to_string(gvarCount);
-    structVarCount++;
-
-    return varName;
-}*/
 
 std::string Program::getValue(const llvm::Constant* val) const {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(val->getType())) {
@@ -404,12 +382,13 @@ void Program::saveFile(const std::string& fileName) {
 
 Struct* Program::getStruct(const llvm::StructType* strct) const {
     std::string structName = strct->getName().str();
-    if (structName.substr(0, 6).compare("struct") == 0) {
+    /*if (structName.substr(0, 6).compare("struct") == 0) {
         structName.erase(0, 7);
     } else {
         //union
         structName.erase(0, 6);
-    }
+    }*/
+    std::replace(structName.begin(), structName.end(), '.', '_');
 
     for (const auto& structElem : structs) {
         if (structElem->name.compare(structName) == 0) {

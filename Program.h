@@ -41,12 +41,6 @@ private:
     std::string getStructVarName();
 
     /**
-     * @brief getGvarName Creates a new name for a global variable
-     * @return String containing a new variable name.
-     */
-    std::string getGvarName();
-
-    /**
      * @brief getValue Return string containing value used for global variable initialization.
      * @param val llvm Constant used for initialization
      * @return Init value
