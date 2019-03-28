@@ -52,21 +52,19 @@ void Program::parseProgram() {
 
 void Program::parseStructs() {
     for (llvm::StructType* structType : module->getIdentifiedStructTypes()) {
-        std::string name = structType->getName().str();
-        /*if (structType->hasName()) {
-            name = structType->getName().str();
-            if (name.substr(0, 6).compare("struct") == 0) {
-                name.erase(0, 7);
-            } else {
-                //union
-                name.erase(0, 6);
-            }
-        }*/
-        std::replace(name.begin(),name.end(), '.', '_');
+        std::string structName = structType->getName().str();
+        if (structName.substr(0, 6).compare("struct") == 0) {
+            structName.erase(0, 7);
+            structName = "s_" + structName;
+        } else {
+            //union
+            structName.erase(0, 6);
+            structName = "u_" + structName;
+        }
 
-        if (name.compare("__va_list_tag") == 0) {
+        if (structName.compare("s___va_list_tag") == 0) {
             hasVarArg = true;
-            auto structExpr = std::make_unique<Struct>(name, false);
+            auto structExpr = std::make_unique<Struct>("__va_list_tag", false);
             structExpr->addItem(std::make_unique<IntType>(true), "gp_offset");
             structExpr->addItem(std::make_unique<IntType>(true), "fp_offset");
             structExpr->addItem(std::make_unique<PointerType>(std::make_unique<VoidType>()), "overflow_arg_area");
@@ -75,7 +73,7 @@ void Program::parseStructs() {
             continue;
         }
 
-        auto structExpr = std::make_unique<Struct>(name, false);
+        auto structExpr = std::make_unique<Struct>(structName, false);
 
         for (llvm::Type* type : structType->elements()) {
             structExpr->addItem(getType(type), getStructVarName());
@@ -382,13 +380,14 @@ void Program::saveFile(const std::string& fileName) {
 
 Struct* Program::getStruct(const llvm::StructType* strct) const {
     std::string structName = strct->getName().str();
-    /*if (structName.substr(0, 6).compare("struct") == 0) {
+    if (structName.substr(0, 6).compare("struct") == 0) {
         structName.erase(0, 7);
+        structName = "s_" + structName;
     } else {
         //union
         structName.erase(0, 6);
-    }*/
-    std::replace(structName.begin(), structName.end(), '.', '_');
+        structName = "u_" + structName;
+    }
 
     for (const auto& structElem : structs) {
         if (structElem->name.compare(structName) == 0) {
