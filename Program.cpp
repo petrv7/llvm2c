@@ -52,19 +52,11 @@ void Program::parseProgram() {
 
 void Program::parseStructs() {
     for (llvm::StructType* structType : module->getIdentifiedStructTypes()) {
-        std::string structName = structType->getName().str();
-        if (structName.substr(0, 6).compare("struct") == 0) {
-            structName.erase(0, 7);
-            structName = "s_" + structName;
-        } else {
-            //union
-            structName.erase(0, 6);
-            structName = "u_" + structName;
-        }
+        std::string structName = TypeHandler::getStructName(structType->getName().str());
 
-        if (structName.compare("s___va_list_tag") == 0) {
+        if (structName.compare("__va_list_tag") == 0) {
             hasVarArg = true;
-            auto structExpr = std::make_unique<Struct>("__va_list_tag", false);
+            auto structExpr = std::make_unique<Struct>(structName, false);
             structExpr->addItem(std::make_unique<IntType>(true), "gp_offset");
             structExpr->addItem(std::make_unique<IntType>(true), "fp_offset");
             structExpr->addItem(std::make_unique<PointerType>(std::make_unique<VoidType>()), "overflow_arg_area");
@@ -379,15 +371,7 @@ void Program::saveFile(const std::string& fileName) {
 }
 
 Struct* Program::getStruct(const llvm::StructType* strct) const {
-    std::string structName = strct->getName().str();
-    if (structName.substr(0, 6).compare("struct") == 0) {
-        structName.erase(0, 7);
-        structName = "s_" + structName;
-    } else {
-        //union
-        structName.erase(0, 6);
-        structName = "u_" + structName;
-    }
+    std::string structName = TypeHandler::getStructName(strct->getName().str());
 
     for (const auto& structElem : structs) {
         if (structElem->name.compare(structName) == 0) {

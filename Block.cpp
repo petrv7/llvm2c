@@ -564,6 +564,11 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
         if (ins.getNumOperands() > 2) {
             advance = 2;
 
+            if (!func->getStruct(ST)) {
+                llvm::outs() << ins << "\n";
+                llvm::outs().flush();
+            }
+
             structElements[&ins] = std::make_unique<StructElement>(func->getStruct(ST), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue(), llvm::cast<llvm::ConstantInt>(gepInst->getOperand(1))->getSExtValue());
             refs[structElements[&ins].get()] = std::make_unique<RefExpr>(structElements[&ins].get());
             gepExpr = std::make_unique<GepExpr>(refs[structElements[&ins].get()].get(), func->getType(gepInst->getType()));

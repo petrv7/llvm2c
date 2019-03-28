@@ -27,6 +27,13 @@ public:
     std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
 
     /**
+     * @brief createNewUnnamedStructType Adds new UnnamedStructType to the map unnameStructs
+     * @param structPointer Pointer to the LLVM StructType
+     * @param structString String containing parsed unnamed struct
+     */
+    void createNewUnnamedStructType(const llvm::StructType* structPointer, const std::string& structString);
+
+    /**
      * @brief getBinaryType Returns type that would be result of a binary operation
      * @param left left argument of the operation
      * @param right right argument of the operation
@@ -35,9 +42,9 @@ public:
     static std::unique_ptr<Type> getBinaryType(const Type* left, const Type* right);
 
     /**
-     * @brief createNewUnnamedStructType Adds new UnnamedStructType to the map unnameStructs
-     * @param structPointer Pointer to the LLVM StructType
-     * @param structString String containing parsed unnamed struct
+     * @brief getStructName Parses LLVM struct (union) name into llvm2c struct name.
+     * @param structName LLVM struct name
+     * @return New struct name
      */
-    void createNewUnnamedStructType(const llvm::StructType* structPointer, const std::string& structString);
+    static std::string getStructName(const std::string& structName);
 };

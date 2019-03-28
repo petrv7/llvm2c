@@ -73,16 +73,7 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
             return std::make_unique<StructType>("__va_list_tag");
         }
 
-        std::string structName = structType->getName().str();
-        if (structName.substr(0, 6).compare("struct") == 0) {
-            structName.erase(0, 7);
-            structName = "s_" + structName;
-        } else {
-            //union
-            structName.erase(0, 6);
-            structName = "u_" + structName;
-        }
-        return std::make_unique<StructType>(structName);
+        return std::make_unique<StructType>(getStructName(structType->getName().str()));
     }
 
     if (type->isFunctionTy()) {
@@ -166,4 +157,23 @@ void TypeHandler::createNewUnnamedStructType(const llvm::StructType* structPoint
     if (unnamedStructs.find(structPointer) == unnamedStructs.end()) {
         unnamedStructs[structPointer] = std::make_unique<UnnamedStructType>(structString);
     }
+}
+
+std::string TypeHandler::getStructName(const std::string& structName) {
+    std::string name = structName;
+
+    if (name.substr(0, 6).compare("struct") == 0) {
+        name.erase(0, 7);
+        name = "s_" + name;
+    } else {
+        //union
+        name.erase(0, 6);
+        name = "u_" + name;
+    }
+
+    if (name.compare("s___va_list_tag") == 0) {
+        name = "__va_list_tag";
+    }
+
+    return name;
 }
