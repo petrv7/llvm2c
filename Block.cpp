@@ -158,12 +158,9 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
         createConstantValue(ins.getOperand(1));
     }
     Expr* val1 = func->getExpr(ins.getOperand(1));
+
     if (derefs.find(val1) == derefs.end()) {
         derefs[val1] = std::make_unique<DerefExpr>(val1);
-    }
-
-    if (derefs[val1]->toString() == "var99") {
-        llvm::outs().flush();
     }
 
     if (!isConstExpr) {
@@ -593,15 +590,10 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
             isStruct = false;
         }
 
-        /*if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(it.getOperand())) {
-            indexValue = std::to_string(CI->getSExtValue());
-        } else {*/
         if (!func->getExpr(it.getOperand())) {
             createConstantValue(it.getOperand());
         }
         indexValue = func->getExpr(it.getOperand())->toString();
-        //}
-
 
         if (prevType->isArrayTy()) {
             gepExpr->addArg(func->getType(prevType), indexValue);
@@ -756,8 +748,8 @@ void Block::unsetAllInit() {
 }
 
 void Block::createConstantValue(const llvm::Value* val) {
-    if (auto CPN = llvm::dyn_cast<const llvm::ConstantPointerNull>(val)) {
-        func->createExpr(val, std::make_unique<Value>("0", std::make_unique<VoidType>()));
+    if (llvm::ConstantPointerNull* CPN = llvm::dyn_cast<const llvm::ConstantPointerNull>(val)) {
+        func->createExpr(val, std::make_unique<Value>("0", func->getType(CPN->getType())));
     }
     if (auto CI = llvm::dyn_cast<const llvm::ConstantInt>(val)) {
         std::string value;
