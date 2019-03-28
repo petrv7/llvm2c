@@ -458,9 +458,9 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
             return;
         }
 
-        llvm::outs() << ins << "\n";
-        llvm::outs() << *callInst->getCalledValue() << "\n";
-        llvm::outs().flush();
+        if (!func->getExpr(callInst->getCalledValue())) {
+            createConstantValue(callInst->getCalledValue());
+        }
 
         funcName = func->getExpr(callInst->getCalledValue())->toString();
     }
@@ -509,6 +509,9 @@ void Block::parseCastInstruction(const llvm::Instruction& ins, bool isConstExpr,
     Expr* expr = func->getExpr(ins.getOperand(0));
 
     const llvm::CastInst* CI = llvm::cast<const llvm::CastInst>(&ins);
+
+    llvm::outs() << *CI->getDestTy() << "\n";
+    llvm::outs().flush();
 
     if (!isConstExpr) {
         func->createExpr(&ins, std::make_unique<CastExpr>(expr, func->getType(CI->getDestTy())));
@@ -690,7 +693,7 @@ void Block::parseLLVMInstruction(const llvm::Instruction& ins, bool isConstExpr,
     case llvm::Instruction::GetElementPtr:
         parseGepInstruction(ins, isConstExpr, val);
         break;
-    /*case llvm::Instruction::ExtractValue:
+        /*case llvm::Instruction::ExtractValue:
         parseExtractValueInstruction(ins, isConstExpr, val);
         break;*/
     default:

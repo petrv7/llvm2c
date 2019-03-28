@@ -72,7 +72,9 @@ void Func::parseFunction() {
     }
 
     lastArg = exprMap[larg].get();
-    isVarArg = function->isVarArg();
+    if (lastArg) {
+        isVarArg = function->isVarArg();
+    }
 
     for (const auto& block : *function) {
         getBlockName(&block);

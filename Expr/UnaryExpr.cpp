@@ -126,5 +126,21 @@ void CastExpr::print() const {
 }
 
 std::string CastExpr::toString() const {
-    return "(" + getType()->toString() + ")" + "(" + expr->toString() + ")";
+    std::string ret = "(" + getType()->toString();
+    if (auto PT = dynamic_cast<PointerType*>(getType())) {
+        if (PT->isFuncPointer || PT->isArrayPointer) {
+            ret += " (";
+            for (unsigned i = 0; i < PT->levels; i++) {
+                ret += "*";
+            }
+            ret += ")";
+        }
+        if (PT->isArrayPointer) {
+            ret = ret + "[" + std::to_string(PT->size) + "]";
+        }
+        if (PT->isFuncPointer) {
+            ret += PT->params;
+        }
+    }
+    return ret + ")" + "(" + expr->toString() + ")";
 }
