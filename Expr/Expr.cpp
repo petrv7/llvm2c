@@ -3,10 +3,9 @@
 
 #include "llvm/Support/raw_ostream.h"
 
-Struct::Struct(const std::string& name, bool isUnnamed)
+Struct::Struct(const std::string& name)
     : name(name),
-      isPrinted(false),
-      isUnnamed(isUnnamed) {
+      isPrinted(false) {
     setType(std::make_unique<StructType>(this->name));
 }
 
@@ -21,21 +20,13 @@ std::string Struct::toString() const {
 
     std::string ret;
 
-    ret += "struct";
-    if (!isUnnamed) {
-        ret += " ";
-    }
-    ret += name + " {";
-    if (!isUnnamed) {
-        ret += "\n";
-    }
+    ret += "struct ";
+    ret += name + " {\n";
+
     for (const auto& item : items) {
         std::string faPointer;
 
-        if (!isUnnamed) {
-            ret += "    ";
-        }
-        ret += item.first->toString();
+        ret += "    " + item.first->toString();
 
         if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
             if (PT->isFuncPointer || PT->isArrayPointer) {
@@ -63,18 +54,10 @@ std::string Struct::toString() const {
             ret += faPointer;
         }
 
-        ret += ";";
-        if (!isUnnamed) {
-            ret += "\n";
-        } else {
-            ret += " ";
-        }
+        ret += ";\n";
     }
 
-    ret += "}";
-    if (!isUnnamed) {
-        ret += ";";
-    }
+    ret += "};";
 
     return ret;
 }

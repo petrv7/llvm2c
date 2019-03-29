@@ -56,7 +56,7 @@ void Program::parseStructs() {
 
         if (structName.compare("__va_list_tag") == 0) {
             hasVarArg = true;
-            auto structExpr = std::make_unique<Struct>(structName, false);
+            auto structExpr = std::make_unique<Struct>(structName);
             structExpr->addItem(std::make_unique<IntType>(true), "gp_offset");
             structExpr->addItem(std::make_unique<IntType>(true), "fp_offset");
             structExpr->addItem(std::make_unique<PointerType>(std::make_unique<VoidType>()), "overflow_arg_area");
@@ -65,7 +65,7 @@ void Program::parseStructs() {
             continue;
         }
 
-        auto structExpr = std::make_unique<Struct>(structName, false);
+        auto structExpr = std::make_unique<Struct>(structName);
 
         for (llvm::Type* type : structType->elements()) {
             structExpr->addItem(getType(type), getStructVarName());
@@ -119,6 +119,12 @@ std::string Program::getStructVarName() {
     structVarCount++;
 
     return varName;
+}
+
+std::string Program::getAnonStructName() {
+    std::string name = "anonymous_struct" + std::to_string(anonStructCount);
+    anonStructCount += 1;
+    return name;
 }
 
 std::string Program::getValue(const llvm::Constant* val) const {
@@ -205,7 +211,7 @@ void Program::print() {
 
     if (!structs.empty()) {
         llvm::outs() << "//Struct declarations\n";
-        for (auto& strct : structs) {
+        for (const auto& strct : structs) {
             llvm::outs() << "struct " << strct->name << ";\n";
         }
         llvm::outs() << "\n";
@@ -213,6 +219,21 @@ void Program::print() {
         for (auto& strct : structs) {
             if (!strct->isPrinted) {
                 printStruct(strct.get());
+            }
+        }
+        llvm::outs() << "\n";
+    }
+
+    if (!unnamedStructs.empty()) {
+        llvm::outs() << "//Anonymous struct declarations\n";
+        for (const auto& elem : unnamedStructs) {
+            llvm::outs() << "struct " << elem.second->name << ";\n";
+        }
+        llvm::outs() << "\n";
+        llvm::outs() << "//Anonymous struct definitions\n";
+        for (auto& elem : unnamedStructs) {
+            if (!elem.second->isPrinted) {
+                printStruct(elem.second.get());
             }
         }
         llvm::outs() << "\n";
@@ -336,6 +357,21 @@ void Program::saveFile(const std::string& fileName) {
         file << "\n";
     }
 
+    if (!unnamedStructs.empty()) {
+        file << "//Anonymous struct declarations\n";
+        for (const auto& elem : unnamedStructs) {
+            file << "struct " << elem.second->name << ";\n";
+        }
+        file << "\n";
+        file << "//Anonymous struct definitions\n";
+        for (auto& elem : unnamedStructs) {
+            if (!elem.second->isPrinted) {
+                saveStruct(elem.second.get(), file);
+            }
+        }
+        file << "\n";
+    }
+
     if (!globalVars.empty()) {
         file << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
@@ -413,7 +449,7 @@ void Program::createNewUnnamedStruct(const llvm::StructType *strct) {
         return;
     }
 
-    auto structExpr = std::make_unique<Struct>("", true);
+    auto structExpr = std::make_unique<Struct>(getAnonStructName());
 
     for (llvm::Type* type : strct->elements()) {
         structExpr->addItem(getType(type), getStructVarName());

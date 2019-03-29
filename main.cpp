@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
             }
         } catch (std::invalid_argument e) {
             llvm::outs() << e.what();
+            return 1;
         }
     } catch (error& e) {
         llvm::errs() << e.what() << "\n\n";

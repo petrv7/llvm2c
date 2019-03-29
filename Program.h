@@ -22,6 +22,8 @@ private:
 
     TypeHandler typeHandler;
 
+    unsigned anonStructCount = 0;
+
     std::vector<std::unique_ptr<Func>> functions; // vector of parsed functions
     std::vector<std::unique_ptr<Func>> declarations; // vector of function declarations
     std::vector<std::unique_ptr<Struct>> structs; // vector of parsed structs
@@ -39,6 +41,12 @@ private:
      * @return String containing a new variable name.
      */
     std::string getStructVarName();
+
+    /**
+     * @brief getAnonStructName Creates new name for anonymous struct.
+     * @return New name for anonymous struct
+     */
+    std::string getAnonStructName();
 
     /**
      * @brief getValue Return string containing value used for global variable initialization.

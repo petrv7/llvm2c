@@ -59,7 +59,7 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
     }
 
     if (type->isStructTy()) {
-        const llvm::StructType* structType = llvm::dyn_cast<const llvm::StructType>(type);
+        /*const llvm::StructType* structType = llvm::cast<const llvm::StructType>(type);
 
         if (!structType->hasName()) {
             if (program->unnamedStructs.find(structType) == program->unnamedStructs.end()) {
@@ -67,6 +67,18 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
             }
             createNewUnnamedStructType(structType, program->unnamedStructs[structType]->toString());
             return unnamedStructs[structType]->clone();
+        }
+
+        if (structType->getName().str().compare("struct.__va_list_tag") == 0) {
+            return std::make_unique<StructType>("__va_list_tag");
+        }
+
+        return std::make_unique<StructType>(getStructName(structType->getName().str()));*/
+        const llvm::StructType* structType = llvm::cast<const llvm::StructType>(type);
+
+        if (!structType->hasName()) {
+            program->createNewUnnamedStruct(structType);
+            return std::make_unique<StructType>(program->getStruct(structType)->name);
         }
 
         if (structType->getName().str().compare("struct.__va_list_tag") == 0) {

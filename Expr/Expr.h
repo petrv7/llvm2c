@@ -38,9 +38,8 @@ public:
     std::vector<std::pair<std::unique_ptr<Type>, std::string>> items;
 
     bool isPrinted; //used for printing structs in the right order
-    bool isUnnamed;
 
-    Struct(const std::string&, bool);
+    Struct(const std::string&);
 
     void print() const override;
     std::string toString() const override;

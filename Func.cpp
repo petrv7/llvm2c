@@ -63,6 +63,7 @@ std::string Func::getVarName() {
 
 void Func::parseFunction() {
     const llvm::Value* larg;
+    isVarArg = false;
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
