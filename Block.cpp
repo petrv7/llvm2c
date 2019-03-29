@@ -611,7 +611,31 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
 }
 
 void Block::parseExtractValueInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
+    const llvm::ExtractValueInst* EVI = llvm::cast<const llvm::ExtractValueInst>(&ins);
 
+    std::vector<std::unique_ptr<Expr>> indices;
+    std::unique_ptr<Type> prevType = func->getType(ins.getOperand(0)->getType());
+    Expr* expr = func->getExpr(ins.getOperand(0));
+
+    for (unsigned idx : EVI->getIndices()) {
+        std::unique_ptr<Expr> element = nullptr;
+
+        if (StructType* ST = dynamic_cast<StructType*>(prevType.get())) {
+            auto test = func->getStruct(ST->name);
+            auto test1 = ST->name;
+            element = std::make_unique<StructElement>(func->getStruct(ST->name), expr, idx, 0);
+        }
+
+        if (ArrayType* AT = dynamic_cast<ArrayType*>(prevType.get())) {
+            element = std::make_unique<ArrayElement>(expr, idx);
+        }
+
+        indices.push_back(std::move(element));
+        prevType = indices[indices.size() - 1]->getType()->clone();
+        expr = indices[indices.size() - 1].get();
+    }
+
+    func->createExpr(isConstExpr ? val : &ins, std::make_unique<ExtractElementExpr>(indices));
 }
 
 void Block::parseLLVMInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
@@ -687,9 +711,9 @@ void Block::parseLLVMInstruction(const llvm::Instruction& ins, bool isConstExpr,
     case llvm::Instruction::GetElementPtr:
         parseGepInstruction(ins, isConstExpr, val);
         break;
-        /*case llvm::Instruction::ExtractValue:
+    case llvm::Instruction::ExtractValue:
         parseExtractValueInstruction(ins, isConstExpr, val);
-        break;*/
+        break;
     default:
         llvm::outs() << "File contains unsupported instruction!\n";
         llvm::outs() << ins << "\n";

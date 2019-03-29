@@ -82,7 +82,6 @@ std::string StructElement::toString() const {
     std::string ret = "(";
     if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
         ret += expr->toString();
-        //return "(" + expr->toString() + " + " + std::to_string(move) + ")->" + strct->items[element].second;
     } else {
         ret += "&" + expr->toString();
     }
@@ -92,7 +91,37 @@ std::string StructElement::toString() const {
     } else {
         return ret + " + " + std::to_string(move) + ")->" + strct->items[element].second;
     }
-    //return "(&" + expr->toString() + " + " + std::to_string(move) + ")->" + strct->items[element].second;
+}
+
+ArrayElement::ArrayElement(Expr* expr, long elem)
+    : expr(expr),
+      element(elem) {
+    ArrayType* AT = static_cast<ArrayType*>(expr->getType());
+    setType(AT->type->clone());
+}
+
+void ArrayElement::print() const {
+    llvm::outs() << toString();
+}
+
+ExtractElementExpr::ExtractElementExpr(std::vector<std::unique_ptr<Expr>>& indices) {
+    for (auto& idx : indices) {
+        this->indices.push_back(std::move(idx));
+    }
+
+    setType(this->indices[this->indices.size() - 1]->getType()->clone());
+}
+
+void ExtractElementExpr::print() const {
+    llvm::outs() << toString();
+}
+
+std::string ExtractElementExpr::toString() const {
+    return indices[indices.size() - 1]->toString();
+}
+
+std::string ArrayElement::toString() const {
+    return "(" + expr->toString() + ")[" + std::to_string(element) + "]";
 }
 
 Value::Value(const std::string& valueName, std::unique_ptr<Type> type) {

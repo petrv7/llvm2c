@@ -60,7 +60,30 @@ private:
     unsigned int move;
 
 public:
-    StructElement(Struct*, Expr*, long, unsigned int move);
+    StructElement(Struct*, Expr*, long, unsigned int);
+
+    void print() const override;
+    std::string toString() const override;
+};
+
+class ArrayElement : public ExprBase {
+private:
+    Expr* expr;
+    long element;
+
+public:
+    ArrayElement(Expr*, long);
+
+    void print() const override;
+    std::string toString() const override;
+};
+
+class ExtractElementExpr : public ExprBase {
+private:
+    std::vector<std::unique_ptr<Expr>> indices;
+
+public:
+    ExtractElementExpr(std::vector<std::unique_ptr<Expr>>&);
 
     void print() const override;
     std::string toString() const override;

@@ -106,6 +106,13 @@ public:
     Struct* getStruct(const llvm::StructType* strct) const;
 
     /**
+     * @brief getStruct Returns pointer to the Struct with the given name.
+     * @param name Name of the struct
+     * @return Pointer to Struct expression if the struct is found, nullptr otherwise
+     */
+    Struct* getStruct(const std::string& name) const;
+
+    /**
      * @brief getGlobalVar Returns corresponding refference to GlobalValue expression.
      * @param val llvm global variable
      * @return RefExpr expression

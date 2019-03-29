@@ -428,6 +428,14 @@ Struct* Program::getStruct(const std::string& name) const {
             return structElem.get();
         }
     }
+
+    for (const auto& mapElem : unnamedStructs) {
+        if (mapElem.second->name.compare(name) == 0) {
+            return mapElem.second.get();
+        }
+    }
+
+    return nullptr;
 }
 
 const RefExpr* Program::getGlobalVar(const llvm::Value* val) const {

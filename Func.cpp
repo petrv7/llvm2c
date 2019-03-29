@@ -205,6 +205,10 @@ Struct* Func::getStruct(const llvm::StructType* strct) const {
     return program->getStruct(strct);
 }
 
+Struct* Func::getStruct(const std::string& name) const {
+    return program->getStruct(name);
+}
+
 RefExpr* Func::getGlobalVar(llvm::Value* val) const {
     return program->getGlobalVar(val);
 }
