@@ -37,7 +37,7 @@ std::string Func::getBlockName(const llvm::BasicBlock* block) {
 }
 
 Expr* Func::getExpr(const llvm::Value* val) {
-    if (exprMap.find(val)== exprMap.end()) {
+    if (exprMap.find(val) == exprMap.end()) {
         if (llvm::Function* F = llvm::dyn_cast<llvm::Function>(val)) {
             createExpr(val, std::make_unique<Value>("&" + F->getName().str(), getType(F->getReturnType())));
             return exprMap.find(val)->second.get();
@@ -64,6 +64,7 @@ std::string Func::getVarName() {
 void Func::parseFunction() {
     const llvm::Value* larg;
     isVarArg = false;
+
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);

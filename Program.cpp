@@ -24,8 +24,7 @@ Program::Program(const std::string &file)
     if(!module) {
         throw std::invalid_argument("Error loading module - invalid input file \"" + fileName + "\"!\n");
     }
-    structVarCount = 0;
-    gvarCount = 0;
+
     hasVarArg = false;
     stackIgnored = false;
 

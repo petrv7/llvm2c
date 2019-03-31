@@ -22,8 +22,6 @@ private:
 
     TypeHandler typeHandler;
 
-    unsigned anonStructCount = 0;
-
     std::vector<std::unique_ptr<Func>> functions; // vector of parsed functions
     std::vector<std::unique_ptr<Func>> declarations; // vector of function declarations
     std::vector<std::unique_ptr<Struct>> structs; // vector of parsed structs
@@ -31,8 +29,9 @@ private:
     llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<RefExpr>> globalRefs; //map containing references to global variables
     llvm::DenseMap<const llvm::StructType*, std::unique_ptr<Struct>> unnamedStructs; // map containing unnamed structs
 
-    unsigned structVarCount;
-    unsigned gvarCount;
+    unsigned structVarCount = 0;
+    unsigned gvarCount = 0;
+    unsigned anonStructCount = 0;
 
     bool hasVarArg; //program uses "stdarg.h"
 
@@ -96,7 +95,7 @@ private:
 
 public:
     std::string fileName;
-    bool stackIgnored;
+    bool stackIgnored; //instruction stacksave was ignored
 
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.
