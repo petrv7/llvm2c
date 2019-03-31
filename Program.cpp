@@ -25,11 +25,14 @@ Program::Program(const std::string &file)
         throw std::invalid_argument("Error loading module - invalid input file \"" + fileName + "\"!\n");
     }
 
-    hasVarArg = false;
-    stackIgnored = false;
-
     llvm::outs() << "IR file successfuly parsed.\n";
 
+    parseProgram();
+}
+
+Program::Program(std::unique_ptr<llvm::Module>& module)
+    : typeHandler(TypeHandler(this)) {
+    this->module = std::move(module);
     parseProgram();
 }
 

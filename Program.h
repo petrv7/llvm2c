@@ -33,7 +33,7 @@ private:
     unsigned gvarCount = 0;
     unsigned anonStructCount = 0;
 
-    bool hasVarArg; //program uses "stdarg.h"
+    bool hasVarArg = false; //program uses "stdarg.h"
 
     /**
      * @brief getVarName Creates a new name for a variable in form of string containing "var" + structVarCount.
@@ -95,13 +95,19 @@ private:
 
 public:
     std::string fileName;
-    bool stackIgnored; //instruction stacksave was ignored
+    bool stackIgnored = false; //instruction stacksave was ignored
 
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.
      * @param file Path to a file for parsing.
      */
     Program(const std::string& file);
+
+    /**
+     * @brief Program Constructor for testing purpouses.
+     * @param module LLVM Module
+     */
+    Program(std::unique_ptr<llvm::Module>& module);
 
     /**
      * @brief print Prints the translated program in the llvm::outs() stream.
