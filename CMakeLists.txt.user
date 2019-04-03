@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.5.2, 2019-03-31T15:29:01. -->
+<!-- Written by QtCreator 4.5.2, 2019-04-03T16:16:37. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -64,7 +64,7 @@
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">{f87934ea-289a-465a-9508-cae6c5ec5df2}</value>
    <value type="int" key="ProjectExplorer.Target.ActiveBuildConfiguration">0</value>
    <value type="int" key="ProjectExplorer.Target.ActiveDeployConfiguration">0</value>
-   <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">1</value>
+   <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">0</value>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
     <valuelist type="QVariantList" key="CMake.Configuration"/>
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/xvitovs2/Projects/build-llvm2c-Desktop-Default</value>
@@ -339,7 +339,7 @@
      <value type="int">14</value>
     </valuelist>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguation.Title">llvm2c</value>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">/home/xvitovs2/Projects/sv-llvm/packet_filter.ll --p</value>
+    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">/home/xvitovs2/Projects/sv-llvm/205_9a_array_safes_linux-3.16-rc1.tar.xz-205_9a-drivers--net--arcnet--com90xx.ko-entry_point.cil.out.ll --p</value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory"></value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory.default">/home/xvitovs2/Projects/build-llvm2c-Desktop-Default</value>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>

@@ -179,6 +179,12 @@ private:
      */
     bool isVoidType(llvm::DITypeRef type);
 
+    /**
+     * @brief createFuncCallParam Creates new Expr for parameter of function call.
+     * @param param Parameter of function call
+     */
+    void createFuncCallParam(const llvm::Use& param);
+
 public:
     std::string blockName;
 

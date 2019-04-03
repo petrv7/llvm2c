@@ -40,13 +40,13 @@ std::string GepExpr::toString() const {
 
     for (unsigned i = 0; i < args.size(); i++) {
         bool move = true;
-        if (args[i].second.compare("0") == 0) {
+        if (args[i].second->toString().compare("0") == 0) {
             move = false;
         }
 
         if (i == 0) {
             if (move) {
-                print.append(" + " + args[i].second);
+                print.append(" + " + args[i].second->toString());
             }
             continue;
         }
@@ -64,7 +64,7 @@ std::string GepExpr::toString() const {
         }
 
         if (move) {
-            print.append(") + " + args[i].second + ")");
+            print.append(") + " + args[i].second->toString() + ")");
         } else {
             print.append("))");
         }
@@ -73,7 +73,7 @@ std::string GepExpr::toString() const {
     return print;
 }
 
-void GepExpr::addArg(std::unique_ptr<Type> type, const std::string& index) {
+void GepExpr::addArg(std::unique_ptr<Type> type, Expr* index) {
     args.push_back(std::make_pair(std::move(type), index));
 }
 

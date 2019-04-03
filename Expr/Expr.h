@@ -78,7 +78,7 @@ public:
     std::string toString() const override;
 };
 
-class ExtractElementExpr : public ExprBase {
+class ExtractElementExpr : public ExprBase { //rename
 private:
     std::vector<std::unique_ptr<Expr>> indices;
 
@@ -158,9 +158,10 @@ public:
 class AsmExpr : public ExprBase {
 private:
     std::string inst;
+    bool isVoid;
 
 public:
-    AsmExpr(const std::string&);
+    AsmExpr(const std::string&, bool);
 
     void print() const override;
     std::string toString() const override;

@@ -41,7 +41,7 @@ void Block::parseLLVMBlock() {
 }
 
 void Block::print() {
-    unsetAllInit();
+    //unsetAllInit(); ???
 
     for (const auto expr : abstractSyntaxTree) {
         if (auto val = dynamic_cast<Value*>(expr)) {
@@ -74,7 +74,7 @@ void Block::print() {
 }
 
 void Block::saveFile(std::ofstream& file) {
-    unsetAllInit();
+    //unsetAllInit(); ???
 
     for (const auto expr : abstractSyntaxTree) {
         if (auto val = dynamic_cast<Value*>(expr)) {
@@ -319,9 +319,7 @@ void Block::parseRetInstruction(const llvm::Instruction& ins, bool isConstExpr, 
         func->createExpr(value, std::make_unique<RetExpr>(expr));
     }
 
-    if (!isConstExpr) {
-        abstractSyntaxTree.push_back(func->getExpr(&ins));
-    }
+    abstractSyntaxTree.push_back(func->getExpr(&ins));
 }
 
 void Block::parseSwitchInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
@@ -353,20 +351,20 @@ void Block::parseAsmInst(const llvm::Instruction& ins, bool isConstExpr, const l
 
     switch(ins.getOpcode()) {
     case llvm::Instruction::Unreachable:
-        inst = "int3";
+        inst = "\"int3\"";
         break;
     case llvm::Instruction::Fence:
-        inst = "fence";
+        inst = "\"fence\"";
         break;
     default:
         break;
     }
 
     if (!isConstExpr) {
-        func->createExpr(&ins, std::make_unique<AsmExpr>(inst));
+        func->createExpr(&ins, std::make_unique<AsmExpr>(inst, true));
         abstractSyntaxTree.push_back(func->getExpr(&ins));
     } else {
-        func->createExpr(val, std::make_unique<AsmExpr>(inst));
+        func->createExpr(val, std::make_unique<AsmExpr>(inst, true));
     }
 }
 
@@ -414,7 +412,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         }
 
         if (funcName.compare("llvm.trap") == 0 || funcName.compare("llvm.debugtrap") == 0) {
-            func->createExpr(&ins, std::make_unique<AsmExpr>("int3"));
+            func->createExpr(&ins, std::make_unique<AsmExpr>("\"int3\"", true));
             abstractSyntaxTree.push_back(func->getExpr(&ins));
             return;
         }
@@ -443,13 +441,28 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 asmString += ", \"" + IA->getConstraintString() + "\"";
             }
 
-            func->callExprMap[value] = std::make_unique<AsmExpr>(asmString);
-            func->createExpr(value, std::make_unique<Value>(func->getVarName(), type->clone()));
-            func->callValueMap[value] = std::make_unique<EqualsExpr>(func->getExpr(value), func->callExprMap[value].get());
+            for (const llvm::Use& param : callInst->arg_operands()) {
+                if (!func->getExpr(param)) {
+                    createFuncCallParam(param);
+                }
+                asmString += ", " + func->getExpr(param)->toString();
+            }
 
-            if (!isConstExpr) {
-                abstractSyntaxTree.push_back(func->getExpr(&ins));
-                abstractSyntaxTree.push_back(func->callValueMap[&ins].get());
+            if (VoidType* VT = dynamic_cast<VoidType*>(type.get())) {
+                func->createExpr(value, std::make_unique<AsmExpr>(asmString, true));
+
+                if (!isConstExpr) {
+                    abstractSyntaxTree.push_back(func->getExpr(&ins));
+                }
+            } else {
+                func->callExprMap[value] = std::make_unique<AsmExpr>(asmString, false);
+                func->createExpr(value, std::make_unique<Value>(func->getVarName(), type->clone()));
+                func->callValueMap[value] = std::make_unique<EqualsExpr>(func->getExpr(value), func->callExprMap[value].get());
+
+                if (!isConstExpr) {
+                    abstractSyntaxTree.push_back(func->getExpr(&ins));
+                    abstractSyntaxTree.push_back(func->callValueMap[&ins].get());
+                }
             }
 
             return;
@@ -464,15 +477,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
     for (const llvm::Use& param : callInst->arg_operands()) {
         if (!func->getExpr(param)) {
-            if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(param->getType())) {
-                if (PT->getElementType()->isFunctionTy()) {
-                    func->createExpr(param, std::make_unique<Value>(param->getName().str(), std::make_unique<VoidType>()));
-                } else {
-                    createConstantValue(param);
-                }
-            } else {
-                createConstantValue(param);
-            }
+            createFuncCallParam(param);
         }
         params.push_back(func->getExpr(param));
     }
@@ -544,7 +549,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
     Expr* expr = func->getExpr(gepInst->getOperand(0));
     auto gepExpr = std::make_unique<GepExpr>(expr, func->getType(gepInst->getType()));
 
-    std::string indexValue;
+    Expr* indexValue;
     llvm::Type* prevType = gepInst->getOperand(0)->getType();
 
     bool isStruct = false;
@@ -571,11 +576,11 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
             gepExpr = std::make_unique<GepExpr>(refs[structElements[&ins].get()].get(), func->getType(gepInst->getType()));
         } else {
             advance = 1;
-            if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(gepInst->getOperand(1))) {
-                indexValue = std::to_string(CI->getSExtValue());
-            } else {
-                indexValue = func->getExpr(gepInst->getOperand(1))->toString();
+
+            if (!func->getExpr(gepInst->getOperand(1))) {
+                createConstantValue(gepInst->getOperand(1));
             }
+            indexValue = func->getExpr(gepInst->getOperand(1));
 
             gepExpr->addArg(func->getType(prevType), indexValue);
         }
@@ -593,7 +598,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
         if (!func->getExpr(it.getOperand())) {
             createConstantValue(it.getOperand());
         }
-        indexValue = func->getExpr(it.getOperand())->toString();
+        indexValue = func->getExpr(it.getOperand());
 
         if (prevType->isArrayTy()) {
             gepExpr->addArg(func->getType(prevType), indexValue);
@@ -825,4 +830,18 @@ bool Block::isVoidType(llvm::DITypeRef type) {
     }
 
     return false;
+}
+
+void Block::createFuncCallParam(const llvm::Use& param) {
+    if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(param->getType())) {
+        if (llvm::ConstantPointerNull* CPN = llvm::dyn_cast<const llvm::ConstantPointerNull>(param)) {
+            createConstantValue(param);
+        } else if (PT->getElementType()->isFunctionTy()) {
+            func->createExpr(param, std::make_unique<Value>(param->getName().str(), std::make_unique<VoidType>()));
+        } else {
+            createConstantValue(param);
+        }
+    } else {
+        createConstantValue(param);
+    }
 }

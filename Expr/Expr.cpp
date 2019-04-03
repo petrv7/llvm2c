@@ -138,7 +138,7 @@ std::string Value::toString() const {
     if (!init) {
         if (auto PT = dynamic_cast<PointerType*>(getType())) {
             std::string ret;
-            if (PT->isFuncPointer || PT->isArrayPointer) {
+            if ((PT->isFuncPointer || PT->isArrayPointer) && valueName.compare("0") != 0) {
                 ret = "(";
                 for (unsigned i = 0; i < PT->levels; i++) {
                     ret += "*";
@@ -248,15 +248,22 @@ std::string SwitchExpr::toString() const {
     return ret + "}";
 }
 
-AsmExpr::AsmExpr(const std::string &inst)
-    :inst(inst) {}
+AsmExpr::AsmExpr(const std::string &inst, bool isVoid)
+    : inst(inst),
+      isVoid(isVoid) {}
 
 void AsmExpr::print() const {
     llvm::outs() << toString();
 }
 
 std::string AsmExpr::toString() const {
-    return "__asm__(\"" + inst + "\");";
+    std::string ret = "__asm__(" + inst + ")";
+
+    if (isVoid) {
+        ret += ";";
+    }
+
+    return ret;
 }
 
 CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type, bool isFuncPointer)

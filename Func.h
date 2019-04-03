@@ -18,6 +18,7 @@ class Program;
  */
 class Func {
 friend class Block;
+friend class Program;
 private:
     std::unique_ptr<Type> returnType;
 

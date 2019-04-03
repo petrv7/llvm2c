@@ -82,6 +82,7 @@ void Program::parseFunctions() {
         if (func.hasName()) {
             if (!func.isDeclaration()) {
                 functions.push_back(std::make_unique<Func>(&func, this, false));
+                declarations.push_back(std::make_unique<Func>(&func, this, true));
             }
 
             if (func.isDeclaration() || llvm::Function::isInternalLinkage(func.getLinkage())) {
@@ -217,26 +218,12 @@ void Program::print() {
             llvm::outs() << "struct " << strct->name << ";\n";
         }
         llvm::outs() << "\n";
-        llvm::outs() << "//Struct definitions\n";
-        for (auto& strct : structs) {
-            if (!strct->isPrinted) {
-                printStruct(strct.get());
-            }
-        }
-        llvm::outs() << "\n";
     }
 
     if (!unnamedStructs.empty()) {
         llvm::outs() << "//Anonymous struct declarations\n";
         for (const auto& elem : unnamedStructs) {
             llvm::outs() << "struct " << elem.second->name << ";\n";
-        }
-        llvm::outs() << "\n";
-        llvm::outs() << "//Anonymous struct definitions\n";
-        for (auto& elem : unnamedStructs) {
-            if (!elem.second->isPrinted) {
-                printStruct(elem.second.get());
-            }
         }
         llvm::outs() << "\n";
     }
@@ -248,19 +235,45 @@ void Program::print() {
             llvm::outs() << "\n";
         }
         llvm::outs() << "\n";
-        llvm::outs() << "//Global variable definitions\n";
-        for (auto& gvar : globalVars) {
-            llvm::outs() << gvar->toString();
-            gvar->init = true;
-            llvm::outs() << "\n";
-        }
-        llvm::outs() << "\n";
     }
 
     if (!declarations.empty()) {
         llvm::outs() << "//Function declarations\n";
         for (const auto& func : declarations) {
             func->print();
+        }
+        llvm::outs() << "\n";
+    }
+
+    if (!structs.empty()) {
+        llvm::outs() << "//Struct definitions\n";
+        for (auto& strct : structs) {
+            if (!strct->isPrinted) {
+                printStruct(strct.get());
+            }
+        }
+        llvm::outs() << "\n";
+    }
+
+    if (!unnamedStructs.empty()) {
+        llvm::outs() << "//Anonymous struct definitions\n";
+        for (auto& elem : unnamedStructs) {
+            if (!elem.second->isPrinted) {
+                printStruct(elem.second.get());
+            }
+        }
+        llvm::outs() << "\n";
+    }
+
+    if (!globalVars.empty()) {
+        llvm::outs() << "//Global variable definitions\n";
+        for (auto& gvar : globalVars) {
+            if (gvar->valueName == "last_index") {
+                llvm::outs().flush();
+            }
+            llvm::outs() << gvar->toString();
+            gvar->init = true;
+            llvm::outs() << "\n";
         }
         llvm::outs() << "\n";
     }
@@ -292,7 +305,6 @@ void Program::printStruct(Struct* strct) {
             for (auto& s : structs) {
                 if (s->name == ST->name) {
                     printStruct(s.get());
-                    llvm::outs() << "\n";
                 }
             }
         }
@@ -322,7 +334,6 @@ void Program::saveStruct(Struct* strct, std::ofstream& file) {
             for (auto& s : structs) {
                 if (s->name == ST->name) {
                     saveStruct(s.get(), file);
-                    file << "\n";
                 }
             }
         }
@@ -350,26 +361,12 @@ void Program::saveFile(const std::string& fileName) {
             file << "struct " << strct->name << ";\n";
         }
         file << "\n";
-        file << "//Struct definitions\n";
-        for (auto& strct : structs) {
-            if (!strct->isPrinted) {
-                saveStruct(strct.get(), file);
-            }
-        }
-        file << "\n";
     }
 
     if (!unnamedStructs.empty()) {
         file << "//Anonymous struct declarations\n";
         for (const auto& elem : unnamedStructs) {
             file << "struct " << elem.second->name << ";\n";
-        }
-        file << "\n";
-        file << "//Anonymous struct definitions\n";
-        for (auto& elem : unnamedStructs) {
-            if (!elem.second->isPrinted) {
-                saveStruct(elem.second.get(), file);
-            }
         }
         file << "\n";
     }
@@ -381,19 +378,42 @@ void Program::saveFile(const std::string& fileName) {
             file << "\n";
         }
         file << "\n";
-        file << "//Global variable definitions\n";
-        for (auto& gvar : globalVars) {
-            file << gvar->toString();
-            gvar->init = true;
-            file << "\n";
-        }
-        file << "\n";
     }
 
     if (!declarations.empty()) {
         file << "//Function declarations\n";
         for (const auto& func : declarations) {
             func->saveFile(file);
+        }
+        file << "\n";
+    }
+
+    if (!structs.empty()) {
+        file << "//Struct definitions\n";
+        for (auto& strct : structs) {
+            if (!strct->isPrinted) {
+                saveStruct(strct.get(), file);
+            }
+        }
+        file << "\n";
+    }
+
+    if (!unnamedStructs.empty()) {
+        file << "//Anonymous struct definitions\n";
+        for (auto& elem : unnamedStructs) {
+            if (!elem.second->isPrinted) {
+                saveStruct(elem.second.get(), file);
+            }
+        }
+        file << "\n";
+    }
+
+    if (!globalVars.empty()) {
+        file << "//Global variable definitions\n";
+        for (auto& gvar : globalVars) {
+            file << gvar->toString();
+            gvar->init = true;
+            file << "\n";
         }
         file << "\n";
     }

@@ -19,6 +19,10 @@ Func::Func(llvm::Function* func, Program* program, bool isDeclaration) {
     this->isDeclaration = isDeclaration;
     returnType = getType(func->getReturnType());
 
+    if (func->getName().str().compare("writeb") == 0) {
+        llvm::outs().flush();
+    }
+
     parseFunction();
 }
 
@@ -113,6 +117,12 @@ void Func::print() const {
         val->getType()->print();
         llvm::outs() << " ";
         val->print();
+
+        if (auto PT = dynamic_cast<PointerType*>(val->getType())) {
+            if (PT->isFuncPointer) {
+                llvm::outs() << " " << PT->params;
+            }
+        }
     }
 
     if (isVarArg) {
@@ -171,6 +181,12 @@ void Func::saveFile(std::ofstream& file) const {
         file << val->getType()->toString();
         file << " ";
         file << val->toString();
+
+        if (auto PT = dynamic_cast<PointerType*>(val->getType())) {
+            if (PT->isFuncPointer) {
+                file << " " << PT->params;
+            }
+        }
     }
 
     if (isVarArg) {

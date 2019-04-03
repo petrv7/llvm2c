@@ -158,6 +158,7 @@ void TypeHandler::createNewUnnamedStructType(const llvm::StructType* structPoint
 
 std::string TypeHandler::getStructName(const std::string& structName) {
     std::string name = structName;
+    std::replace(name.begin(), name.end(), '.', '_');
 
     if (name.substr(0, 6).compare("struct") == 0) {
         name.erase(0, 7);
