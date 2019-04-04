@@ -248,22 +248,53 @@ std::string SwitchExpr::toString() const {
     return ret + "}";
 }
 
-AsmExpr::AsmExpr(const std::string &inst, bool isVoid)
+AsmExpr::AsmExpr(const std::string& inst, const std::vector<std::pair<std::string, Expr*>>& output, const std::vector<std::pair<std::string, Expr*>>& input, const std::string& usedReg)
     : inst(inst),
-      isVoid(isVoid) {}
+      output(output),
+      input(input),
+      usedReg(usedReg) {}
 
 void AsmExpr::print() const {
     llvm::outs() << toString();
 }
 
 std::string AsmExpr::toString() const {
-    std::string ret = "__asm__(" + inst + ")";
+    std::string ret = "__asm__(" + inst + "\n    : ";
 
-    if (isVoid) {
-        ret += ";";
+    if (!output.empty()) {
+        bool first = true;
+        for (const auto& out : output) {
+            if (!out.second) {
+                break;
+            }
+            if (!first) {
+                ret += ", ";
+            }
+            first = false;
+            ret += out.first + " (" + out.second->toString() + ")";
+        }
     }
 
-    return ret;
+    ret += "\n    : ";
+
+    if (!input.empty()) {
+        bool first = true;
+        for (const auto& in : input) {
+            if (!first) {
+                ret += ", ";
+            }
+            first = false;
+            ret += in.first + " (" + in.second->toString() + ")";
+        }
+    }
+
+    ret += "\n    : ";
+
+    if (!usedReg.empty()) {
+        ret += usedReg;
+    }
+
+    return ret + "\n);";
 }
 
 CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type, bool isFuncPointer)

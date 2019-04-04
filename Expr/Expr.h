@@ -158,10 +158,12 @@ public:
 class AsmExpr : public ExprBase {
 private:
     std::string inst;
-    bool isVoid;
+    std::vector<std::pair<std::string, Expr*>> output;
+    std::vector<std::pair<std::string, Expr*>> input;
+    std::string usedReg;
 
 public:
-    AsmExpr(const std::string&, bool);
+    AsmExpr(const std::string&, const std::vector<std::pair<std::string, Expr*>>&, const std::vector<std::pair<std::string, Expr*>>&, const std::string&);
 
     void print() const override;
     std::string toString() const override;

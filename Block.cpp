@@ -361,10 +361,10 @@ void Block::parseAsmInst(const llvm::Instruction& ins, bool isConstExpr, const l
     }
 
     if (!isConstExpr) {
-        func->createExpr(&ins, std::make_unique<AsmExpr>(inst, true));
+        func->createExpr(&ins, std::make_unique<AsmExpr>(inst, std::vector<std::pair<std::string, Expr*>>(), std::vector<std::pair<std::string, Expr*>>(), ""));
         abstractSyntaxTree.push_back(func->getExpr(&ins));
     } else {
-        func->createExpr(val, std::make_unique<AsmExpr>(inst, true));
+        func->createExpr(val, std::make_unique<AsmExpr>(inst, std::vector<std::pair<std::string, Expr*>>(), std::vector<std::pair<std::string, Expr*>>(), ""));
     }
 }
 
@@ -412,7 +412,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         }
 
         if (funcName.compare("llvm.trap") == 0 || funcName.compare("llvm.debugtrap") == 0) {
-            func->createExpr(&ins, std::make_unique<AsmExpr>("\"int3\"", true));
+            func->createExpr(&ins, std::make_unique<AsmExpr>("\"int3\"", std::vector<std::pair<std::string, Expr*>>(), std::vector<std::pair<std::string, Expr*>>(), ""));
             abstractSyntaxTree.push_back(func->getExpr(&ins));
             return;
         }
@@ -437,32 +437,36 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
         if (llvm::InlineAsm* IA = llvm::dyn_cast<llvm::InlineAsm>(callInst->getCalledValue())) {
             std::string asmString = "\"" + IA->getAsmString() + "\"";
+            std::vector<std::string> inputStrings;
+            std::vector<std::string> outputStrings;
+            std::string usedReg;
+
             if (!IA->getConstraintString().empty()) {
-                asmString += ", \"" + IA->getConstraintString() + "\"";
+                outputStrings = getAsmOutputStrings(IA->getConstraintString());
+                inputStrings = getAsmInputStrings(IA->getConstraintString());
+                usedReg = getAsmUsedRegString(IA->getConstraintString());
             }
 
+            std::vector<std::pair<std::string, Expr*>> output;
+            Expr* expr = nullptr;
+            for (const auto& str : outputStrings) {
+                output.push_back({str, expr});
+            }
+
+            std::vector<std::pair<std::string, Expr*>> input;
+            unsigned i = 0;
             for (const llvm::Use& param : callInst->arg_operands()) {
                 if (!func->getExpr(param)) {
                     createFuncCallParam(param);
                 }
-                asmString += ", " + func->getExpr(param)->toString();
+
+                input.push_back({inputStrings[i], func->getExpr(param)});
+                i++;
             }
+            func->createExpr(value, std::make_unique<AsmExpr>(asmString, output, input, usedReg));
 
-            if (VoidType* VT = dynamic_cast<VoidType*>(type.get())) {
-                func->createExpr(value, std::make_unique<AsmExpr>(asmString, true));
-
-                if (!isConstExpr) {
-                    abstractSyntaxTree.push_back(func->getExpr(&ins));
-                }
-            } else {
-                func->callExprMap[value] = std::make_unique<AsmExpr>(asmString, false);
-                func->createExpr(value, std::make_unique<Value>(func->getVarName(), type->clone()));
-                func->callValueMap[value] = std::make_unique<EqualsExpr>(func->getExpr(value), func->callExprMap[value].get());
-
-                if (!isConstExpr) {
-                    abstractSyntaxTree.push_back(func->getExpr(&ins));
-                    abstractSyntaxTree.push_back(func->callValueMap[&ins].get());
-                }
+            if (!isConstExpr) {
+                abstractSyntaxTree.push_back(func->getExpr(&ins));
             }
 
             return;
@@ -844,4 +848,99 @@ void Block::createFuncCallParam(const llvm::Use& param) {
     } else {
         createConstantValue(param);
     }
+}
+
+std::vector<std::string> Block::getAsmOutputStrings(const std::string& str) const {
+    std::vector<std::string> ret;
+    std::string constraint = str;
+    size_t pos = 0;
+    std::string tok;
+
+    while ((pos = constraint.find(',')) != std::string::npos) {
+        tok = constraint.substr(0, pos);
+
+        if (tok[0] != '=') {
+            break;
+        }
+
+        ret.push_back("\"=" + getRegisterString(tok) + "\"");
+
+        constraint.erase(0, pos + 1);
+    }
+
+    return ret;
+}
+
+std::vector<std::string> Block::getAsmInputStrings(const std::string& str) const {
+    std::vector<std::string> ret;
+    std::string constraint = str;
+    size_t pos = 0;
+    std::string tok;
+
+    while ((pos = constraint.find(',')) != std::string::npos) {
+        tok = constraint.substr(0, pos);
+
+        if (tok[0] == '=') {
+            constraint.erase(0, pos + 1);
+            continue;
+        }
+
+        if (tok[0] == '~') {
+            break;
+        }
+
+        ret.push_back("\"" + getRegisterString(tok) + "\"");
+
+        constraint.erase(0, pos + 1);
+    }
+
+    return ret;
+}
+
+std::string Block::getRegisterString(const std::string& str) const {
+    std::string ret;
+
+    if (str[1] != '{') {
+        return str;
+    }
+
+    if (str[3] == 'i') {
+        return ret + (char)std::toupper(str[2]);
+    }
+
+    if (str[3] == 'x') {
+        return ret + str[2];
+    }
+    return "";
+}
+
+std::string Block::getAsmUsedRegString(const std::string& str) const {
+    static std::vector<std::string> REGS = {"%rax", "%eax", "%ax", "%al", "%rbx", "%ebx", "%bx", "%bl", "%rcx", "%ecx", "%cx",
+                              "%cl", "%rdx", "%edx", "%dx", "%dl", "%rsi", "%esi", "%si", "%rdi", "%edi", "%di"};
+    std::string ret;
+    std::string constraint = str;
+    size_t pos = 0;
+    std::string tok;
+
+    bool first = true;
+    while ((pos = constraint.find(',')) != std::string::npos) {
+        tok = constraint.substr(0, pos);
+        if (tok[0] != '~') {
+            constraint.erase(0, pos + 1);
+            continue;
+        }
+
+        std::string reg = "%" + tok.substr(2, tok.size() - 3);
+        if (std::find(REGS.begin(), REGS.end(), reg) != REGS.end()) {
+            if (!first) {
+                ret += ", ";
+            }
+            first = false;
+            ret += "\"" + reg + "\"";
+        }
+
+        constraint.erase(0, pos + 1);
+    }
+
+    return ret;
 }

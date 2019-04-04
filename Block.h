@@ -185,6 +185,34 @@ private:
      */
     void createFuncCallParam(const llvm::Use& param);
 
+    /**
+     * @brief getAsmOutputString Parses asm constraint string to get output operands.
+     * @param str asm constraint string
+     * @return Strings containing output operand for inline assembler
+     */
+    std::vector<std::string> getAsmOutputStrings(const std::string& str) const;
+
+    /**
+     * @brief getAsmInputStrings Parses asm constraint string to get input operands.
+     * @param str asm constraint string
+     * @return Vector of strings containing input operand for inline assembler
+     */
+    std::vector<std::string> getAsmInputStrings(const std::string& str) const;
+
+    /**
+     * @brief getRegisterString Parses string containing register label from LLVM to C.
+     * @param str LLVM register string
+     * @return C register string
+     */
+    std::string getRegisterString(const std::string& str) const;
+
+    /**
+     * @brief getAsmUsedRegString Parses asm constraint string to get used registers.
+     * @param str asm constraint string
+     * @return String containing used registers
+     */
+    std::string getAsmUsedRegString(const std::string& str) const;
+
 public:
     std::string blockName;
 
