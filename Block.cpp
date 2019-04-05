@@ -149,6 +149,20 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
         }
     }
 
+    if (llvm::ExtractValueInst* EVI = llvm::dyn_cast<llvm::ExtractValueInst>(ins.getOperand(0))) {
+        if (func->getExpr(ins.getOperand(1)) == nullptr) {
+            createConstantValue(ins.getOperand(1));
+        }
+        Expr* value = func->getExpr(ins.getOperand(1));
+        Expr* asmExpr = func->getExpr(EVI->getOperand(0));
+
+        if (auto AE = dynamic_cast<AsmExpr*>(asmExpr)) {
+            AE->addOutputExpr(value, EVI->getIndices()[0]);
+            return;
+        }
+
+    }
+
     if (func->getExpr(ins.getOperand(0)) == nullptr) {
         createConstantValue(ins.getOperand(0));
     }
@@ -441,9 +455,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         isFuncPointer = true;
 
         if (llvm::InlineAsm* IA = llvm::dyn_cast<llvm::InlineAsm>(callInst->getCalledValue())) {
-            std::string asmString = "\"" + IA->getAsmString() + "\"";
-            asmString.erase(std::remove(asmString.begin(), asmString.end(), '\n'), asmString.end());
-
+            std::string asmString = IA->getAsmString();
             std::vector<std::string> inputStrings;
             std::vector<std::string> outputStrings;
             std::string usedReg;
@@ -633,6 +645,10 @@ void Block::parseExtractValueInstruction(const llvm::Instruction& ins, bool isCo
     std::unique_ptr<Type> prevType = func->getType(ins.getOperand(0)->getType());
     Expr* expr = func->getExpr(ins.getOperand(0));
 
+    if (auto AE = dynamic_cast<AsmExpr*>(expr)) {
+        return;
+    }
+
     for (unsigned idx : EVI->getIndices()) {
         std::unique_ptr<Expr> element = nullptr;
 
@@ -651,7 +667,7 @@ void Block::parseExtractValueInstruction(const llvm::Instruction& ins, bool isCo
         expr = indices[indices.size() - 1].get();
     }
 
-    func->createExpr(isConstExpr ? val : &ins, std::make_unique<ExtractElementExpr>(indices));
+    func->createExpr(isConstExpr ? val : &ins, std::make_unique<ExtractValueExpr>(indices));
 }
 
 void Block::parseLLVMInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
@@ -908,7 +924,7 @@ std::string Block::getRegisterString(const std::string& str) const {
     std::string ret;
 
     if (str[1] != '{') {
-        return str;
+        return str.substr(1, str.size() - 1);
     }
 
     if (str[3] == 'i') {

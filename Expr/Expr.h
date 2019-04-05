@@ -78,12 +78,12 @@ public:
     std::string toString() const override;
 };
 
-class ExtractElementExpr : public ExprBase { //rename
+class ExtractValueExpr : public ExprBase { //rename
 private:
     std::vector<std::unique_ptr<Expr>> indices;
 
 public:
-    ExtractElementExpr(std::vector<std::unique_ptr<Expr>>&);
+    ExtractValueExpr(std::vector<std::unique_ptr<Expr>>&);
 
     void print() const override;
     std::string toString() const override;

@@ -104,7 +104,7 @@ void ArrayElement::print() const {
     llvm::outs() << toString();
 }
 
-ExtractElementExpr::ExtractElementExpr(std::vector<std::unique_ptr<Expr>>& indices) {
+ExtractValueExpr::ExtractValueExpr(std::vector<std::unique_ptr<Expr>>& indices) {
     for (auto& idx : indices) {
         this->indices.push_back(std::move(idx));
     }
@@ -112,11 +112,11 @@ ExtractElementExpr::ExtractElementExpr(std::vector<std::unique_ptr<Expr>>& indic
     setType(this->indices[this->indices.size() - 1]->getType()->clone());
 }
 
-void ExtractElementExpr::print() const {
+void ExtractValueExpr::print() const {
     llvm::outs() << toString();
 }
 
-std::string ExtractElementExpr::toString() const {
+std::string ExtractValueExpr::toString() const {
     return indices[indices.size() - 1]->toString();
 }
 
@@ -259,7 +259,7 @@ void AsmExpr::print() const {
 }
 
 std::string AsmExpr::toString() const {
-    std::string ret = "__asm__(" + inst + "\n        : ";
+    std::string ret = "__asm__(\"" + inst + "\"\n        : ";
 
     if (!output.empty()) {
         bool first = true;
