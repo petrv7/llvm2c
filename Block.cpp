@@ -163,6 +163,11 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
         derefs[val1] = std::make_unique<DerefExpr>(val1);
     }
 
+    if (auto AE = dynamic_cast<AsmExpr*>(val0)) {
+        AE->addOutputExpr(val1, 0);
+        return;
+    }
+
     if (!isConstExpr) {
         func->createExpr(&ins, std::make_unique<EqualsExpr>(derefs[val1].get(), val0));
         abstractSyntaxTree.push_back(func->getExpr(&ins));
@@ -437,6 +442,8 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
         if (llvm::InlineAsm* IA = llvm::dyn_cast<llvm::InlineAsm>(callInst->getCalledValue())) {
             std::string asmString = "\"" + IA->getAsmString() + "\"";
+            asmString.erase(std::remove(asmString.begin(), asmString.end(), '\n'), asmString.end());
+
             std::vector<std::string> inputStrings;
             std::vector<std::string> outputStrings;
             std::string usedReg;

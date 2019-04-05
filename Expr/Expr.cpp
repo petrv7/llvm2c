@@ -259,7 +259,7 @@ void AsmExpr::print() const {
 }
 
 std::string AsmExpr::toString() const {
-    std::string ret = "__asm__(" + inst + "\n    : ";
+    std::string ret = "__asm__(" + inst + "\n        : ";
 
     if (!output.empty()) {
         bool first = true;
@@ -271,11 +271,18 @@ std::string AsmExpr::toString() const {
                 ret += ", ";
             }
             first = false;
-            ret += out.first + " (" + out.second->toString() + ")";
+
+            ret += out.first + " (";
+            if (out.second->toString()[0] == '&') {
+                ret += out.second->toString().substr(2, out.second->toString().size() - 3);
+            } else {
+                ret += "*(" + out.second->toString() + ")";
+            }
+            ret += ")";
         }
     }
 
-    ret += "\n    : ";
+    ret += "\n        : ";
 
     if (!input.empty()) {
         bool first = true;
@@ -288,13 +295,17 @@ std::string AsmExpr::toString() const {
         }
     }
 
-    ret += "\n    : ";
+    ret += "\n        : ";
 
     if (!usedReg.empty()) {
         ret += usedReg;
     }
 
-    return ret + "\n);";
+    return ret + "\n    );";
+}
+
+void AsmExpr::addOutputExpr(Expr* expr, unsigned pos) {
+    output[pos].second = expr;
 }
 
 CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type, bool isFuncPointer)

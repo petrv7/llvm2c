@@ -167,6 +167,13 @@ public:
 
     void print() const override;
     std::string toString() const override;
+
+    /**
+     * @brief addOutputExpr Adds Expr to the output vector
+     * @param expr Output expression
+     * @param pos Position in vector
+     */
+    void addOutputExpr(Expr* expr, unsigned pos);
 };
 
 class CallExpr : public ExprBase {
