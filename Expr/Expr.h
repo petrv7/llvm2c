@@ -56,11 +56,11 @@ class StructElement : public ExprBase {
 private:
     Struct* strct;
     Expr* expr;
-    long element;
+    unsigned element;
     unsigned int move;
 
 public:
-    StructElement(Struct*, Expr*, long, unsigned int);
+    StructElement(Struct*, Expr*, unsigned, unsigned int);
 
     void print() const override;
     std::string toString() const override;
@@ -69,16 +69,16 @@ public:
 class ArrayElement : public ExprBase {
 private:
     Expr* expr;
-    long element;
+    Expr* element;
 
 public:
-    ArrayElement(Expr*, long);
+    ArrayElement(Expr*, Expr*);
 
     void print() const override;
     std::string toString() const override;
 };
 
-class ExtractValueExpr : public ExprBase { //rename
+class ExtractValueExpr : public ExprBase {
 private:
     std::vector<std::unique_ptr<Expr>> indices;
 
@@ -178,12 +178,12 @@ public:
 
 class CallExpr : public ExprBase {
 private:
+    Expr* funcValue;
     std::string funcName;
     std::vector<Expr*> params;
-    bool isFuncPointer;
 
 public:
-    CallExpr(const std::string&, std::vector<Expr*>, std::unique_ptr<Type>, bool);
+    CallExpr(Expr*, const std::string&, std::vector<Expr*>, std::unique_ptr<Type>);
 
     void print() const override;
     std::string toString() const override;

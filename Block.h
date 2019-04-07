@@ -6,6 +6,7 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DebugInfoMetadata.h"
+#include "llvm/IR/InlineAsm.h"
 
 #include "Expr/Expr.h"
 
@@ -22,9 +23,11 @@ private:
     Func* func;
 
     std::vector<Expr*> abstractSyntaxTree; //vector used for saving instructions of the block in form of AST
-    llvm::DenseMap<const llvm::Value*, std::unique_ptr<StructElement>> structElements; //DenseMap used for storing unique pointers to StructElements (used in parsing getelementptr instruction and constant expressions)
+    //llvm::DenseMap<const llvm::Value*, std::unique_ptr<StructElement>> structElements; //DenseMap used for storing unique pointers to StructElements (used in parsing getelementptr instruction and constant expressions)
+    std::vector<std::unique_ptr<StructElement>> structElements;
     std::map<Expr*, std::unique_ptr<Expr>> derefs; //Map used for storing unique pointers to DerefExpr (used in store instruction parsing)
     std::map<Expr*, std::unique_ptr<Expr>> refs; //Map used for storing unique pointers to RefExpr (used in parsing getelementptr instruction and constant expressions)
+    std::vector<std::unique_ptr<Value>> values; //vector containing Values used in parsing extractvalue
 
     /**
      * @brief parseAllocaInstruction Parses alloca instruction into Value and RefExpr.
@@ -187,17 +190,17 @@ private:
 
     /**
      * @brief getAsmOutputString Parses asm constraint string to get output operands.
-     * @param str asm constraint string
+     * @param info ConstraintInfoVector containing parsed asm constraint string
      * @return Strings containing output operand for inline assembler
      */
-    std::vector<std::string> getAsmOutputStrings(const std::string& str) const;
+    std::vector<std::string> getAsmOutputStrings(llvm::InlineAsm::ConstraintInfoVector info) const;
 
     /**
      * @brief getAsmInputStrings Parses asm constraint string to get input operands.
-     * @param str asm constraint string
+     * @param info ConstraintInfoVector containing parsed asm constraint string
      * @return Vector of strings containing input operand for inline assembler
      */
-    std::vector<std::string> getAsmInputStrings(const std::string& str) const;
+    std::vector<std::string> getAsmInputStrings(llvm::InlineAsm::ConstraintInfoVector info) const;
 
     /**
      * @brief getRegisterString Parses string containing register label from LLVM to C.
@@ -208,10 +211,17 @@ private:
 
     /**
      * @brief getAsmUsedRegString Parses asm constraint string to get used registers.
-     * @param str asm constraint string
+     * @param info ConstraintInfoVector containing parsed asm constraint string
      * @return String containing used registers
      */
-    std::string getAsmUsedRegString(const std::string& str) const;
+    std::string getAsmUsedRegString(llvm::InlineAsm::ConstraintInfoVector info) const;
+
+    /**
+     * @brief toRawString Converts string to its raw format (including escape chars etc.)
+     * @param str String
+     * @return String in raw format
+     */
+    std::string toRawString(const std::string& str) const;
 
 public:
     std::string blockName;

@@ -130,8 +130,12 @@ std::string Program::getAnonStructName() {
     return name;
 }
 
-std::string Program::getValue(const llvm::Constant* val) const {
+std::string Program::getValue(const llvm::Constant* val) {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(val->getType())) {
+        if (val->getName().str().empty()) {
+            return "0";
+        }
+
         if (llvm::ConstantPointerNull* CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
             return "0";
         }
@@ -158,6 +162,16 @@ std::string Program::getValue(const llvm::Constant* val) const {
     }
 
     if (llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
+        if (CFP->isInfinity()) {
+            this->hasMath = true;
+            return "INFINITY";
+        }
+
+        if (CFP->isNaN()) {
+            hasMath = true;
+            return "NAN";
+        }
+
         return std::to_string(CFP->getValueAPF().convertToFloat());
     }
 
@@ -192,7 +206,11 @@ std::string Program::getValue(const llvm::Constant* val) const {
         return value + "}";
     }
 
-    return "";
+    if (!val->getType()->isStructTy() && !val->getType()->isPointerTy() && !val->getType()->isArrayTy()) {
+        return "0";
+    }
+
+    return "{}";
 }
 
 void Program::unsetAllInit() {
@@ -208,14 +226,32 @@ void Program::unsetAllInit() {
 void Program::print() {
     unsetAllInit();
 
+    if (hasMath) {
+        llvm::outs() << "#include \"math.h\"\n";
+    }
+
     if (hasVarArg) {
-        llvm::outs() << "#include <stdarg.h>\n\n";
+        llvm::outs() << "#include <stdarg.h>\n";
+    }
+
+    if (hasMath || hasVarArg) {
+        llvm::outs() << "\n";
     }
 
     if (!structs.empty()) {
         llvm::outs() << "//Struct declarations\n";
         for (const auto& strct : structs) {
             llvm::outs() << "struct " << strct->name << ";\n";
+        }
+        llvm::outs() << "\n";
+    }
+
+    if (!structs.empty()) {
+        llvm::outs() << "//Struct definitions\n";
+        for (auto& strct : structs) {
+            if (!strct->isPrinted) {
+                printStruct(strct.get());
+            }
         }
         llvm::outs() << "\n";
     }
@@ -241,16 +277,6 @@ void Program::print() {
         llvm::outs() << "//Function declarations\n";
         for (const auto& func : declarations) {
             func->print();
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (!structs.empty()) {
-        llvm::outs() << "//Struct definitions\n";
-        for (auto& strct : structs) {
-            if (!strct->isPrinted) {
-                printStruct(strct.get());
-            }
         }
         llvm::outs() << "\n";
     }
@@ -295,11 +321,11 @@ void Program::printStruct(Struct* strct) {
             }
         }
 
-        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
+        /*if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
             if (PT->isStructPointer && PT->isArrayPointer) {
                 printStruct(getStruct(PT->structName));
             }
-        }
+        }*/
 
         if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
             for (auto& s : structs) {
@@ -307,13 +333,19 @@ void Program::printStruct(Struct* strct) {
                     printStruct(s.get());
                 }
             }
+
+            for (auto& s : unnamedStructs) {
+                if (s.second->name == ST->name) {
+                    printStruct(s.second.get());
+                }
+            }
         }
     }
     if (!strct->isPrinted) {
         strct->print();
         strct->isPrinted = true;
+        llvm::outs() << "\n\n";
     }
-    llvm::outs() << "\n";
 }
 
 void Program::saveStruct(Struct* strct, std::ofstream& file) {
@@ -324,11 +356,11 @@ void Program::saveStruct(Struct* strct, std::ofstream& file) {
             }
         }
 
-        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
+        /*if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
             if (PT->isStructPointer && PT->isArrayPointer) {
                 saveStruct(getStruct(PT->structName), file);
             }
-        }
+        }*/
 
         if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
             for (auto& s : structs) {
@@ -336,13 +368,19 @@ void Program::saveStruct(Struct* strct, std::ofstream& file) {
                     saveStruct(s.get(), file);
                 }
             }
+
+            for (auto& s : unnamedStructs) {
+                if (s.second->name == ST->name) {
+                    saveStruct(s.second.get(), file);
+                }
+            }
         }
     }
     if (!strct->isPrinted) {
         file << strct->toString();
         strct->isPrinted = true;
+        file << "\n\n";
     }
-    file << "\n";
 }
 
 void Program::saveFile(const std::string& fileName) {
@@ -351,14 +389,32 @@ void Program::saveFile(const std::string& fileName) {
     std::ofstream file;
     file.open(fileName);
 
+    if (hasMath) {
+        file << "#include \"math.h\"\n";
+    }
+
     if (hasVarArg) {
-        file << "#include <stdarg.h>\n\n";
+        file << "#include <stdarg.h>\n";
+    }
+
+    if (hasMath || hasVarArg) {
+        file << "\n";
     }
 
     if (!structs.empty()) {
         file << "//Struct declarations\n";
         for (auto& strct : structs) {
             file << "struct " << strct->name << ";\n";
+        }
+        file << "\n";
+    }
+
+    if (!structs.empty()) {
+        file << "//Struct definitions\n";
+        for (auto& strct : structs) {
+            if (!strct->isPrinted) {
+                saveStruct(strct.get(), file);
+            }
         }
         file << "\n";
     }
@@ -384,16 +440,6 @@ void Program::saveFile(const std::string& fileName) {
         file << "//Function declarations\n";
         for (const auto& func : declarations) {
             func->saveFile(file);
-        }
-        file << "\n";
-    }
-
-    if (!structs.empty()) {
-        file << "//Struct definitions\n";
-        for (auto& strct : structs) {
-            if (!strct->isPrinted) {
-                saveStruct(strct.get(), file);
-            }
         }
         file << "\n";
     }

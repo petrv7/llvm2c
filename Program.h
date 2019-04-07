@@ -52,7 +52,7 @@ private:
      * @param val llvm Constant used for initialization
      * @return Init value
      */
-    std::string getValue(const llvm::Constant* val) const;
+    std::string getValue(const llvm::Constant* val);
 
     /**
      * @brief unsetAllInit Resets the init flag for every global variable.
@@ -96,6 +96,7 @@ private:
 public:
     std::string fileName;
     bool stackIgnored = false; //instruction stacksave was ignored
+    bool hasMath = false; //program uses "math.h"
 
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.

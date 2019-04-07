@@ -82,6 +82,8 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
             for (unsigned i = 0; i < FT->getNumParams(); i++) {
                 functionType->addParam(getType(FT->getParamType(0), voidType));
             }
+
+            functionType->isVarArg = FT->isVarArg();
         }
 
         return functionType;

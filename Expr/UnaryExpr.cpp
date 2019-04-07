@@ -37,25 +37,25 @@ void GepExpr::print() const {
 
 std::string GepExpr::toString() const {
     std::string print = expr->toString();
+    bool move;
 
     for (unsigned i = 0; i < args.size(); i++) {
-        bool move = true;
-        if (args[i].second->toString().compare("0") == 0) {
-            move = false;
-        }
+        move = args[i].second->toString().compare("0") != 0;
 
         if (i == 0) {
             if (move) {
-                print.append(" + " + args[i].second->toString());
+                if (auto SE = dynamic_cast<StructElement*>(args[i].second)) {
+                    print.append(SE->toString());
+                } else {
+                    print.append(" + " + args[i].second->toString());
+                }
             }
             continue;
         }
+
         if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
-            if (auto ST = dynamic_cast<StructType*>(AT->type.get())) {
-                print = "(*((" + args[i].first->toString() + "(*)" + AT->sizeToString() + ")" + print;
-                if (ST->name.compare("__va_list_tag") != 0) {
-                    print = "" + print;
-                }
+            if (AT->isPointerArray && AT->pointer->isFuncPointer) {
+                print = "(((" + args[i].first->toString() + "(**)" + AT->pointer->params + ")" + print;
             } else {
                 print = "(*((" + args[i].first->toString() + "(*)" + AT->sizeToString() + ")" + print;
             }
@@ -64,9 +64,34 @@ std::string GepExpr::toString() const {
         }
 
         if (move) {
-            print.append(") + " + args[i].second->toString() + ")");
+            if (auto SE = dynamic_cast<StructElement*>(args[i].second)) {
+                print += "))";
+                print.append(args[i].second->toString());
+            } else {
+                print.append(") + " + args[i].second->toString() + ")");
+            }
         } else {
             print.append("))");
+        }
+
+        if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
+            if (i != args.size() - 1) {
+                print = "(*(" + print + "))";
+            }
+        }
+
+        if (i == args.size() - 1) {
+            bool isPointer = false;
+            if (auto PT = dynamic_cast<PointerType*>(args[i].first.get())) {
+                isPointer = true;
+            }
+            if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
+                isPointer = true;
+            }
+
+            if (!isPointer) {
+                print = "&((" + args[i].first->toString() + "*)" + print + ")";
+            }
         }
     }
 

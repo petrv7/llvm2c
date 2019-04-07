@@ -19,10 +19,6 @@ Func::Func(llvm::Function* func, Program* program, bool isDeclaration) {
     this->isDeclaration = isDeclaration;
     returnType = getType(func->getReturnType());
 
-    if (func->getName().str().compare("writeb") == 0) {
-        llvm::outs().flush();
-    }
-
     parseFunction();
 }
 
@@ -118,11 +114,8 @@ void Func::print() const {
         llvm::outs() << " ";
         val->print();
 
-        if (auto PT = dynamic_cast<PointerType*>(val->getType())) {
-            if (PT->isFuncPointer) {
-                llvm::outs() << " " << PT->params;
-            }
-        }
+        val->init = true;
+
     }
 
     if (isVarArg) {
@@ -182,11 +175,7 @@ void Func::saveFile(std::ofstream& file) const {
         file << " ";
         file << val->toString();
 
-        if (auto PT = dynamic_cast<PointerType*>(val->getType())) {
-            if (PT->isFuncPointer) {
-                file << " " << PT->params;
-            }
-        }
+        val->init = true;
     }
 
     if (isVarArg) {
@@ -244,4 +233,8 @@ void Func::createNewUnnamedStruct(const llvm::StructType* strct) {
 
 std::unique_ptr<Type> Func::getType(const llvm::Type* type, bool voidType) {
     return program->getType(type, voidType);
+}
+
+void Func::hasMath() {
+    program->hasMath = true;
 }

@@ -33,6 +33,10 @@ std::string FunctionType::paramsToString() const {
         ret += param->toString();
     }
 
+    if (isVarArg) {
+        ret += ", ...";
+    }
+
     return ret + ")";
 }
 
@@ -94,15 +98,24 @@ ArrayType::ArrayType(std::unique_ptr<Type> type, unsigned int size)
     : type(std::move(type)),
       size(size) {
     isStructArray = false;
+    isPointerArray = false;
 
     if (auto AT = dynamic_cast<ArrayType*>(this->type.get())) {
         isStructArray = AT->isStructArray;
         structName = AT->structName;
+
+        isPointerArray = AT->isPointerArray;
+        pointer = AT->pointer;
     }
 
     if (auto ST = dynamic_cast<StructType*>(this->type.get())) {
         isStructArray = true;
         structName = ST->name;
+    }
+
+    if (auto PT = dynamic_cast<PointerType*>(this->type.get())) {
+        isPointerArray = true;
+        pointer = PT;
     }
 }
 
@@ -111,6 +124,8 @@ ArrayType::ArrayType(const ArrayType& other) {
     type = other.type->clone();
     isStructArray = other.isStructArray;
     structName = other.structName;
+    isPointerArray = other.isPointerArray;
+    pointer = other.pointer;
 }
 
 std::unique_ptr<Type> ArrayType::clone() const  {

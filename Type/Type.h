@@ -30,11 +30,14 @@ public:
 };
 
 class FunctionType : public Type {
+friend class TypeHandler;
 private:
     std::unique_ptr<Type> retType;
     std::vector<std::unique_ptr<Type>> params;
 
 public:
+    bool isVarArg = false;
+
     FunctionType(std::unique_ptr<Type>);
     FunctionType(const FunctionType&);
 
@@ -71,32 +74,6 @@ public:
     std::string toString() const override;
 };
 
-class ArrayType : public Type {
-public:
-    std::unique_ptr<Type> type;
-    unsigned int size;
-
-    bool isStructArray;
-    std::string structName;
-
-    ArrayType(std::unique_ptr<Type>, unsigned int);
-    ArrayType(const ArrayType&);
-
-    std::unique_ptr<Type> clone() const override;
-    void print() const override;
-    std::string toString() const override;
-
-    void printSize() const;
-    std::string sizeToString() const;
-};
-
-class VoidType : public Type {
-public:
-    std::unique_ptr<Type> clone() const override;
-    void print() const override;
-    std::string toString() const override;
-};
-
 class PointerType : public Type {
 public:
     std::unique_ptr<Type> type;
@@ -114,6 +91,35 @@ public:
     PointerType(std::unique_ptr<Type>);
     PointerType(const PointerType& other);
 
+    std::unique_ptr<Type> clone() const override;
+    void print() const override;
+    std::string toString() const override;
+};
+
+class ArrayType : public Type {
+public:
+    std::unique_ptr<Type> type;
+    unsigned int size;
+
+    bool isStructArray;
+    std::string structName;
+
+    bool isPointerArray;
+    PointerType* pointer;
+
+    ArrayType(std::unique_ptr<Type>, unsigned int);
+    ArrayType(const ArrayType&);
+
+    std::unique_ptr<Type> clone() const override;
+    void print() const override;
+    std::string toString() const override;
+
+    void printSize() const;
+    std::string sizeToString() const;
+};
+
+class VoidType : public Type {
+public:
     std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;

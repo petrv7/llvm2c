@@ -66,7 +66,7 @@ void Struct::addItem(std::unique_ptr<Type> type, const std::string& name) {
     items.push_back(std::make_pair(std::move(type), name));
 }
 
-StructElement::StructElement(Struct* strct, Expr* expr, long element, unsigned int move)
+StructElement::StructElement(Struct* strct, Expr* expr, unsigned element, unsigned int move)
     : strct(strct),
       expr(expr),
       element(element),
@@ -79,6 +79,10 @@ void StructElement::print() const {
 }
 
 std::string StructElement::toString() const {
+    if (!expr) {
+        return "." + strct->items[element].second;
+    }
+
     std::string ret = "(";
     if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
         ret += expr->toString();
@@ -91,9 +95,10 @@ std::string StructElement::toString() const {
     } else {
         return ret + " + " + std::to_string(move) + ")->" + strct->items[element].second;
     }
+
 }
 
-ArrayElement::ArrayElement(Expr* expr, long elem)
+ArrayElement::ArrayElement(Expr* expr, Expr* elem)
     : expr(expr),
       element(elem) {
     ArrayType* AT = static_cast<ArrayType*>(expr->getType());
@@ -102,6 +107,10 @@ ArrayElement::ArrayElement(Expr* expr, long elem)
 
 void ArrayElement::print() const {
     llvm::outs() << toString();
+}
+
+std::string ArrayElement::toString() const {
+    return "(" + expr->toString() + ")[" + element->toString() + "]";
 }
 
 ExtractValueExpr::ExtractValueExpr(std::vector<std::unique_ptr<Expr>>& indices) {
@@ -120,10 +129,6 @@ std::string ExtractValueExpr::toString() const {
     return indices[indices.size() - 1]->toString();
 }
 
-std::string ArrayElement::toString() const {
-    return "(" + expr->toString() + ")[" + std::to_string(element) + "]";
-}
-
 Value::Value(const std::string& valueName, std::unique_ptr<Type> type) {
     setType(std::move(type));
     this->valueName = valueName;
@@ -135,9 +140,13 @@ void Value::print() const {
 }
 
 std::string Value::toString() const {
+    if (valueName.compare("0") == 0) {
+        return valueName;
+    }
+
     if (!init) {
+        std::string ret;
         if (auto PT = dynamic_cast<PointerType*>(getType())) {
-            std::string ret;
             if ((PT->isFuncPointer || PT->isArrayPointer) && valueName.compare("0") != 0) {
                 ret = "(";
                 for (unsigned i = 0; i < PT->levels; i++) {
@@ -145,12 +154,29 @@ std::string Value::toString() const {
                 }
                 ret += valueName + ")";
             }
+
             if (PT->isArrayPointer) {
                 ret = ret + "[" + std::to_string(PT->size) + "]";
             }
 
+            if (PT->isFuncPointer) {
+                ret += PT->params;
+            }
+
             if (!ret.empty()) {
                 return ret;
+            }
+        }
+
+        if (auto AT = dynamic_cast<ArrayType*>(getType())) {
+            if (AT->isPointerArray && AT->pointer->isFuncPointer) {
+                ret = "(";
+                for (unsigned i = 0; i < AT->pointer->levels; i++) {
+                    ret += "*";
+                }
+                return ret + valueName + AT->sizeToString() + ")" + AT->pointer->params;
+            } else {
+                return valueName + AT->sizeToString();
             }
         }
     }
@@ -166,12 +192,52 @@ void GlobalValue::print() const {
     llvm::outs() << toString();
 }
 
-std::string GlobalValue::toString() const {
+std::string GlobalValue::toString() const {   
     if (!init) {
-        std::string ret = getType()->toString() + " " + valueName;
+        std::string ret = getType()->toString() + " ";
         if (ArrayType* AT = dynamic_cast<ArrayType*>(getType())) {
-            ret += AT->sizeToString();
+            if (AT->isPointerArray && AT->pointer->isFuncPointer) {
+                ret += " (";
+                for (unsigned i = 0; i < AT->pointer->levels; i++) {
+                    ret += "*";
+                }
+                ret += valueName + AT->sizeToString() + ")" + AT->pointer->params;
+            } else {
+                ret += " " + valueName + AT->sizeToString();;
+            }
+        } else if (auto PT = dynamic_cast<PointerType*>(getType())) {
+            if ((PT->isFuncPointer || PT->isArrayPointer) && valueName.compare("0") != 0) {
+                ret += "(";
+                for (unsigned i = 0; i < PT->levels; i++) {
+                    ret += "*";
+                }
+                ret += valueName + ")";
+            } else {
+                ret += " " + valueName;
+
+                if (!value.empty()) {
+                    ret += " = " + value;
+                }
+
+                return ret + ";";
+            }
+
+            if (PT->isArrayPointer) {
+                ret = ret + "[" + std::to_string(PT->size) + "]";
+            }
+
+            if (PT->isFuncPointer) {
+                ret += PT->params;
+            }
+
+            /*if (!ret.empty()) {
+                return ret;
+            }*/
+
+        } else {
+            ret += valueName;
         }
+
         if (!value.empty()) {
             ret += " = " + value;
         }
@@ -183,9 +249,43 @@ std::string GlobalValue::toString() const {
 }
 
 std::string GlobalValue::declToString() const {
-    std::string ret = getType()->toString() + " " + valueName;
+    std::string ret = getType()->toString();
     if (ArrayType* AT = dynamic_cast<ArrayType*>(getType())) {
-        ret += AT->sizeToString();
+        if (AT->isPointerArray && AT->pointer->isFuncPointer) {
+            ret += " (";
+            for (unsigned i = 0; i < AT->pointer->levels; i++) {
+                ret += "*";
+            }
+            ret += valueName + AT->sizeToString() + ")" + AT->pointer->params;
+
+        } else {
+            ret += " " + valueName + AT->sizeToString();;
+        }
+    } else if (auto PT = dynamic_cast<PointerType*>(getType())) {
+        if ((PT->isFuncPointer || PT->isArrayPointer) && valueName.compare("0") != 0) {
+            ret += "(";
+            for (unsigned i = 0; i < PT->levels; i++) {
+                ret += "*";
+            }
+            ret += valueName + ")";
+        } else {
+            return ret + " " + valueName + ";";
+        }
+
+        if (PT->isArrayPointer) {
+            ret = ret + "[" + std::to_string(PT->size) + "]";
+        }
+
+        if (PT->isFuncPointer) {
+            ret += PT->params;
+        }
+
+        /*if (!ret.empty()) {
+            return ret;
+        }*/
+
+    } else {
+        ret += " " + valueName;
     }
 
     return ret + ";";
@@ -273,6 +373,12 @@ std::string AsmExpr::toString() const {
             first = false;
 
             ret += out.first + " (";
+
+            if (auto CE = dynamic_cast<CastExpr*>(out.second)) {
+                llvm::outs() << "WARNING: use of a cast in a inline asm context! Build with \"-fheinous-gnu-extensions\"!";
+                llvm::outs().flush();
+            }
+
             if (out.second->toString()[0] == '&') {
                 ret += out.second->toString().substr(2, out.second->toString().size() - 3);
             } else {
@@ -291,7 +397,19 @@ std::string AsmExpr::toString() const {
                 ret += ", ";
             }
             first = false;
-            ret += in.first + " (" + in.second->toString() + ")";
+
+            ret += in.first + " ";
+
+            if (auto CE = dynamic_cast<CastExpr*>(in.second)) {
+                llvm::outs() << "WARNING: use of a cast in a inline asm context! Build with \"-fheinous-gnu-extensions\"!";
+                llvm::outs().flush();
+            }
+
+            if (in.second->toString()[0] == '&') {
+                ret += "(" + in.second->toString().substr(1, in.second->toString().size() - 1) + ")";
+            } else {
+                ret += "(" + in.second->toString() + ")";
+            }
         }
     }
 
@@ -308,11 +426,10 @@ void AsmExpr::addOutputExpr(Expr* expr, unsigned pos) {
     output[pos].second = expr;
 }
 
-CallExpr::CallExpr(const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type, bool isFuncPointer)
-    : funcName(funcName),
-      params(params),
-      isFuncPointer(isFuncPointer)
-{
+CallExpr::CallExpr(Expr* funcValue, const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type)
+    : funcValue(funcValue),
+      funcName(funcName),
+      params(params) {
     setType(std::move(type));
 }
 
@@ -323,8 +440,8 @@ void CallExpr::print() const {
 std::string CallExpr::toString() const {
     std::string ret;
 
-    if (isFuncPointer) {
-        ret += "(" + funcName + ")(";
+    if (funcValue) {
+        ret += "(" + funcValue->toString() + ")(";
     } else {
         ret += funcName + "(";
     }
@@ -342,6 +459,7 @@ std::string CallExpr::toString() const {
         } else {
             ret += ", " + param->toString();
         }
+
         first = false;
     }
 

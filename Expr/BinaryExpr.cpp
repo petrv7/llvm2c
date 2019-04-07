@@ -111,7 +111,7 @@ void XorExpr::print() const {
 }
 
 std::string XorExpr::toString() const {
-    return "(" + left->toString() + " ^ " + right->toString() + ")";
+    return "((" + left->toString() + ") ^ (" + right->toString() + "))";
 }
 
 CmpExpr::CmpExpr(Expr* l, Expr* r, const std::string& cmp, bool isUnsigned) :
@@ -126,16 +126,15 @@ void CmpExpr::print() const {
 }
 
 std::string CmpExpr::toString() const {
-    std::string ret;
     if (isUnsigned) {
         auto ITL = static_cast<IntegerType*>(left->getType());
         auto ITR = static_cast<IntegerType*>(right->getType());
 
         if (!ITL->unsignedType && !ITR->unsignedType) {
-            ret = "(unsigned " + ITL->toString() + ")";
+            return "(unsigned " + ITL->toString() + ")(" + left->toString() + ") " + comparsion + " (" + right->toString() + ")";;
         }
     }
-    return ret + left->toString() + " " + comparsion + " " + right->toString();
+    return "(" + left->toString() + ") " + comparsion + " (" + right->toString() + ")";
 }
 
 AshrExpr::AshrExpr(Expr* l, Expr* r) :
