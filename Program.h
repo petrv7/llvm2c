@@ -93,6 +93,12 @@ private:
      */
     void parseGlobalVars();
 
+    /**
+     * @brief getIncludeString Returns string containing all includes program uses.
+     * @return String containing includes;
+     */
+    std::string getIncludeString() const;
+
 public:
     std::string fileName;
     bool stackIgnored = false; //instruction stacksave was ignored

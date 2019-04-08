@@ -57,10 +57,10 @@ private:
     Struct* strct;
     Expr* expr;
     unsigned element;
-    unsigned int move;
+    //unsigned int move;
 
 public:
-    StructElement(Struct*, Expr*, unsigned, unsigned int);
+    StructElement(Struct*, Expr*, unsigned/*, unsigned int*/);
 
     void print() const override;
     std::string toString() const override;
@@ -184,6 +184,30 @@ private:
 
 public:
     CallExpr(Expr*, const std::string&, std::vector<Expr*>, std::unique_ptr<Type>);
+
+    void print() const override;
+    std::string toString() const override;
+};
+
+class PointerMove : public ExprBase {
+private:
+    std::unique_ptr<Type> ptrType;
+    Expr* pointer;
+    Expr* move;
+
+public:
+    PointerMove(std::unique_ptr<Type>, Expr*, Expr*);
+
+    void print() const override;
+    std::string toString() const override;
+};
+
+class NewGep : public ExprBase {
+private:
+    std::vector<std::unique_ptr<Expr>> indices;
+
+public:
+    NewGep(std::vector<std::unique_ptr<Expr>>&);
 
     void print() const override;
     std::string toString() const override;

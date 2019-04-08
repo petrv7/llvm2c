@@ -226,17 +226,7 @@ void Program::unsetAllInit() {
 void Program::print() {
     unsetAllInit();
 
-    if (hasMath) {
-        llvm::outs() << "#include \"math.h\"\n";
-    }
-
-    if (hasVarArg) {
-        llvm::outs() << "#include <stdarg.h>\n";
-    }
-
-    if (hasMath || hasVarArg) {
-        llvm::outs() << "\n";
-    }
+    llvm::outs() << getIncludeString();
 
     if (!structs.empty()) {
         llvm::outs() << "//Struct declarations\n";
@@ -321,11 +311,11 @@ void Program::printStruct(Struct* strct) {
             }
         }
 
-        /*if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
+        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
             if (PT->isStructPointer && PT->isArrayPointer) {
                 printStruct(getStruct(PT->structName));
             }
-        }*/
+        }
 
         if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
             for (auto& s : structs) {
@@ -356,11 +346,11 @@ void Program::saveStruct(Struct* strct, std::ofstream& file) {
             }
         }
 
-        /*if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
+        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
             if (PT->isStructPointer && PT->isArrayPointer) {
                 saveStruct(getStruct(PT->structName), file);
             }
-        }*/
+        }
 
         if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
             for (auto& s : structs) {
@@ -389,17 +379,7 @@ void Program::saveFile(const std::string& fileName) {
     std::ofstream file;
     file.open(fileName);
 
-    if (hasMath) {
-        file << "#include \"math.h\"\n";
-    }
-
-    if (hasVarArg) {
-        file << "#include <stdarg.h>\n";
-    }
-
-    if (hasMath || hasVarArg) {
-        file << "\n";
-    }
+    file << getIncludeString();
 
     if (!structs.empty()) {
         file << "//Struct declarations\n";
@@ -536,4 +516,22 @@ void Program::createNewUnnamedStruct(const llvm::StructType *strct) {
 
 std::unique_ptr<Type> Program::getType(const llvm::Type* type, bool voidType) {
     return typeHandler.getType(type, voidType);
+}
+
+std::string Program::getIncludeString() const {
+    std::string ret;
+
+    if (hasMath) {
+        ret+= "#include \"math.h\"\n";
+    }
+
+    if (hasVarArg) {
+        ret += "#include <stdarg.h>\n";
+    }
+
+    if (!ret.empty()) {
+        ret += "\n";
+    }
+
+    return ret;
 }

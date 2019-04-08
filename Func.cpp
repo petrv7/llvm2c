@@ -65,6 +65,16 @@ void Func::parseFunction() {
     const llvm::Value* larg;
     isVarArg = false;
 
+    std::string name = function->getName().str();
+    if (Block::isCFunc(Block::getCFunc(name))) {
+        name = Block::getCFunc(name);
+
+        if (Block::isCMath(name)) {
+            program->hasMath = true;
+            return;
+        }
+    }
+
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
@@ -87,11 +97,16 @@ void Func::parseFunction() {
     }
 }
 
-void Func::print() const {
+void Func::print() {
     std::string name = function->getName().str();
+
     if (Block::isCFunc(Block::getCFunc(name))) {
         name = Block::getCFunc(name);
         if (name.compare("va_start") == 0 || name.compare("va_end") == 0) {
+            return;
+        }
+
+        if (Block::isCMath(name)) {
             return;
         }
     }
@@ -99,8 +114,24 @@ void Func::print() const {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
+    if (name.compare("memcpy") == 0 && function->arg_size() > 3) {
+        return;
+    }
+
     returnType->print();
-    llvm::outs() <<  " " << name << "(";
+    if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
+        if (!PT->isFuncPointer) {
+            llvm::outs() << " " << name << "(";
+        } else {
+            llvm::outs() << " (";
+            for (int i = 0; i < PT->levels; i++) {
+                llvm::outs() << "*";
+            }
+            llvm::outs() << name << "(";
+        }
+    } else {
+        llvm::outs() << " " << name << "(";
+    }
 
     bool first = true;
     for (const llvm::Value& arg : function->args()) {
@@ -128,6 +159,12 @@ void Func::print() const {
 
     llvm::outs() << ")";
 
+    if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
+        if (PT->isFuncPointer) {
+            llvm::outs() << ")" << PT->params;
+        }
+    }
+
     if (isDeclaration) {
         llvm::outs() << ";\n";
         return;
@@ -148,11 +185,16 @@ void Func::print() const {
     llvm::outs() << "}\n\n";
 }
 
-void Func::saveFile(std::ofstream& file) const {
+void Func::saveFile(std::ofstream& file) {
     std::string name = function->getName().str();
+
     if (Block::isCFunc(Block::getCFunc(name))) {
         name = Block::getCFunc(name);
         if (name.compare("va_start") == 0 || name.compare("va_end") == 0) {
+            return;
+        }
+
+        if (Block::isCMath(name)) {
             return;
         }
     }
@@ -160,8 +202,25 @@ void Func::saveFile(std::ofstream& file) const {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
+    if (name.compare("memcpy") == 0 && function->arg_size() > 3) {
+        return;
+    }
+
     file << returnType->toString();
-    file <<  " " << name << "(";
+    if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
+        if (!PT->isFuncPointer) {
+            file << " " << name << "(";
+        } else {
+            file << " (";
+            for (int i = 0; i < PT->levels; i++) {
+                file << "*";
+            }
+            file << name << "(";
+        }
+    } else {
+        file << " " << name << "(";
+    }
+
     bool first = true;
 
     for (const llvm::Value& arg : function->args()) {
@@ -186,6 +245,12 @@ void Func::saveFile(std::ofstream& file) const {
     }
 
     file << ")";
+
+    if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
+        if (PT->isFuncPointer) {
+            file << ")" << PT->params;
+        }
+    }
 
     if (isDeclaration) {
         file << ";\n";
@@ -237,4 +302,12 @@ std::unique_ptr<Type> Func::getType(const llvm::Type* type, bool voidType) {
 
 void Func::hasMath() {
     program->hasMath = true;
+}
+
+void Func::changeExprKey(Expr* expr, const llvm::Value* val) {
+    for (auto& elem : exprMap) {
+        if (elem.second.get() == expr) {
+            createExpr(val, std::move(elem.second));
+        }
+    }
 }

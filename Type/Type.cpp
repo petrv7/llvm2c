@@ -184,6 +184,7 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
         structName = PT->structName;
         levels = PT->levels + 1;
         params = PT->params;
+        sizes = PT->sizes;
     }
 
     if (auto FT = dynamic_cast<FunctionType*>(type.get())) {
@@ -193,7 +194,7 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
 
     if (auto AT = dynamic_cast<ArrayType*>(type.get())) {
         isArrayPointer = true;
-        size = AT->size;
+        sizes = AT->sizeToString();
 
         isStructPointer = AT->isStructArray;
         structName = AT->structName;
@@ -213,7 +214,7 @@ PointerType::PointerType(const PointerType &other) {
     isArrayPointer = other.isArrayPointer;
     levels = other.levels;
     params = other.params;
-    size = other.size;
+    sizes = other.sizes;
 }
 
 std::unique_ptr<Type> PointerType::clone() const  {

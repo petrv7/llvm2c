@@ -25,6 +25,7 @@ private:
     std::vector<Expr*> abstractSyntaxTree; //vector used for saving instructions of the block in form of AST
     //llvm::DenseMap<const llvm::Value*, std::unique_ptr<StructElement>> structElements; //DenseMap used for storing unique pointers to StructElements (used in parsing getelementptr instruction and constant expressions)
     std::vector<std::unique_ptr<StructElement>> structElements;
+    std::vector<std::unique_ptr<NewGep>> geps;
     std::map<Expr*, std::unique_ptr<Expr>> derefs; //Map used for storing unique pointers to DerefExpr (used in store instruction parsing)
     std::map<Expr*, std::unique_ptr<Expr>> refs; //Map used for storing unique pointers to RefExpr (used in parsing getelementptr instruction and constant expressions)
     std::vector<std::unique_ptr<Value>> values; //vector containing Values used in parsing extractvalue
@@ -256,6 +257,13 @@ public:
      * @return True if function is standard C library function, false otherwise
      */
     static bool isCFunc(const std::string& func);
+
+    /**
+     * @brief isCFunc Determines wether the LLVM function has equivalent in math.h
+     * @param func Name of the function
+     * @return True if function is in math.h, false otherwise
+     */
+    static bool isCMath(const std::string& func);
 
     /**
      * @brief getCFunc Takes LLVM intrinsic function and returns name of the corresponding C function.

@@ -91,13 +91,13 @@ public:
     /**
      * @brief print Prints the translated function in the llvm::outs() stream.
      */
-    void print() const;
+    void print();
 
     /**
      * @brief saveFile Saves the translated function to the given file.
      * @param file Opened file for saving the function.
      */
-    void saveFile(std::ofstream& file) const;
+    void saveFile(std::ofstream& file);
 
     /**
      * @brief getStruct Returns pointer to the Struct corresponding to the given LLVM StructType.
@@ -142,4 +142,11 @@ public:
      * @return unique_ptr to corresponding Type object
      */
     std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
+
+    /**
+     * @brief changeExprKey Changes key of expr in exprMap to val.
+     * @param expr Original expression
+     * @param val New LLVM Value
+     */
+    void changeExprKey(Expr* expr, const llvm::Value* val);
 };

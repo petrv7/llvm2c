@@ -28,6 +28,10 @@ const std::set<std::string> C_FUNCTIONS = {"memcpy", "memmove", "memset", "sqrt"
                                            "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
                                            "round", "va_start", "va_end"};
 
+const std::set<std::string> C_MATH = {"sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
+                                      "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
+                                      "round"};
+
 Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* func)
     : block(block),
       func(func),
@@ -100,12 +104,7 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins, bool isConstExpr,
         createConstantValue(ins.getOperand(0));
     }
 
-    if (!isConstExpr) {
-        func->createExpr(&ins, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
-    } else {
-
-        func->createExpr(val, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
-    }
+    func->createExpr(isConstExpr ? val : &ins, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
 }
 
 void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
@@ -154,6 +153,10 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
             }
             Expr* value = func->getExpr(ins.getOperand(1));
 
+            if (auto RE = dynamic_cast<RefExpr*>(value)) {
+                value = RE->expr;
+            }
+
             AE->addOutputExpr(value, 0);
             return;
         }
@@ -177,11 +180,6 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
     }
     Expr* val0 = func->getExpr(ins.getOperand(0));
 
-    if (!val0) {
-        llvm::outs() << ins << "\n";
-        llvm::outs().flush();
-    }
-
     if (!func->getExpr(ins.getOperand(1))) {
         createConstantValue(ins.getOperand(1));
     }
@@ -192,6 +190,9 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
     }
 
     if (auto AE = dynamic_cast<AsmExpr*>(val0)) {
+        if (auto RE = dynamic_cast<RefExpr*>(val1)) {
+            val1 = RE->expr;
+        }
         AE->addOutputExpr(val1, 0);
         return;
     }
@@ -205,12 +206,12 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
 }
 
 void Block::parseBinaryInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
-    if (func->getExpr(ins.getOperand(0)) == nullptr) {
+    if (!func->getExpr(ins.getOperand(0))) {
         createConstantValue(ins.getOperand(0));
     }
     Expr* val0 = func->getExpr(ins.getOperand(0));
 
-    if (func->getExpr(ins.getOperand(1)) == nullptr) {
+    if (!func->getExpr(ins.getOperand(1))) {
         createConstantValue(ins.getOperand(1));
     }
     Expr* val1 = func->getExpr(ins.getOperand(1));
@@ -483,9 +484,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 try {
                     int i = std::stoi(input.substr(1, input.size() - 2));
                     input = "\"" + outputStrings[i].substr(2, outputStrings[i].size() - 2);
-                } catch (std::invalid_argument e) {
-
-                }
+                } catch (std::invalid_argument e) { }
             }
 
             std::vector<std::pair<std::string, Expr*>> output;
@@ -495,23 +494,58 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
             }
 
             std::vector<std::pair<std::string, Expr*>> input;
-            unsigned i = 0;
-            for (const llvm::Use& param : callInst->arg_operands()) {
-                if (i == inputStrings.size()) {
+            int i = inputStrings.size() - 1;
+            for (auto iter = callInst->arg_end(); --iter != callInst->arg_begin();) {
+                if (i == -1) {
                     break;
                 }
 
-                if (!func->getExpr(param)) {
-                    createFuncCallParam(param);
+                if (const llvm::AllocaInst* AI = llvm::dyn_cast<llvm::AllocaInst>(*iter)) {
+                    auto RE = static_cast<RefExpr*>(func->getExpr(*iter));
+                    input.push_back({inputStrings[i], RE->expr});
+                } else if (const llvm::GetElementPtrInst* AI = llvm::dyn_cast<llvm::GetElementPtrInst>(*iter)) {
+                    auto RE = static_cast<RefExpr*>(func->getExpr(*iter));
+                    input.push_back({inputStrings[i], RE->expr});
+                } else {
+                    if (!func->getExpr(*iter)) {
+                        createFuncCallParam(*iter);
+                    }
+
+                    input.push_back({inputStrings[i], func->getExpr(*iter)});
                 }
 
-                input.push_back({inputStrings[i], func->getExpr(param)});
-                i++;
+                i--;
             }
             func->createExpr(value, std::make_unique<AsmExpr>(asmString, output, input, usedReg));
 
             if (!isConstExpr) {
                 abstractSyntaxTree.push_back(func->getExpr(&ins));
+            }
+
+            unsigned u = 0;
+            auto AE = static_cast<AsmExpr*>(func->getExpr(&ins));
+            if (inputStrings.size() < callInst->getNumArgOperands()) {
+                for (auto& param : callInst->arg_operands()) {
+                    if (u > outputStrings.size() - 1) {
+                        break;
+                    }
+
+                    if (llvm::AllocaInst* AI = llvm::dyn_cast<llvm::AllocaInst>(param)) {
+                        auto RE = static_cast<RefExpr*>(func->getExpr(param));
+                        AE->addOutputExpr(RE->expr, u);
+                    } else if (llvm::GetElementPtrInst* AI = llvm::dyn_cast<llvm::GetElementPtrInst>(param)) {
+                        auto RE = static_cast<RefExpr*>(func->getExpr(param));
+                        AE->addOutputExpr(RE->expr, u);
+                    } else {
+                        if (!func->getExpr(param)) {
+                            createFuncCallParam(param);
+                        }
+
+                        AE->addOutputExpr(func->getExpr(param), u);
+                    }
+
+                    u++;
+                }
             }
 
             return;
@@ -529,7 +563,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
     int i = 0;
     for (const llvm::Use& param : callInst->arg_operands()) {
-        if (funcName == "memcpy" && i == 3) {
+        if ((funcName == "memcpy")  && i == 3) {
             break;
         }
 
@@ -614,6 +648,72 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
     }
     Expr* expr = func->getExpr(gepInst->getOperand(0));
 
+    bool isNullGep = expr->toString().compare("0") == 0;
+
+    llvm::Type* prevType = gepInst->getOperand(0)->getType();
+    Expr* prevExpr = expr;
+    std::vector<std::unique_ptr<Expr>> indices;
+
+    for (auto it = llvm::gep_type_begin(gepInst); it != llvm::gep_type_end(gepInst); it++) {
+        if (!isNullGep) {
+            if (!func->getExpr(it.getOperand())) {
+                createConstantValue(it.getOperand());
+            }
+            Expr* index = func->getExpr(it.getOperand());
+
+            if (prevType->isPointerTy()) {
+                if (index->toString().compare("0") == 0) {
+                    indices.push_back(std::make_unique<DerefExpr>(prevExpr));
+                } else {
+                    indices.push_back(std::make_unique<PointerMove>(func->getType(prevType), prevExpr, index));
+                }
+            }
+
+            if (prevType->isArrayTy()) {
+                indices.push_back(std::make_unique<ArrayElement>(prevExpr, index));
+            }
+
+            if (prevType->isStructTy()) {
+                llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(it.getOperand());
+                if (!CI) {
+                    throw std::invalid_argument("Invalid GEP index - access to struct element only allows integer!");
+                }
+
+                indices.push_back(std::make_unique<StructElement>(func->getStruct(prevType), prevExpr, CI->getSExtValue()));
+            }
+
+            prevType = it.getIndexedType();
+            prevExpr = indices[indices.size() - 1].get();
+        } else {
+            if (!func->getExpr(it.getOperand())) {
+                createConstantValue(it.getOperand());
+            }
+            Expr* index = func->getExpr(it.getOperand());
+
+            if (index->toString().compare("0") == 0 && expr->toString().compare("0") != 0) {
+                indices.push_back(std::make_unique<DerefExpr>(prevExpr));
+            } else {
+                if (prevType->isPointerTy()) {
+                    indices.push_back(std::make_unique<PointerMove>(func->getType(prevType), prevExpr, index));
+                } else {
+                    indices.push_back(std::make_unique<PointerMove>(std::make_unique<PointerType>(func->getType(prevType)), prevExpr, index));
+                }
+            }
+
+            prevType = it.getIndexedType();
+            prevExpr = indices[indices.size() - 1].get();
+        }
+    }
+    geps.push_back(std::make_unique<NewGep>(indices));
+    func->createExpr(isConstExpr ? val : &ins, std::make_unique<RefExpr>(geps[geps.size() -1].get()));
+    /*const llvm::GetElementPtrInst* gepInst = llvm::cast<llvm::GetElementPtrInst>(&ins);
+
+    if (!func->getExpr(gepInst->getOperand(0))) {
+        createConstantValue(gepInst->getOperand(0));
+    }
+    Expr* expr = func->getExpr(gepInst->getOperand(0));
+
+    bool isNullGep = expr->toString().compare("0") == 0;
     auto gepExpr = std::make_unique<GepExpr>(expr, func->getType(gepInst->getType()));
 
     Expr* indexValue;
@@ -621,31 +721,34 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
 
     bool isStruct = false;
     int advance = 0;
-    llvm::PointerType* PT = llvm::cast<llvm::PointerType>(gepInst->getOperand(0)->getType());
-    if (PT->getElementType()->isStructTy()) {
-        isStruct = true;
-        llvm::StructType* ST = llvm::cast<llvm::StructType>(PT->getElementType());
 
-        if (!ST->hasName()) {
-            func->createNewUnnamedStruct(ST);
-        }
+    if (!isNullGep) {
+        llvm::PointerType* PT = llvm::cast<llvm::PointerType>(gepInst->getOperand(0)->getType());
+        if (PT->getElementType()->isStructTy()) {
+            isStruct = true;
+            llvm::StructType* ST = llvm::cast<llvm::StructType>(PT->getElementType());
 
-        if (ins.getNumOperands() > 2) {
-            advance = 2;
-
-            //structElements[&ins] = std::make_unique<StructElement>(func->getStruct(ST), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue(), llvm::cast<llvm::ConstantInt>(gepInst->getOperand(1))->getSExtValue());
-            structElements.push_back(std::make_unique<StructElement>(func->getStruct(ST), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue(), llvm::cast<llvm::ConstantInt>(gepInst->getOperand(1))->getSExtValue()));
-            refs[structElements[structElements.size() - 1].get()] = std::make_unique<RefExpr>(structElements[structElements.size() - 1].get());
-            gepExpr = std::make_unique<GepExpr>(refs[structElements[structElements.size() - 1].get()].get(), func->getType(gepInst->getType()));
-        } else {
-            advance = 1;
-
-            if (!func->getExpr(gepInst->getOperand(1))) {
-                createConstantValue(gepInst->getOperand(1));
+            if (!ST->hasName()) {
+                func->createNewUnnamedStruct(ST);
             }
-            indexValue = func->getExpr(gepInst->getOperand(1));
 
-            gepExpr->addArg(func->getType(prevType), indexValue);
+            if (ins.getNumOperands() > 2) {
+                advance = 2;
+
+                //structElements[&ins] = std::make_unique<StructElement>(func->getStruct(ST), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue(), llvm::cast<llvm::ConstantInt>(gepInst->getOperand(1))->getSExtValue());
+                structElements.push_back(std::make_unique<StructElement>(func->getStruct(ST), expr, llvm::cast<llvm::ConstantInt>(gepInst->getOperand(2))->getSExtValue(), llvm::cast<llvm::ConstantInt>(gepInst->getOperand(1))->getSExtValue()));
+                refs[structElements[structElements.size() - 1].get()] = std::make_unique<RefExpr>(structElements[structElements.size() - 1].get());
+                gepExpr = std::make_unique<GepExpr>(refs[structElements[structElements.size() - 1].get()].get(), func->getType(gepInst->getType()));
+            } else {
+                advance = 1;
+
+                if (!func->getExpr(gepInst->getOperand(1))) {
+                    createConstantValue(gepInst->getOperand(1));
+                }
+                indexValue = func->getExpr(gepInst->getOperand(1));
+
+                gepExpr->addArg(func->getType(prevType), indexValue);
+            }
         }
     }
 
@@ -671,7 +774,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
 
         if (prevType->isArrayTy()) {
             gepExpr->addArg(func->getType(prevType), indexValue);
-        } else if (prevType->isStructTy()) {
+        } else if (prevType->isStructTy() && !isNullGep) {
             structElements.push_back(std::make_unique<StructElement>(func->getStruct(prevType), nullptr, llvm::cast<llvm::ConstantInt>(it.getOperand())->getSExtValue(), 0));
             gepExpr->addArg(func->getType(prevType), structElements[structElements.size() - 1].get());
         } else {
@@ -687,7 +790,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
         func->createExpr(&ins, std::move(gepExpr));
     } else {
         func->createExpr(val, std::move(gepExpr));
-    }
+    }*/
 }
 
 void Block::parseExtractValueInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
@@ -705,7 +808,7 @@ void Block::parseExtractValueInstruction(const llvm::Instruction& ins, bool isCo
         std::unique_ptr<Expr> element = nullptr;
 
         if (StructType* ST = dynamic_cast<StructType*>(prevType.get())) {
-            element = std::make_unique<StructElement>(func->getStruct(ST->name), expr, idx, 0);
+            element = std::make_unique<StructElement>(func->getStruct(ST->name), expr, idx);
         }
 
         if (ArrayType* AT = dynamic_cast<ArrayType*>(prevType.get())) {
@@ -922,7 +1025,7 @@ void Block::createFuncCallParam(const llvm::Use& param) {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(param->getType())) {
         if (const llvm::ConstantPointerNull* CPN = llvm::dyn_cast<const llvm::ConstantPointerNull>(param)) {
             createConstantValue(param);
-        } else if (PT->getElementType()->isFunctionTy()) {
+        } else if (PT->getElementType()->isFunctionTy() && !param->getName().empty()) {
             func->createExpr(param, std::make_unique<Value>(param->getName().str(), std::make_unique<VoidType>()));
         } else {
             createConstantValue(param);
@@ -1065,4 +1168,8 @@ std::string Block::toRawString(const std::string& str) const {
     ret.erase(std::remove(ret.begin(), ret.end(), '\n'), ret.end()); //TODO escape chars
 
     return ret;
+}
+
+bool Block::isCMath(const std::string& func) {
+    return C_MATH.find(func) != C_MATH.end();
 }

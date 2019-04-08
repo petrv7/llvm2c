@@ -80,7 +80,7 @@ public:
     unsigned levels;
 
     bool isArrayPointer;
-    unsigned int size;
+    std::string sizes;
 
     bool isStructPointer;
     std::string structName;
