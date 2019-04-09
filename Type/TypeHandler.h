@@ -14,6 +14,15 @@ class TypeHandler {
 private:
     const Program* program;
     llvm::DenseMap<const llvm::StructType*, std::unique_ptr<Type>> unnamedStructs; // map containing unnamed structs
+    llvm::DenseMap<const llvm::Type*, std::unique_ptr<Type>> typeDefs;
+
+    unsigned typeDefCount = 0;
+
+    std::string getTypeDefName() {
+        std::string ret = "typeDef_" + std::to_string(typeDefCount);
+        typeDefCount++;
+        return ret;
+    }
 
 public:
     TypeHandler(const Program* program)
@@ -47,4 +56,14 @@ public:
      * @return New struct name
      */
     static std::string getStructName(const std::string& structName);
+
+    /**
+     * @brief getSortedTypeDefs Sorts typedefs and returns them as vector of pointers
+     * @return Vector of sorted typedefs
+     */
+    std::vector<TypeDef*> getSortedTypeDefs();
+
+    bool hasTypeDefs() const {
+        return !typeDefs.empty();
+    }
 };

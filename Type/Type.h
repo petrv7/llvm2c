@@ -29,6 +29,29 @@ public:
     }
 };
 
+class TypeDef : public Type {
+private:
+    std::string type;
+    std::string name;
+    std::string typeEnd;
+
+    std::unique_ptr<Type> derefType;
+
+public:
+    TypeDef(std::unique_ptr<Type>, const std::string&, const std::string&, const std::string& = "");
+    TypeDef(const TypeDef&);
+
+    std::unique_ptr<Type> clone() const override;
+    void print() const override;
+    std::string toString() const override;
+
+    std::unique_ptr<Type> getDerefType() {
+        return derefType->clone();
+    }
+
+    std::string defToString() const;
+};
+
 class FunctionType : public Type {
 friend class TypeHandler;
 private:
@@ -168,9 +191,9 @@ public:
     std::unique_ptr<Type> clone() const override;
 };
 
-class UInt128 : public IntegerType {
+class Int128 : public IntegerType {
 public:
-    UInt128();
+    Int128();
 
     std::unique_ptr<Type> clone() const override;
 };

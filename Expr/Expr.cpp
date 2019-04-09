@@ -89,22 +89,12 @@ void StructElement::print() const {
 }
 
 std::string StructElement::toString() const {
-    /*if (!expr) {
-        return "." + strct->items[element].second;
-    }*/
-
     std::string ret = "(";
     if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
         return "(" + expr->toString() + ")->" + strct->items[element].second;
     }
 
     return "(" + expr->toString() + ")." + strct->items[element].second;
-    /*if (move == 0) {
-        return ret + ")->" + strct->items[element].second;
-    } else {
-        return ret + " + " + std::to_string(move) + ")->" + strct->items[element].second;
-    }
-*/
 }
 
 ArrayElement::ArrayElement(Expr* expr, Expr* elem)
@@ -112,6 +102,12 @@ ArrayElement::ArrayElement(Expr* expr, Expr* elem)
       element(elem) {
     ArrayType* AT = static_cast<ArrayType*>(expr->getType());
     setType(AT->type->clone());
+}
+
+ArrayElement::ArrayElement(Expr* expr, Expr* elem, std::unique_ptr<Type> type)
+    : expr(expr),
+      element(elem) {
+    setType(std::move(type));
 }
 
 void ArrayElement::print() const {
@@ -432,7 +428,7 @@ std::string AsmExpr::toString() const {
             ret += "(";
 
             if (in.second->toString()[0] == '&') {
-                ret += in.second->toString().substr(2, in.second->toString().size() - 3);
+                ret += in.second->toString().substr(1, in.second->toString().size() - 1);
             } else {
                 ret += in.second->toString();
             }
@@ -501,8 +497,11 @@ PointerMove::PointerMove(std::unique_ptr<Type> ptrType, Expr* pointer, Expr* mov
     : ptrType(std::move(ptrType)),
       pointer(pointer),
       move(move) {
-    auto PT = static_cast<PointerType*>(this->ptrType.get());
-    setType(PT->type->clone());
+    if (auto PT = dynamic_cast<PointerType*>(this->ptrType.get())) {
+        setType(PT->type->clone());
+    } else if (auto TD = dynamic_cast<TypeDef*>(this->ptrType.get())) {
+        setType(TD->getDerefType());
+    }
 }
 
 void PointerMove::print() const {

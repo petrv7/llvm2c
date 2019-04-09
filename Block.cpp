@@ -465,7 +465,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         }
     } else {
         llvm::PointerType* PT = llvm::cast<llvm::PointerType>(callInst->getCalledValue()->getType());
-        llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getElementType());
+        llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getPointerElementType());
         type = func->getType(FT->getReturnType());
 
         if (const llvm::InlineAsm* IA = llvm::dyn_cast<const llvm::InlineAsm>(callInst->getCalledValue())) {
@@ -480,7 +480,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 usedReg = getAsmUsedRegString(IA->ParseConstraints());
             }
 
-            for (auto& input : inputStrings) {
+            for (auto& input : inputStrings) {                
                 try {
                     int i = std::stoi(input.substr(1, input.size() - 2));
                     input = "\"" + outputStrings[i].substr(2, outputStrings[i].size() - 2);
@@ -506,6 +506,17 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 } else if (const llvm::GetElementPtrInst* AI = llvm::dyn_cast<llvm::GetElementPtrInst>(*iter)) {
                     auto RE = static_cast<RefExpr*>(func->getExpr(*iter));
                     input.push_back({inputStrings[i], RE->expr});
+                } else if (const llvm::CastInst* CI = llvm::dyn_cast<llvm::CastInst>(*iter)) {
+                    auto CE = static_cast<CastExpr*>(func->getExpr(*iter));
+                    if (auto RE = dynamic_cast<RefExpr*>(CE->expr)) {
+                        input.push_back({inputStrings[i], RE->expr});
+                    } else {
+                        if (!func->getExpr(*iter)) {
+                            createFuncCallParam(*iter);
+                        }
+
+                        input.push_back({inputStrings[i], func->getExpr(*iter)});
+                    }
                 } else {
                     if (!func->getExpr(*iter)) {
                         createFuncCallParam(*iter);
@@ -648,21 +659,30 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
     }
     Expr* expr = func->getExpr(gepInst->getOperand(0));
 
-    bool isNullGep = expr->toString().compare("0") == 0;
+    //bool isNullGep = expr->toString().compare("0") == 0;
 
     llvm::Type* prevType = gepInst->getOperand(0)->getType();
     Expr* prevExpr = expr;
     std::vector<std::unique_ptr<Expr>> indices;
+    bool first = true;
+
+    if (expr->toString().compare("0") == 0) {
+        casts.push_back(std::make_unique<CastExpr>(expr, func->getType(prevType)));
+        prevExpr = casts[casts.size() - 1].get();
+    }
 
     for (auto it = llvm::gep_type_begin(gepInst); it != llvm::gep_type_end(gepInst); it++) {
-        if (!isNullGep) {
+        //if (!isNullGep) {
             if (!func->getExpr(it.getOperand())) {
                 createConstantValue(it.getOperand());
             }
             Expr* index = func->getExpr(it.getOperand());
 
             if (prevType->isPointerTy()) {
-                if (index->toString().compare("0") == 0) {
+                /*auto GE = dynamic_cast<NewGep*>(prevExpr);
+                if (first && GE && GE->isNullGep) {
+                    indices.push_back(std::make_unique<PointerMove>(func->getType(prevType), prevExpr, index));
+                } else*/ if (index->toString().compare("0") == 0) {
                     indices.push_back(std::make_unique<DerefExpr>(prevExpr));
                 } else {
                     indices.push_back(std::make_unique<PointerMove>(func->getType(prevType), prevExpr, index));
@@ -670,7 +690,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
             }
 
             if (prevType->isArrayTy()) {
-                indices.push_back(std::make_unique<ArrayElement>(prevExpr, index));
+                indices.push_back(std::make_unique<ArrayElement>(prevExpr, index, func->getType(prevType->getArrayElementType())));
             }
 
             if (prevType->isStructTy()) {
@@ -684,13 +704,14 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
 
             prevType = it.getIndexedType();
             prevExpr = indices[indices.size() - 1].get();
-        } else {
+            first = false;
+        /*} else {
             if (!func->getExpr(it.getOperand())) {
                 createConstantValue(it.getOperand());
             }
             Expr* index = func->getExpr(it.getOperand());
 
-            if (index->toString().compare("0") == 0 && expr->toString().compare("0") != 0) {
+            /*if (index->toString().compare("0") == 0 && expr->toString().compare("0") != 0) {
                 indices.push_back(std::make_unique<DerefExpr>(prevExpr));
             } else {
                 if (prevType->isPointerTy()) {
@@ -698,14 +719,20 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
                 } else {
                     indices.push_back(std::make_unique<PointerMove>(std::make_unique<PointerType>(func->getType(prevType)), prevExpr, index));
                 }
+            }*
+            if (prevType->isPointerTy()) {
+                indices.push_back(std::make_unique<PointerMove>(func->getType(prevType), prevExpr, index));
+            } else {
+                indices.push_back(std::make_unique<PointerMove>(std::make_unique<PointerType>(func->getType(prevType)), prevExpr, index));
             }
 
             prevType = it.getIndexedType();
             prevExpr = indices[indices.size() - 1].get();
-        }
+        }*/
     }
     geps.push_back(std::make_unique<NewGep>(indices));
     func->createExpr(isConstExpr ? val : &ins, std::make_unique<RefExpr>(geps[geps.size() -1].get()));
+    //geps[geps.size() -1]->isNullGep = isNullGep;
     /*const llvm::GetElementPtrInst* gepInst = llvm::cast<llvm::GetElementPtrInst>(&ins);
 
     if (!func->getExpr(gepInst->getOperand(0))) {
@@ -965,7 +992,7 @@ void Block::createConstantValue(const llvm::Value* val) {
         std::string value;
         if (CI->getBitWidth() > 64) {
             const llvm::APInt& API = CI->getValue();
-            value = API.toString(10, false);
+            value = std::to_string(API.getLimitedValue());
         } else {
             value = std::to_string(CI->getSExtValue());
         }
@@ -1097,7 +1124,7 @@ std::string Block::getRegisterString(const std::string& str) const {
     std::string ret;
 
     if (reg[0] != '{') {
-        ret = reg;
+        return reg;
     }
 
     if (reg[2] == 'i') {

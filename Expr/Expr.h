@@ -57,10 +57,9 @@ private:
     Struct* strct;
     Expr* expr;
     unsigned element;
-    //unsigned int move;
 
 public:
-    StructElement(Struct*, Expr*, unsigned/*, unsigned int*/);
+    StructElement(Struct*, Expr*, unsigned);
 
     void print() const override;
     std::string toString() const override;
@@ -73,6 +72,7 @@ private:
 
 public:
     ArrayElement(Expr*, Expr*);
+    ArrayElement(Expr*, Expr*, std::unique_ptr<Type>);
 
     void print() const override;
     std::string toString() const override;
@@ -207,6 +207,8 @@ private:
     std::vector<std::unique_ptr<Expr>> indices;
 
 public:
+    bool isNullGep = false;
+
     NewGep(std::vector<std::unique_ptr<Expr>>&);
 
     void print() const override;

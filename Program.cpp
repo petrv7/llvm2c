@@ -103,6 +103,7 @@ void Program::parseGlobalVars() {
         bool isPrivate = gvar.hasPrivateLinkage();
         std::string gvarName = gvar.getName().str();
         std::replace(gvarName.begin(), gvarName.end(), '.', '_');
+        gvarName = "g_" + gvarName;
 
         std::string value = "";
         if (gvar.hasInitializer()) {
@@ -132,6 +133,12 @@ std::string Program::getAnonStructName() {
 
 std::string Program::getValue(const llvm::Constant* val) {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(val->getType())) {
+        std::string name = val->getName().str();
+        if (const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
+            std::replace(name.begin(), name.end(), '.', '_');
+            name = "g_" + name;
+        }
+
         if (val->getName().str().empty()) {
             return "0";
         }
@@ -141,20 +148,20 @@ std::string Program::getValue(const llvm::Constant* val) {
         }
 
         if (llvm::FunctionType* FT = llvm::dyn_cast<llvm::FunctionType>(PT->getElementType())) {
-            return  "&" + val->getName().str();
+            return  "&" + name;
         }
 
         if (llvm::StructType* ST = llvm::dyn_cast<llvm::StructType>(PT->getElementType())) {
-            return "&" + val->getName().str();
+            return "&" + name;
         }
 
         if (llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val->getOperand(0))) {
             std::string replacedName = GV->getName().str();
             std::replace(replacedName.begin(), replacedName.end(), '.', '_');
-            return replacedName;
-        } else {
-            return "&" + val->getName().str();
+            return "g_" + replacedName;
         }
+
+        return "&" + name;
     }
 
     if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
@@ -232,6 +239,14 @@ void Program::print() {
         llvm::outs() << "//Struct declarations\n";
         for (const auto& strct : structs) {
             llvm::outs() << "struct " << strct->name << ";\n";
+        }
+        llvm::outs() << "\n";
+    }
+
+    if (typeHandler.hasTypeDefs()) {
+        llvm::outs() << "//typedefs\n";
+        for (auto elem : typeHandler.getSortedTypeDefs()) {
+            llvm::outs() << elem->defToString() << "\n";
         }
         llvm::outs() << "\n";
     }
@@ -385,6 +400,14 @@ void Program::saveFile(const std::string& fileName) {
         file << "//Struct declarations\n";
         for (auto& strct : structs) {
             file << "struct " << strct->name << ";\n";
+        }
+        file << "\n";
+    }
+
+    if (typeHandler.hasTypeDefs()) {
+        file << "//typedefs\n";
+        for (auto elem : typeHandler.getSortedTypeDefs()) {
+            file << elem->defToString() << "\n";
         }
         file << "\n";
     }

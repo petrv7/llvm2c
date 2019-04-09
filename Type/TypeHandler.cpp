@@ -5,7 +5,12 @@
 #include "../Program.h"
 
 std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType) {
+    if (typeDefs.find(type) != typeDefs.end()) {
+        return typeDefs[type]->clone();
+    }
+
     if (type->isArrayTy()) {
+        const llvm::ArrayType* AT = llvm::cast<llvm::ArrayType>(type);
         return std::make_unique<ArrayType>(getType(type->getArrayElementType(), voidType), type->getArrayNumElements());
     }
 
@@ -38,7 +43,7 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
             return std::make_unique<LongType>(false);
         }
 
-        return std::make_unique<UInt128>();
+        return std::make_unique<Int128>();
     }
 
     if (type->isFloatTy()) {
@@ -55,6 +60,29 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
 
     if (type->isPointerTy()) {
         const llvm::PointerType* PT = llvm::cast<const llvm::PointerType>(type);
+
+        if (const llvm::FunctionType* FT = llvm::dyn_cast<llvm::FunctionType>(PT->getPointerElementType())) {
+            FunctionType functionType = { getType(FT->getReturnType(), voidType) };
+            if (FT->getNumParams() == 0) {
+                functionType.addParam(std::make_unique<VoidType>());
+            } else {
+                for (unsigned i = 0; i < FT->getNumParams(); i++) {
+                    functionType.addParam(getType(FT->getParamType(i), voidType));
+                }
+
+                functionType.isVarArg = FT->isVarArg();
+            }
+
+            typeDefs[type] = std::make_unique<TypeDef>(std::make_unique<FunctionType>(getType(FT->getReturnType(), voidType)), functionType.toString() + "(*", getTypeDefName(), ")" + functionType.paramsToString());
+            return typeDefs[type]->clone();
+        }
+
+        /*if (const llvm::ArrayType* AT = llvm::dyn_cast<llvm::ArrayType>(PT->getPointerElementType())) {
+            ArrayType arrayType = { getType(AT->getArrayElementType(), voidType), AT->getArrayNumElements() };
+            typeDefs[type] = std::make_unique<TypeDef>(std::make_unique<ArrayType>(getType(AT->getArrayElementType(), voidType), AT->getArrayNumElements()), arrayType.toString() + "(*", getTypeDefName(), ")" + arrayType.sizeToString());
+            return typeDefs[type]->clone();
+        }*/
+
         return std::make_unique<PointerType>(getType(PT->getPointerElementType(), voidType));
     }
 
@@ -80,7 +108,7 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
             functionType->addParam(std::make_unique<VoidType>());
         } else {
             for (unsigned i = 0; i < FT->getNumParams(); i++) {
-                functionType->addParam(getType(FT->getParamType(0), voidType));
+                functionType->addParam(getType(FT->getParamType(i), voidType));
             }
 
             functionType->isVarArg = FT->isVarArg();
@@ -114,11 +142,11 @@ std::unique_ptr<Type> TypeHandler::getBinaryType(const Type* left, const Type* r
         return std::make_unique<FloatType>();
     }
 
-    if (const auto UI = dynamic_cast<const UInt128*>(left)) {
-        return std::make_unique<UInt128>();
+    if (const auto UI = dynamic_cast<const Int128*>(left)) {
+        return std::make_unique<Int128>();
     }
-    if (const auto UI = dynamic_cast<const UInt128*>(right)) {
-        return std::make_unique<UInt128>();
+    if (const auto UI = dynamic_cast<const Int128*>(right)) {
+        return std::make_unique<Int128>();
     }
 
     if (const auto LT = dynamic_cast<const LongType*>(left)) {
@@ -176,4 +204,19 @@ std::string TypeHandler::getStructName(const std::string& structName) {
     }
 
     return name;
+}
+
+std::vector<TypeDef*> TypeHandler::getSortedTypeDefs() {
+    std::vector<TypeDef*> ret;
+
+    for (unsigned i = 0; i < typeDefCount; i++) {
+        for (auto& elem : typeDefs) {
+            auto TD = static_cast<TypeDef*>(elem.second.get());
+            if (TD->toString().compare("typeDef_" + std::to_string(i)) == 0) {
+                ret.push_back(TD);
+            }
+        }
+    }
+
+    return ret;
 }

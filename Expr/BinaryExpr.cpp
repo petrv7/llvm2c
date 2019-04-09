@@ -23,7 +23,7 @@ void AddExpr::print() const {
 }
 
 std::string AddExpr::toString() const {
-    return "(" + left->toString() + " + " + right->toString() + ")";
+    return "(" + left->toString() + ") + (" + right->toString() + ")";
 }
 
 SubExpr::SubExpr(Expr* l, Expr* r) :
@@ -34,7 +34,7 @@ void SubExpr::print() const {
 }
 
 std::string SubExpr::toString() const {
-    return "(" + left->toString() + " - " + right->toString() + ")";
+    return "(" + left->toString() + ") - (" + right->toString() + ")";
 }
 
 EqualsExpr::EqualsExpr(Expr* l, Expr* r) :
@@ -56,7 +56,7 @@ void MulExpr::print() const {
 }
 
 std::string MulExpr::toString() const {
-    return "(" + left->toString() + " * " + right->toString() + ")";
+    return "(" + left->toString() + ") * (" + right->toString() + ")";
 }
 
 DivExpr::DivExpr(Expr* l, Expr* r) :
@@ -67,7 +67,7 @@ void DivExpr::print() const {
 }
 
 std::string DivExpr::toString() const {
-    return "(" + left->toString() + " / " + right->toString() + ")";
+    return "(" + left->toString() + ") / (" + right->toString() + ")";
 }
 
 RemExpr::RemExpr(Expr* l, Expr* r) :
@@ -78,7 +78,7 @@ void RemExpr::print() const {
 }
 
 std::string RemExpr::toString() const {
-    return "(" + left->toString() + " % " + right->toString() + ")";
+    return "(" + left->toString() + ") % (" + right->toString() + ")";
 }
 
 AndExpr::AndExpr(Expr* l, Expr* r) :
@@ -89,7 +89,7 @@ void AndExpr::print() const {
 }
 
 std::string AndExpr::toString() const {
-    return "(" + left->toString() + " & " + right->toString() + ")";
+    return "(" + left->toString() + ") & (" + right->toString() + ")";
 }
 
 OrExpr::OrExpr(Expr* l, Expr* r) :
@@ -100,7 +100,7 @@ void OrExpr::print() const {
 }
 
 std::string OrExpr::toString() const {
-    return "(" + left->toString() + " | " + right->toString() + ")";
+    return "(" + left->toString() + ") | (" + right->toString() + ")";
 }
 
 XorExpr::XorExpr(Expr* l, Expr* r) :
@@ -111,7 +111,7 @@ void XorExpr::print() const {
 }
 
 std::string XorExpr::toString() const {
-    return "((" + left->toString() + ") ^ (" + right->toString() + "))";
+    return "(" + left->toString() + ") ^ (" + right->toString() + ")";
 }
 
 CmpExpr::CmpExpr(Expr* l, Expr* r, const std::string& cmp, bool isUnsigned) :
@@ -145,7 +145,7 @@ void AshrExpr::print() const {
 }
 
 std::string AshrExpr::toString() const {
-    return "(" + left->toString() + " >> " + right->toString() + ")";
+    return "(" + left->toString() + ") >> (" + right->toString() + ")";
 }
 
 LshrExpr::LshrExpr(Expr* l, Expr* r) :
@@ -156,12 +156,14 @@ void LshrExpr::print() const {
 }
 
 std::string LshrExpr::toString() const {
-    std::string ret = "(";
+    std::string ret;
     auto IT = static_cast<IntegerType*>(left->getType());
     if (!IT->unsignedType) {
-        ret += "(unsigned " + IT->toString() + ")";
+        ret += "(unsigned " + IT->toString() + ")(";
+    } else {
+        ret += "(";
     }
-    return ret + left->toString() + " >> " + right->toString() + ")";
+    return ret + left->toString() + ") >> (" + right->toString() + ")";
 }
 
 ShlExpr::ShlExpr(Expr* l, Expr* r) :
@@ -172,7 +174,7 @@ void ShlExpr::print() const {
 }
 
 std::string ShlExpr::toString() const {
-    return "(" + left->toString() + " << " + right->toString() + ")";
+    return "(" + left->toString() + ") << (" + right->toString() + ")";
 }
 
 SelectExpr::SelectExpr(Expr* comp, Expr* l, Expr* r) :

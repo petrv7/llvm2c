@@ -3,6 +3,40 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/Support/raw_ostream.h"
 
+TypeDef::TypeDef(std::unique_ptr<Type> derefType, const std::string& type, const std::string& name, const std::string& typeEnd)
+    : type(type),
+      name(name),
+      typeEnd(typeEnd),
+      derefType(std::move(derefType)) { }
+
+
+TypeDef::TypeDef(const TypeDef& other) {
+    derefType = other.derefType->clone();
+    type = other.type;
+    name = other.name;
+    typeEnd = other.typeEnd;
+}
+
+void TypeDef::print() const {
+    llvm::outs() << toString();
+}
+
+std::string TypeDef::toString() const {
+    return name;
+}
+
+std::unique_ptr<Type> TypeDef::clone() const {
+    return std::make_unique<TypeDef>(derefType->clone(), type, name, typeEnd);
+}
+
+std::string TypeDef::defToString() const {
+    if (typeEnd.empty()) {
+        return "typedef " + type + " " + name + ";";
+    }
+
+    return "typedef " + type + name + typeEnd + ";";
+}
+
 FunctionType::FunctionType(std::unique_ptr<Type> retType)
     : retType(std::move(retType)) { }
 
@@ -31,7 +65,29 @@ std::string FunctionType::paramsToString() const {
         first = false;
 
         ret += param->toString();
+
+        if (auto PT = dynamic_cast<PointerType*>(param.get())) {
+            if (PT->isFuncPointer || PT->isArrayPointer) {
+                ret += " (";
+                for (unsigned i = 0; i < PT->levels; i++) {
+                    ret += "*";
+                }
+                ret += ")";
+            }
+            if (PT->isArrayPointer) {
+                ret += PT->sizes;
+            }
+            if (PT->isFuncPointer) {
+                ret += PT->params;
+            }
+        }
+
+        if (auto AT = dynamic_cast<ArrayType*>(param.get())) {
+            ret += AT->sizeToString();
+        }
     }
+
+
 
     if (isVarArg) {
         ret += ", ...";
@@ -291,11 +347,11 @@ std::unique_ptr<Type> LongType::clone() const  {
     return std::make_unique<LongType>(*this);
 }
 
-UInt128::UInt128()
-    : IntegerType("__uint128_t", false) { }
+Int128::Int128()
+    : IntegerType("__int128", false) { }
 
-std::unique_ptr<Type> UInt128::clone() const {
-    return std::make_unique<UInt128>();
+std::unique_ptr<Type> Int128::clone() const {
+    return std::make_unique<Int128>();
 }
 
 FloatingPointType::FloatingPointType(const std::string& name)

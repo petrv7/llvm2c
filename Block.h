@@ -26,6 +26,7 @@ private:
     //llvm::DenseMap<const llvm::Value*, std::unique_ptr<StructElement>> structElements; //DenseMap used for storing unique pointers to StructElements (used in parsing getelementptr instruction and constant expressions)
     std::vector<std::unique_ptr<StructElement>> structElements;
     std::vector<std::unique_ptr<NewGep>> geps;
+    std::vector<std::unique_ptr<Expr>> casts;
     std::map<Expr*, std::unique_ptr<Expr>> derefs; //Map used for storing unique pointers to DerefExpr (used in store instruction parsing)
     std::map<Expr*, std::unique_ptr<Expr>> refs; //Map used for storing unique pointers to RefExpr (used in parsing getelementptr instruction and constant expressions)
     std::vector<std::unique_ptr<Value>> values; //vector containing Values used in parsing extractvalue

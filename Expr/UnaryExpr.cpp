@@ -102,6 +102,8 @@ DerefExpr::DerefExpr(Expr* expr) :
     UnaryExpr(expr) {
     if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
         setType(PT->type->clone());
+    } else if (auto TD = dynamic_cast<TypeDef*>(expr->getType())) {
+        setType(TD->getDerefType());
     }
 }
 
