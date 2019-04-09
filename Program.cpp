@@ -179,7 +179,13 @@ std::string Program::getValue(const llvm::Constant* val) {
             return "NAN";
         }
 
-        return std::to_string(CFP->getValueAPF().convertToFloat());
+        std::string ret = std::to_string(CFP->getValueAPF().convertToFloat());
+        if (ret.compare("-nan") == 0) {
+            hasMath = true;
+            return "-NAN";
+        }
+
+        return ret;
     }
 
     if (llvm::ConstantDataArray* CDA = llvm::dyn_cast<llvm::ConstantDataArray>(val)) {

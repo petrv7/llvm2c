@@ -1006,7 +1006,12 @@ void Block::createConstantValue(const llvm::Value* val) {
             func->hasMath();
             func->createExpr(val, std::make_unique<Value>("NAN", std::make_unique<FloatType>()));
         } else {
-            func->createExpr(val, std::make_unique<Value>(std::to_string(CFP->getValueAPF().convertToDouble()), std::make_unique<FloatType>()));
+            std::string CFPvalue = std::to_string(CFP->getValueAPF().convertToDouble());
+            if (CFPvalue.compare("-nan") == 0) {
+                func->hasMath();
+                CFPvalue = "-NAN";
+            }
+            func->createExpr(val, std::make_unique<Value>(CFPvalue, std::make_unique<FloatType>()));
         }
     }
     if (auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
