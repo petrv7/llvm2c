@@ -26,78 +26,6 @@ std::string RefExpr::toString() const {
     return "&(" + expr->toString() + ")";
 }
 
-GepExpr::GepExpr(Expr* expr, std::unique_ptr<Type> type)
-    : UnaryExpr(expr) {
-    setType(std::move(type));
-}
-
-void GepExpr::print() const {
-    llvm::outs() << this->toString();
-}
-
-std::string GepExpr::toString() const {
-    std::string print = expr->toString();
-    bool move;
-    bool se = false;
-
-    for (unsigned i = 0; i < args.size(); i++) {
-        se = false;
-        move = args[i].second->toString().compare("0") != 0;
-
-        if (i == 0) {
-            if (move) {
-                if (auto SE = dynamic_cast<StructElement*>(args[i].second)) {
-                    print.append(SE->toString());
-                } else {
-                    print.append(" + " + args[i].second->toString());
-                }
-            }
-            continue;
-        }
-
-        if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
-            if (AT->isPointerArray && AT->pointer->isFuncPointer) {
-                print = "(((" + args[i].first->toString() + "(**)" + AT->pointer->params + ")" + print;
-            } else {
-                print = "(*((" + args[i].first->toString() + "(*)" + AT->sizeToString() + ")" + print;
-            }
-        } else if (auto PT = dynamic_cast<PointerType*>(args[i].first.get())) {
-
-        } else {
-            if (auto SE = dynamic_cast<StructElement*>(args[i].second)) {
-                print += SE->toString();
-                move = false;
-                se = true;
-            } else {
-                print = "(((" + args[i].first->toString() + ")" + print;
-            }
-        }
-
-        if (move) {
-            if (auto SE = dynamic_cast<StructElement*>(args[i].second)) {
-                print += "))";
-                print.append(args[i].second->toString());
-            } else {
-                print.append(") + " + args[i].second->toString() + ")");
-            }
-        } else if (!se) {
-            print.append("))");
-        }
-
-        if (auto AT = dynamic_cast<ArrayType*>(args[i].first.get())) {
-            if (i != args.size() - 1) {
-                print = "(*(" + print + "))";
-            }
-        }
-    }
-
-    return print;
-}
-
-void GepExpr::addArg(std::unique_ptr<Type> type, Expr* index) {
-    args.push_back(std::make_pair(std::move(type), index));
-}
-
 DerefExpr::DerefExpr(Expr* expr) :
     UnaryExpr(expr) {
     if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
@@ -152,18 +80,12 @@ void CastExpr::print() const {
 std::string CastExpr::toString() const {
     std::string ret = "(" + getType()->toString();
     if (auto PT = dynamic_cast<PointerType*>(getType())) {
-        if (PT->isFuncPointer || PT->isArrayPointer) {
+        if (PT->isArrayPointer) {
             ret += " (";
             for (unsigned i = 0; i < PT->levels; i++) {
                 ret += "*";
             }
-            ret += ")";
-        }
-        if (PT->isArrayPointer) {
-            ret = ret + PT->sizes;
-        }
-        if (PT->isFuncPointer) {
-            ret += PT->params;
+            ret += ")" + PT->sizes;
         }
     }
     return ret + ")" + "(" + expr->toString() + ")";

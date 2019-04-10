@@ -108,9 +108,6 @@ public:
     bool isStructPointer;
     std::string structName;
 
-    bool isFuncPointer;
-    std::string params;
-
     PointerType(std::unique_ptr<Type>);
     PointerType(const PointerType& other);
 

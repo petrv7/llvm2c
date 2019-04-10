@@ -23,13 +23,21 @@ private:
     Func* func;
 
     std::vector<Expr*> abstractSyntaxTree; //vector used for saving instructions of the block in form of AST
-    //llvm::DenseMap<const llvm::Value*, std::unique_ptr<StructElement>> structElements; //DenseMap used for storing unique pointers to StructElements (used in parsing getelementptr instruction and constant expressions)
-    std::vector<std::unique_ptr<StructElement>> structElements;
-    std::vector<std::unique_ptr<NewGep>> geps;
-    std::vector<std::unique_ptr<Expr>> casts;
-    std::map<Expr*, std::unique_ptr<Expr>> derefs; //Map used for storing unique pointers to DerefExpr (used in store instruction parsing)
+
+    //getelementptr expressions
+    std::vector<std::unique_ptr<GepExpr>> geps; //GepExpr vector used in getelementptr parsing
+    std::vector<std::unique_ptr<Expr>> casts; //Vector of casted values used in parsing getelementptr and store instruction
     std::map<Expr*, std::unique_ptr<Expr>> refs; //Map used for storing unique pointers to RefExpr (used in parsing getelementptr instruction and constant expressions)
-    std::vector<std::unique_ptr<Value>> values; //vector containing Values used in parsing extractvalue
+
+    //store expressions
+    std::map<Expr*, std::unique_ptr<Expr>> derefs; //Map used for storing unique pointers to DerefExpr (used in store instruction parsing)
+
+    //extractvalue expressions
+    std::vector<std::unique_ptr<Value>> values; //Vector containing Values used in parsing extractvalue
+
+    //inline asm expressions
+    std::vector<std::unique_ptr<Expr>> vars; //Vector of Values used in parsing inline asm
+    std::vector<std::unique_ptr<Expr>> stores; //Vector containing EqualsExpr used in parsing inline asm
 
     /**
      * @brief parseAllocaInstruction Parses alloca instruction into Value and RefExpr.
@@ -160,16 +168,10 @@ private:
     void parseLLVMInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
-     * @brief setMetadataInfo Sets original variable name and unsigned flag for the variable type if its metadata is found.
+     * @brief setMetadataInfo Uses metadata to add additional information to variables (e.g. original name, unsigness)
      * @param ins Call instruction that called llvm.dbg.declare
      */
     void setMetadataInfo(const llvm::CallInst* ins);
-
-    /**
-     * @brief unsetAllInit Resets the init flag for every variable.
-     * Used for repeated calling of print and saveFile.
-     */
-    void unsetAllInit();
 
     /**
      * @brief createConstantValue Creates Value for given ConstantInt or ConstantFP and inserts it into exprMap.
@@ -224,6 +226,11 @@ private:
      * @return String in raw format
      */
     std::string toRawString(const std::string& str) const;
+
+    /**
+     * @brief unsetAllInit Unsets the init flag in every Value in abstractSyntaxTree. Used for repeated calling of print or saveFile.
+     */
+    void unsetAllInit();
 
 public:
     std::string blockName;

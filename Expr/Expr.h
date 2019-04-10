@@ -202,14 +202,14 @@ public:
     std::string toString() const override;
 };
 
-class NewGep : public ExprBase {
+class GepExpr : public ExprBase {
 private:
     std::vector<std::unique_ptr<Expr>> indices;
 
 public:
     bool isNullGep = false;
 
-    NewGep(std::vector<std::unique_ptr<Expr>>&);
+    GepExpr(std::vector<std::unique_ptr<Expr>>&);
 
     void print() const override;
     std::string toString() const override;

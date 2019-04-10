@@ -120,15 +120,7 @@ void Func::print() {
 
     returnType->print();
     if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
-        if (!PT->isFuncPointer) {
-            llvm::outs() << " " << name << "(";
-        } else {
-            llvm::outs() << " (";
-            for (int i = 0; i < PT->levels; i++) {
-                llvm::outs() << "*";
-            }
-            llvm::outs() << name << "(";
-        }
+        llvm::outs() << " " << name << "(";
     } else {
         llvm::outs() << " " << name << "(";
     }
@@ -156,14 +148,7 @@ void Func::print() {
         llvm::outs() << "...";
     }
 
-
     llvm::outs() << ")";
-
-    if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
-        if (PT->isFuncPointer) {
-            llvm::outs() << ")" << PT->params;
-        }
-    }
 
     if (isDeclaration) {
         llvm::outs() << ";\n";
@@ -208,15 +193,7 @@ void Func::saveFile(std::ofstream& file) {
 
     file << returnType->toString();
     if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
-        if (!PT->isFuncPointer) {
-            file << " " << name << "(";
-        } else {
-            file << " (";
-            for (int i = 0; i < PT->levels; i++) {
-                file << "*";
-            }
-            file << name << "(";
-        }
+        file << " " << name << "(";
     } else {
         file << " " << name << "(";
     }
@@ -245,12 +222,6 @@ void Func::saveFile(std::ofstream& file) {
     }
 
     file << ")";
-
-    if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
-        if (PT->isFuncPointer) {
-            file << ")" << PT->params;
-        }
-    }
 
     if (isDeclaration) {
         file << ";\n";

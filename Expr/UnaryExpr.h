@@ -19,7 +19,7 @@ public:
     std::string toString() const override;
 };
 
-class GepExpr : public UnaryExpr {
+/*class GepExpr : public UnaryExpr {
 private:
     std::vector<std::pair<std::unique_ptr<Type>, Expr*>> args; //vector containing pairs of type of the pointer and Expr containing an increment of the pointer
 
@@ -32,7 +32,7 @@ public:
     std::string toString() const override;
 
     void addArg(std::unique_ptr<Type>type , Expr* index);
-};
+};*/
 
 
 class DerefExpr : public UnaryExpr {

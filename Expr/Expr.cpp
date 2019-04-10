@@ -29,18 +29,12 @@ std::string Struct::toString() const {
         ret += "    " + item.first->toString();
 
         if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
-            if (PT->isFuncPointer || PT->isArrayPointer) {
+            if (PT->isArrayPointer) {
                 faPointer = " (";
                 for (unsigned i = 0; i < PT->levels; i++) {
                     faPointer += "*";
                 }
-                faPointer += item.second + ")";
-            }
-            if (PT->isArrayPointer) {
-                faPointer = faPointer + PT->sizes;
-            }
-            if (PT->isFuncPointer) {
-                faPointer += PT->params;
+                faPointer += item.second + ")" + PT->sizes;
             }
         }
 
@@ -48,15 +42,7 @@ std::string Struct::toString() const {
             ret += " ";
 
             if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
-                if (AT->isPointerArray && AT->pointer->isFuncPointer) {
-                    ret += "(";
-                    for (unsigned i = 0; i < AT->pointer->levels; i++) {
-                        ret += "*";
-                    }
-                    ret += item.second + AT->sizeToString() + ")" + AT->pointer->params;
-                } else {
-                    ret += item.second + AT->sizeToString();
-                }
+                ret += item.second + AT->sizeToString();
             } else {
                 ret += item.second;
             }
@@ -76,11 +62,10 @@ void Struct::addItem(std::unique_ptr<Type> type, const std::string& name) {
     items.push_back(std::make_pair(std::move(type), name));
 }
 
-StructElement::StructElement(Struct* strct, Expr* expr, unsigned element/*, unsigned int move*/)
+StructElement::StructElement(Struct* strct, Expr* expr, unsigned element)
     : strct(strct),
       expr(expr),
-      element(element)/*,
-      move(move)*/ {
+      element(element) {
     setType(strct->items[element].first->clone());
 }
 
@@ -152,7 +137,7 @@ std::string Value::toString() const {
     if (!init) {
         std::string ret;
         if (auto PT = dynamic_cast<PointerType*>(getType())) {
-            if ((PT->isFuncPointer || PT->isArrayPointer) && valueName.compare("0") != 0) {
+            if (PT->isArrayPointer && valueName.compare("0") != 0) {
                 ret = "(";
                 for (unsigned i = 0; i < PT->levels; i++) {
                     ret += "*";
@@ -164,23 +149,13 @@ std::string Value::toString() const {
                 ret = ret + PT->sizes;
             }
 
-            if (PT->isFuncPointer) {
-                ret += PT->params;
-            }
-
             if (!ret.empty()) {
                 return ret;
             }
         }
 
         if (auto AT = dynamic_cast<ArrayType*>(getType())) {
-            if (AT->isPointerArray && AT->pointer->isFuncPointer) {
-                ret = "(";
-                for (unsigned i = 0; i < AT->pointer->levels; i++) {
-                    ret += "*";
-                }
-                return ret + valueName + AT->sizeToString() + ")" + AT->pointer->params;
-            } else if (AT->isPointerArray && AT->pointer->isArrayPointer) {
+            if (AT->isPointerArray && AT->pointer->isArrayPointer) {
                 ret = "(";
                 for (unsigned i = 0; i < AT->pointer->levels; i++) {
                     ret += "*";
@@ -207,13 +182,7 @@ std::string GlobalValue::toString() const {
     if (!init) {
         std::string ret = getType()->toString() + " ";
         if (ArrayType* AT = dynamic_cast<ArrayType*>(getType())) {
-            if (AT->isPointerArray && AT->pointer->isFuncPointer) {
-                ret += " (";
-                for (unsigned i = 0; i < AT->pointer->levels; i++) {
-                    ret += "*";
-                }
-                ret += valueName + AT->sizeToString() + ")" + AT->pointer->params;
-            } else if (AT->isPointerArray && AT->pointer->isArrayPointer) {
+            if (AT->isPointerArray && AT->pointer->isArrayPointer) {
                 ret += "(";
                 for (unsigned i = 0; i < AT->pointer->levels; i++) {
                     ret += "*";
@@ -223,7 +192,7 @@ std::string GlobalValue::toString() const {
                 ret += " " + valueName + AT->sizeToString();;
             }
         } else if (auto PT = dynamic_cast<PointerType*>(getType())) {
-            if ((PT->isFuncPointer || PT->isArrayPointer) && valueName.compare("0") != 0) {
+            if (PT->isArrayPointer && valueName.compare("0") != 0) {
                 ret += "(";
                 for (unsigned i = 0; i < PT->levels; i++) {
                     ret += "*";
@@ -242,12 +211,6 @@ std::string GlobalValue::toString() const {
             if (PT->isArrayPointer) {
                 ret = ret + PT->sizes;
             }
-
-            if (PT->isFuncPointer) {
-                ret += PT->params;
-            }
-
-
         } else {
             ret += valueName;
         }
@@ -265,13 +228,7 @@ std::string GlobalValue::toString() const {
 std::string GlobalValue::declToString() const {
     std::string ret = getType()->toString();
     if (ArrayType* AT = dynamic_cast<ArrayType*>(getType())) {
-        if (AT->isPointerArray && AT->pointer->isFuncPointer) {
-            ret += " (";
-            for (unsigned i = 0; i < AT->pointer->levels; i++) {
-                ret += "*";
-            }
-            ret += valueName + AT->sizeToString() + ")" + AT->pointer->params;
-        } else if (AT->isPointerArray && AT->pointer->isArrayPointer) {
+        if (AT->isPointerArray && AT->pointer->isArrayPointer) {
             ret += " (";
             for (unsigned i = 0; i < AT->pointer->levels; i++) {
                 ret += "*";
@@ -281,7 +238,7 @@ std::string GlobalValue::declToString() const {
             ret += " " + valueName + AT->sizeToString();;
         }
     } else if (auto PT = dynamic_cast<PointerType*>(getType())) {
-        if ((PT->isFuncPointer || PT->isArrayPointer) && valueName.compare("0") != 0) {
+        if (PT->isArrayPointer && valueName.compare("0") != 0) {
             ret += "(";
             for (unsigned i = 0; i < PT->levels; i++) {
                 ret += "*";
@@ -295,13 +252,6 @@ std::string GlobalValue::declToString() const {
             ret = ret + PT->sizes;
         }
 
-        if (PT->isFuncPointer) {
-            ret += PT->params;
-        }
-
-        /*if (!ret.empty()) {
-            return ret;
-        }*/
 
     } else {
         ret += " " + valueName;
@@ -447,7 +397,12 @@ std::string AsmExpr::toString() const {
 }
 
 void AsmExpr::addOutputExpr(Expr* expr, unsigned pos) {
-    output[pos].second = expr;
+    for (unsigned i = pos; i < output.size(); i++) {
+        if (!output[i].second) {
+            output[i].second = expr;
+            break;
+        }
+    }
 }
 
 CallExpr::CallExpr(Expr* funcValue, const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type)
@@ -519,26 +474,18 @@ std::string PointerMove::toString() const {
 
     auto PT = static_cast<PointerType*>(ptrType.get());
 
-    if (PT->isArrayPointer || PT->isFuncPointer) {
+    if (PT->isArrayPointer) {
         ret += "(";
         for (int i = 0; i < PT->levels; i++) {
             ret += "*";
         }
-        ret += ")";
-
-        if (PT->isArrayPointer) {
-            ret = ret + PT->sizes;
-        }
-
-        if (PT->isFuncPointer) {
-            ret += PT->params;
-        }
+        ret += ")" + PT->sizes;
     }
 
     return ret + ")(" + pointer->toString() + ")) + (" + move->toString() + "))";
 }
 
-NewGep::NewGep(std::vector<std::unique_ptr<Expr>>& indices) {
+GepExpr::GepExpr(std::vector<std::unique_ptr<Expr>>& indices) {
     for (auto& index : indices) {
         this->indices.push_back(std::move(index));
     }
@@ -546,10 +493,10 @@ NewGep::NewGep(std::vector<std::unique_ptr<Expr>>& indices) {
     setType(this->indices[this->indices.size() - 1]->getType()->clone());
 }
 
-void NewGep::print() const {
+void GepExpr::print() const {
     llvm::outs() << toString();
 }
 
-std::string NewGep::toString() const {
+std::string GepExpr::toString() const {
     return indices[indices.size() - 1]->toString();
 }

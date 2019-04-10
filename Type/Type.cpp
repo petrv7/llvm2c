@@ -67,18 +67,12 @@ std::string FunctionType::paramsToString() const {
         ret += param->toString();
 
         if (auto PT = dynamic_cast<PointerType*>(param.get())) {
-            if (PT->isFuncPointer || PT->isArrayPointer) {
+            if (PT->isArrayPointer) {
                 ret += " (";
                 for (unsigned i = 0; i < PT->levels; i++) {
                     ret += "*";
                 }
-                ret += ")";
-            }
-            if (PT->isArrayPointer) {
-                ret += PT->sizes;
-            }
-            if (PT->isFuncPointer) {
-                ret += PT->params;
+                ret += ")" + PT->sizes;
             }
         }
 
@@ -86,8 +80,6 @@ std::string FunctionType::paramsToString() const {
             ret += AT->sizeToString();
         }
     }
-
-
 
     if (isVarArg) {
         ret += ", ...";
@@ -229,23 +221,15 @@ std::string VoidType::toString() const {
 
 PointerType::PointerType(std::unique_ptr<Type> type) {
     levels = 1;
-    isFuncPointer = false;
     isArrayPointer = false;
     isStructPointer = false;
 
     if (auto PT = dynamic_cast<PointerType*>(type.get())) {
-        isFuncPointer = PT->isFuncPointer;
         isArrayPointer = PT->isArrayPointer;
         isStructPointer = PT->isStructPointer;
         structName = PT->structName;
         levels = PT->levels + 1;
-        params = PT->params;
         sizes = PT->sizes;
-    }
-
-    if (auto FT = dynamic_cast<FunctionType*>(type.get())) {
-        isFuncPointer = true;
-        params = FT->paramsToString();
     }
 
     if (auto AT = dynamic_cast<ArrayType*>(type.get())) {
@@ -266,10 +250,8 @@ PointerType::PointerType(std::unique_ptr<Type> type) {
 
 PointerType::PointerType(const PointerType &other) {
     type = other.type->clone();
-    isFuncPointer = other.isFuncPointer;
     isArrayPointer = other.isArrayPointer;
     levels = other.levels;
-    params = other.params;
     sizes = other.sizes;
 }
 
@@ -284,7 +266,7 @@ void PointerType::print() const {
 std::string PointerType::toString() const {
     std::string ret = getConstStaticString();
 
-    if (isFuncPointer || isArrayPointer) {
+    if (isArrayPointer) {
         return ret + type->toString();
     }
 
