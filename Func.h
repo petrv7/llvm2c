@@ -27,10 +27,6 @@ private:
 
     llvm::DenseMap<const llvm::BasicBlock*, std::unique_ptr<Block>> blockMap; //DenseMap used for mapping llvm::BasicBlock to Block
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> exprMap; // DenseMap used for mapping llvm::Value to Expr
-    llvm::DenseMap<const llvm::Value*, std::unique_ptr<Value>> valueMap; //DenseMap used in parsing alloca instruction for mapping llvm::Value to Value
-    //llvm::DenseMap<const llvm::Value*, std::unique_ptr<GepExpr>> gepExprMap; //DenseMap used in parsing getelementptr instruction for mapping llvm::Value to GepExpr
-    llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> callExprMap; //DenseMap used in parsing call instruction for mapping llvm::Value to CallExpr
-    llvm::DenseMap<const llvm::Value*, std::unique_ptr<EqualsExpr>> callValueMap; //DenseMap used in parsing call instruction for mapping llvm::Value to EqualsExpr
 
     unsigned varCount; //counter for assigning names of variables
     unsigned blockCount; // counter for assigning names of blocks

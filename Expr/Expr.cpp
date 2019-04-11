@@ -317,11 +317,11 @@ std::string SwitchExpr::toString() const {
     return ret + "}";
 }
 
-AsmExpr::AsmExpr(const std::string& inst, const std::vector<std::pair<std::string, Expr*>>& output, const std::vector<std::pair<std::string, Expr*>>& input, const std::string& usedReg)
+AsmExpr::AsmExpr(const std::string& inst, const std::vector<std::pair<std::string, Expr*>>& output, const std::vector<std::pair<std::string, Expr*>>& input, const std::string& clobbers)
     : inst(inst),
       output(output),
       input(input),
-      usedReg(usedReg) {}
+      clobbers(clobbers) {}
 
 void AsmExpr::print() const {
     llvm::outs() << toString();
@@ -389,8 +389,8 @@ std::string AsmExpr::toString() const {
 
     ret += "\n        : ";
 
-    if (!usedReg.empty()) {
-        ret += usedReg;
+    if (!clobbers.empty()) {
+        ret += clobbers;
     }
 
     return ret + "\n    );";

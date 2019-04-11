@@ -157,10 +157,10 @@ public:
 
 class AsmExpr : public ExprBase {
 private:
-    std::string inst;
-    std::vector<std::pair<std::string, Expr*>> output;
-    std::vector<std::pair<std::string, Expr*>> input;
-    std::string usedReg;
+    std::string inst; //asm string
+    std::vector<std::pair<std::string, Expr*>> output; //output constraints
+    std::vector<std::pair<std::string, Expr*>> input; //input constraints
+    std::string clobbers;
 
 public:
     AsmExpr(const std::string&, const std::vector<std::pair<std::string, Expr*>>&, const std::vector<std::pair<std::string, Expr*>>&, const std::string&);
@@ -207,8 +207,6 @@ private:
     std::vector<std::unique_ptr<Expr>> indices;
 
 public:
-    bool isNullGep = false;
-
     GepExpr(std::vector<std::unique_ptr<Expr>>&);
 
     void print() const override;

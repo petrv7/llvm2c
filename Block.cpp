@@ -90,11 +90,11 @@ void Block::parseAllocaInstruction(const llvm::Instruction& ins, bool isConstExp
 
     const llvm::Value* value = isConstExpr ? val : &ins;
 
-    func->valueMap[value] = std::make_unique<Value>(func->getVarName(), func->getType(allocaInst->getAllocatedType()));
-    func->createExpr(value, std::make_unique<RefExpr>(func->valueMap[&ins].get()));
+    valueMap.push_back(std::make_unique<Value>(func->getVarName(), func->getType(allocaInst->getAllocatedType())));
+    func->createExpr(value, std::make_unique<RefExpr>(valueMap[valueMap.size() - 1].get()));
 
     if (!isConstExpr) {
-        abstractSyntaxTree.push_back(func->valueMap[&ins].get());
+        abstractSyntaxTree.push_back(valueMap[valueMap.size() - 1].get());
     }
 }
 
@@ -581,13 +581,14 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
             abstractSyntaxTree.push_back(func->getExpr(&ins));
         }
     } else {
-        func->callExprMap[value] = std::make_unique<CallExpr>(funcValue, funcName, params, type->clone());
+        callExprMap.push_back(std::make_unique<CallExpr>(funcValue, funcName, params, type->clone()));
+
         func->createExpr(value, std::make_unique<Value>(func->getVarName(), type->clone()));
-        func->callValueMap[value] = std::make_unique<EqualsExpr>(func->getExpr(value), func->callExprMap[value].get());
+        callValueMap.push_back(std::make_unique<EqualsExpr>(func->getExpr(value), callExprMap[callExprMap.size() - 1].get()));
 
         if (!isConstExpr) {
             abstractSyntaxTree.push_back(func->getExpr(&ins));
-            abstractSyntaxTree.push_back(func->callValueMap[&ins].get());
+            abstractSyntaxTree.push_back(callValueMap[callValueMap.size() - 1].get());
         }
     }
 }
@@ -598,11 +599,9 @@ void Block::parseCastInstruction(const llvm::Instruction& ins, bool isConstExpr,
     }
     Expr* expr = func->getExpr(ins.getOperand(0));
 
-    if (!expr) {
-        return;
-    }
-
-    if (auto AE = dynamic_cast<AsmExpr*>(expr)) {
+    auto AE = dynamic_cast<AsmExpr*>(expr);
+    //operand is used for initializing output in inline asm
+    if (!expr || AE) {
         return;
     }
 
@@ -807,7 +806,7 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
     llvm::Metadata* md = llvm::dyn_cast<llvm::MetadataAsValue>(ins->getOperand(0))->getMetadata();
     llvm::Value* referredVal = llvm::cast<llvm::ValueAsMetadata>(md)->getValue();
 
-    if (Value* variable = func->valueMap[referredVal].get()) {
+    if (Value* variable = valueMap[referredVal].get()) {
         llvm::Metadata* varMD = llvm::dyn_cast<llvm::MetadataAsValue>(ins->getOperand(1))->getMetadata();
         llvm::DILocalVariable* localVar = llvm::dyn_cast<llvm::DILocalVariable>(varMD);
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());

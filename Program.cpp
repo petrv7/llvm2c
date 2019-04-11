@@ -103,11 +103,14 @@ void Program::parseGlobalVars() {
         bool isPrivate = gvar.hasPrivateLinkage();
         std::string gvarName = gvar.getName().str();
         std::replace(gvarName.begin(), gvarName.end(), '.', '_');
-        gvarName = "g_" + gvarName;
+
+        if (gvarName.compare("stdin") != 0) {
+            gvarName = "g_" + gvarName;
+        }
 
         std::string value = "";
         if (gvar.hasInitializer()) {
-            value = getValue(gvar.getInitializer());
+            value = getInitValue(gvar.getInitializer());
         }
 
         llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
@@ -131,12 +134,14 @@ std::string Program::getAnonStructName() {
     return name;
 }
 
-std::string Program::getValue(const llvm::Constant* val) {
+std::string Program::getInitValue(const llvm::Constant* val) {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(val->getType())) {
         std::string name = val->getName().str();
         if (const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
             std::replace(name.begin(), name.end(), '.', '_');
-            name = "g_" + name;
+            if (name.compare("stdin") != 0) {
+                name = "g_" + name;
+            }
         }
 
         if (val->getName().str().empty()) {
@@ -158,7 +163,11 @@ std::string Program::getValue(const llvm::Constant* val) {
         if (llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val->getOperand(0))) {
             std::string replacedName = GV->getName().str();
             std::replace(replacedName.begin(), replacedName.end(), '.', '_');
-            return "g_" + replacedName;
+
+            if (replacedName.compare("stdin") != 0) {
+                return "g_" + replacedName;
+            }
+            return replacedName;
         }
 
         return "&" + name;
@@ -198,7 +207,7 @@ std::string Program::getValue(const llvm::Constant* val) {
             }
             first = false;
 
-            value += getValue(CDA->getElementAsConstant(i));
+            value += getInitValue(CDA->getElementAsConstant(i));
         }
 
         return value + "}";
@@ -213,7 +222,7 @@ std::string Program::getValue(const llvm::Constant* val) {
             }
             first = false;
 
-            value += getValue(val->getOperand(i));
+            value += getInitValue(val->getOperand(i));
         }
 
         return value + "}";

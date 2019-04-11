@@ -22,6 +22,7 @@ private:
 
     TypeHandler typeHandler;
 
+    //expressions
     std::vector<std::unique_ptr<Func>> functions; // vector of parsed functions
     std::vector<std::unique_ptr<Func>> declarations; // vector of function declarations
     std::vector<std::unique_ptr<Struct>> structs; // vector of parsed structs
@@ -29,11 +30,10 @@ private:
     llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<RefExpr>> globalRefs; //map containing references to global variables
     llvm::DenseMap<const llvm::StructType*, std::unique_ptr<Struct>> unnamedStructs; // map containing unnamed structs
 
+    //variables used for creating names for structs, global variables and anonymous structs
     unsigned structVarCount = 0;
     unsigned gvarCount = 0;
     unsigned anonStructCount = 0;
-
-    bool hasVarArg = false; //program uses "stdarg.h"
 
     /**
      * @brief getVarName Creates a new name for a variable in form of string containing "var" + structVarCount.
@@ -48,11 +48,11 @@ private:
     std::string getAnonStructName();
 
     /**
-     * @brief getValue Return string containing value used for global variable initialization.
+     * @brief getInitValue Return string containing value used for global variable initialization.
      * @param val llvm Constant used for initialization
      * @return Init value
      */
-    std::string getValue(const llvm::Constant* val);
+    std::string getInitValue(const llvm::Constant* val);
 
     /**
      * @brief unsetAllInit Resets the init flag for every global variable.
@@ -101,8 +101,10 @@ private:
 
 public:
     std::string fileName;
+
     bool stackIgnored = false; //instruction stacksave was ignored
     bool hasMath = false; //program uses "math.h"
+    bool hasVarArg = false; //program uses "stdarg.h"
 
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.

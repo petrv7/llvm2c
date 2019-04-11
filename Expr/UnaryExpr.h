@@ -19,22 +19,6 @@ public:
     std::string toString() const override;
 };
 
-/*class GepExpr : public UnaryExpr {
-private:
-    std::vector<std::pair<std::unique_ptr<Type>, Expr*>> args; //vector containing pairs of type of the pointer and Expr containing an increment of the pointer
-
-public:
-    std::unique_ptr<Type> lastType;
-
-    GepExpr(Expr*, std::unique_ptr<Type>);
-
-    void print() const override;
-    std::string toString() const override;
-
-    void addArg(std::unique_ptr<Type>type , Expr* index);
-};*/
-
-
 class DerefExpr : public UnaryExpr {
 public:
     DerefExpr(Expr*);

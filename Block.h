@@ -27,17 +27,23 @@ private:
     //getelementptr expressions
     std::vector<std::unique_ptr<GepExpr>> geps; //GepExpr vector used in getelementptr parsing
     std::vector<std::unique_ptr<Expr>> casts; //Vector of casted values used in parsing getelementptr and store instruction
-    std::map<Expr*, std::unique_ptr<Expr>> refs; //Map used for storing unique pointers to RefExpr (used in parsing getelementptr instruction and constant expressions)
 
     //store expressions
     std::map<Expr*, std::unique_ptr<Expr>> derefs; //Map used for storing unique pointers to DerefExpr (used in store instruction parsing)
 
+    //alloca expressions
+    std::vector<std::unique_ptr<Value>> valueMap; //Vector of Values used in parsing alloca instruction
+
     //extractvalue expressions
-    std::vector<std::unique_ptr<Value>> values; //Vector containing Values used in parsing extractvalue
+    std::vector<std::unique_ptr<Value>> values; //Vector of Values used in parsing extractvalue
 
     //inline asm expressions
     std::vector<std::unique_ptr<Expr>> vars; //Vector of Values used in parsing inline asm
-    std::vector<std::unique_ptr<Expr>> stores; //Vector containing EqualsExpr used in parsing inline asm
+    std::vector<std::unique_ptr<Expr>> stores; //Vector of EqualsExpr used in parsing inline asm
+
+    //call expressions
+    std::vector<std::unique_ptr<Expr>> callExprMap; //Vector of CallExpr used in parsing call instruction
+    std::vector<std::unique_ptr<Expr>> callValueMap; //Vector of EqualsExpr used in parsing call instruction
 
     /**
      * @brief parseAllocaInstruction Parses alloca instruction into Value and RefExpr.
