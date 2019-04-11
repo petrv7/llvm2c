@@ -77,12 +77,6 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
             return typeDefs[type]->clone();
         }
 
-        /*if (const llvm::ArrayType* AT = llvm::dyn_cast<llvm::ArrayType>(PT->getPointerElementType())) {
-            ArrayType arrayType = { getType(AT->getArrayElementType(), voidType), AT->getArrayNumElements() };
-            typeDefs[type] = std::make_unique<TypeDef>(std::make_unique<ArrayType>(getType(AT->getArrayElementType(), voidType), AT->getArrayNumElements()), arrayType.toString() + "(*", getTypeDefName(), ")" + arrayType.sizeToString());
-            return typeDefs[type]->clone();
-        }*/
-
         return std::make_unique<PointerType>(getType(PT->getPointerElementType(), voidType));
     }
 
@@ -99,22 +93,6 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
         }
 
         return std::make_unique<StructType>(getStructName(structType->getName().str()));
-    }
-
-    if (type->isFunctionTy()) {
-        const llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(type);
-        auto functionType = std::make_unique<FunctionType>(getType(FT->getReturnType(), voidType));
-        if (FT->getNumParams() == 0) {
-            functionType->addParam(std::make_unique<VoidType>());
-        } else {
-            for (unsigned i = 0; i < FT->getNumParams(); i++) {
-                functionType->addParam(getType(FT->getParamType(i), voidType));
-            }
-
-            functionType->isVarArg = FT->isVarArg();
-        }
-
-        return functionType;
     }
 
     return nullptr;

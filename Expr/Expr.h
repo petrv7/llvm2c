@@ -117,17 +117,6 @@ public:
     std::string declToString() const;
 };
 
-class JumpExpr : public ExprBase {
-private:
-    std::string block;
-
-public:
-    JumpExpr(const std::string&);
-
-    void print() const override;
-    std::string toString() const override;
-};
-
 class IfExpr : public ExprBase {
 private:
     Expr* cmp;

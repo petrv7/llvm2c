@@ -260,17 +260,6 @@ std::string GlobalValue::declToString() const {
     return ret + ";";
 }
 
-JumpExpr::JumpExpr(const std::string &block)
-    : block(block) {}
-
-void JumpExpr::print() const {
-    llvm::outs() << toString();
-}
-
-std::string JumpExpr::toString() const {
-    return "goto " + block;
-}
-
 IfExpr::IfExpr(Expr* cmp, const std::string& trueBlock, const std::string& falseBlock)
     : cmp(cmp),
       trueBlock(trueBlock),
