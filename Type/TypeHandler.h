@@ -13,7 +13,6 @@ class Program;
 class TypeHandler {
 private:
     const Program* program;
-    llvm::DenseMap<const llvm::StructType*, std::unique_ptr<Type>> unnamedStructs; // map containing unnamed structs
     llvm::DenseMap<const llvm::Type*, std::unique_ptr<Type>> typeDefs;
 
     unsigned typeDefCount = 0;
@@ -34,13 +33,6 @@ public:
      * @return unique_ptr to corresponding Type object
      */
     std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
-
-    /**
-     * @brief createNewUnnamedStructType Adds new UnnamedStructType to the map unnameStructs
-     * @param structPointer Pointer to the LLVM StructType
-     * @param structString String containing parsed unnamed struct
-     */
-    void createNewUnnamedStructType(const llvm::StructType* structPointer, const std::string& structString);
 
     /**
      * @brief getBinaryType Returns type that would be result of a binary operation

@@ -30,6 +30,7 @@ public:
 };
 
 class TypeDef : public Type {
+friend class TypeHandler;
 private:
     std::string type;
     std::string name;

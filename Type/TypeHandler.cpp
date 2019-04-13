@@ -4,6 +4,8 @@
 
 #include "../Program.h"
 
+#include <boost/lambda/lambda.hpp>
+
 std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType) {
     if (typeDefs.find(type) != typeDefs.end()) {
         return typeDefs[type]->clone();
@@ -158,12 +160,6 @@ std::unique_ptr<Type> TypeHandler::getBinaryType(const Type* left, const Type* r
     return nullptr;
 }
 
-void TypeHandler::createNewUnnamedStructType(const llvm::StructType* structPointer, const std::string& structString) {
-    if (unnamedStructs.find(structPointer) == unnamedStructs.end()) {
-        unnamedStructs[structPointer] = std::make_unique<UnnamedStructType>(structString);
-    }
-}
-
 std::string TypeHandler::getStructName(const std::string& structName) {
     std::string name = structName;
     std::replace(name.begin(), name.end(), '.', '_');
@@ -192,6 +188,7 @@ std::vector<TypeDef*> TypeHandler::getSortedTypeDefs() {
             auto TD = static_cast<TypeDef*>(elem.second.get());
             if (TD->toString().compare("typeDef_" + std::to_string(i)) == 0) {
                 ret.push_back(TD);
+                break;
             }
         }
     }

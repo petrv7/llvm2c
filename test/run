@@ -1,0 +1,82 @@
+#!/bin/bash
+
+if ! [[ -e llvm2c ]]; then
+	echo "llvm2c not found!"
+	exit 1
+fi
+
+echo "Running math tests..."
+
+MATH=0
+
+for f in math_single_arg/*.c; do
+	clang "$f" -o orig 2>/dev/null
+	clang "$f" -emit-llvm -S -o temp.ll 2>/dev/null
+	./llvm2c temp.ll --o temp.c >> /dev/null
+	if [[ $? != 0 ]]; then
+		echo "llvm2c failed to translate $f!"
+		rm orig
+		rm temp.ll
+	else
+		clang temp.c -o new 2>/dev/null
+		if [[ $? != 0 ]]; then
+			echo "Clang could not compile translated file $f!"
+			rm orig
+			rm temp.ll
+			rm temp.c
+		else
+			for i in `seq -10 10`; do
+				./orig $i
+				ORIG=$?
+				./new $i
+				if [[ $ORIG != $? ]]; then
+					echo "Test $f failed with input $i!"
+					MATH=$((MATH+1))
+				fi
+			done
+		fi
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
+	fi
+done
+
+for f in math_two_args/*.c; do
+	clang "$f" -o orig 2>/dev/null
+	clang "$f" -emit-llvm -S -o temp.ll 2>/dev/null
+	./llvm2c temp.ll --o temp.c >> /dev/null
+	if [[ $? != 0 ]]; then
+		echo "llvm2c failed to translate $f!"
+		rm orig
+		rm temp.ll
+	else
+		clang temp.c -o new 2>/dev/null
+		if [[ $? != 0 ]]; then
+			echo "Clang could not compile translated file $f!"
+			rm orig
+			rm temp.ll
+			rm temp.c
+		else
+			for i in `seq -10 10`; do
+				./orig $i $((i+5))
+				ORIG=$?
+				./new $i $((i+5))
+				if [[ $ORIG != $? ]]; then
+					echo "Test $f failed with input $i!"
+					MATH=$((MATH+1))
+				fi
+			done
+		fi
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
+	fi
+done
+
+if [[ $MATH -eq 0 ]]; then
+	echo "All math tests passed!"
+else
+	echo "$MATH math tests failed!"
+fi
