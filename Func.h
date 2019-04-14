@@ -138,11 +138,4 @@ public:
      * @return unique_ptr to corresponding Type object
      */
     std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
-
-    /**
-     * @brief changeExprKey Changes key of expr in exprMap to val.
-     * @param expr Original expression
-     * @param val New LLVM Value
-     */
-    void changeExprKey(Expr* expr, const llvm::Value* val);
 };

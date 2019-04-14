@@ -102,7 +102,7 @@ void Func::print() {
 
     if (Block::isCFunc(Block::getCFunc(name))) {
         name = Block::getCFunc(name);
-        if (name.compare("va_start") == 0 || name.compare("va_end") == 0) {
+        if (name.compare("va_start") == 0 || name.compare("va_end") == 0 || name.compare("va_copy") == 0) {
             return;
         }
 
@@ -273,12 +273,4 @@ std::unique_ptr<Type> Func::getType(const llvm::Type* type, bool voidType) {
 
 void Func::hasMath() {
     program->hasMath = true;
-}
-
-void Func::changeExprKey(Expr* expr, const llvm::Value* val) {
-    for (auto& elem : exprMap) {
-        if (elem.second.get() == expr) {
-            createExpr(val, std::move(elem.second));
-        }
-    }
 }

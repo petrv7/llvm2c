@@ -14,10 +14,6 @@ void Struct::print() const {
 }
 
 std::string Struct::toString() const {
-    if (name.compare("va_list") == 0) {
-        return "";
-    }
-
     std::string ret;
 
     ret += "struct ";
