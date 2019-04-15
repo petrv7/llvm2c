@@ -1,0 +1,108 @@
+#!/bin/bash
+
+if ! [[ -e llvm2c ]]; then
+	echo "llvm2c not found!"
+	exit 1
+fi
+
+echo "Running inline asm tests..."
+
+ASM=0
+
+clang asm/basic_add.c -o orig 2>/dev/null
+clang asm/basic_add.c -emit-llvm -S -o temp.ll 2>/dev/null
+./llvm2c temp.ll --o temp.c >> /dev/null
+if [[ $? != 0 ]]; then
+	echo "llvm2c failed to translate asm/basic_add.c!"
+	rm orig
+	rm temp.ll
+else
+	clang temp.c -o new 2>/dev/null
+	if [[ $? != 0 ]]; then
+		echo "Clang could not compile translated file asm/basic_add.c!"
+		rm orig
+		rm temp.ll
+		rm temp.c
+	else
+		for i in `seq -10 10`; do
+			./orig $i $((i+5))
+			ORIG=$?
+			./new $i $((i+5))
+			if [[ $ORIG != $? ]]; then
+				echo "Test $f failed with input $i $((i+5))!"
+				ASM=$((ASM+1))
+			fi
+		done
+	fi
+	rm temp.ll
+	rm temp.c
+	rm new
+	rm orig
+fi
+
+clang asm/multiple_asm.c -o orig 2>/dev/null
+clang asm/multiple_asm.c -emit-llvm -S -o temp.ll 2>/dev/null
+./llvm2c temp.ll --o temp.c >> /dev/null
+if [[ $? != 0 ]]; then
+	echo "llvm2c failed to translate asm/multiple_asm.c!"
+	rm orig
+	rm temp.ll
+else
+	clang temp.c -o new 2>/dev/null
+	if [[ $? != 0 ]]; then
+		echo "Clang could not compile translated file asm/multiple_asm.c!"
+		rm orig
+		rm temp.ll
+		rm temp.c
+	else
+		for i in `seq -10 10`; do
+			./orig $i $((i+5))
+			ORIG=$?
+			./new $i $((i+5))
+			if [[ $ORIG != $? ]]; then
+				echo "Test $f failed with input $i $((i+5))!"
+				ASM=$((ASM+1))
+			fi
+		done
+	fi
+	rm temp.ll
+	rm temp.c
+	rm new
+	rm orig
+fi
+
+clang asm/mov.c -o orig 2>/dev/null
+clang asm/mov.c -emit-llvm -S -o temp.ll 2>/dev/null
+./llvm2c temp.ll --o temp.c >> /dev/null
+if [[ $? != 0 ]]; then
+	echo "llvm2c failed to translate asm/mov.c!"
+	rm orig
+	rm temp.ll
+else
+	clang temp.c -o new 2>/dev/null
+	if [[ $? != 0 ]]; then
+		echo "Clang could not compile translated file asm/mov.c!"
+		rm orig
+		rm temp.ll
+		rm temp.c
+	else
+		./orig
+		ORIG=$?
+		./new
+		if [[ $ORIG != $? ]]; then
+			echo "Test $f failed!"
+			ASM=$((ASM+1))
+		fi
+
+	fi
+	rm temp.ll
+	rm temp.c
+	rm new
+	rm orig
+fi
+
+if [[ $ASM -eq 0 ]]; then
+	echo "All inline asm tests passed!"
+else
+	echo "$ASM inline asm tests failed!"
+fi

@@ -1037,16 +1037,25 @@ std::string Block::toRawString(const std::string& str) const {
     std::string ret = str;
     size_t pos = 0;
 
-    while ((pos = ret.find("$$", pos)) != std::string::npos) {
-        ret.replace(pos, 2, "$");
-    }
-
-    pos = 0;
     while ((pos = ret.find("%", pos)) != std::string::npos) {
         if (ret[pos + 1] < 48 || ret[pos + 1] > 57) {
             ret.replace(pos, 1, "%%");
             pos += 2;
         }
+    }
+
+    pos = 0;
+    while ((pos = ret.find("$", pos)) != std::string::npos) {
+        if (ret[pos + 1] != '$') {
+            ret.replace(pos, 1, "%");
+        } else {
+            pos += 2;
+        }
+    }
+
+    pos = 0;
+    while ((pos = ret.find("$$", pos)) != std::string::npos) {
+        ret.replace(pos, 2, "$");
     }
 
     pos = 0;

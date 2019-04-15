@@ -1,0 +1,49 @@
+#!/bin/bash
+
+if ! [[ -e llvm2c ]]; then
+	echo "llvm2c not found!"
+	exit 1
+fi
+
+echo "Running struct tests..."
+
+STRUCT=0
+
+for f in struct/*.c; do
+	clang "$f" -o orig 2>/dev/null
+	clang "$f" -emit-llvm -S -o temp.ll 2>/dev/null
+	./llvm2c temp.ll --o temp.c >> /dev/null
+	if [[ $? != 0 ]]; then
+		echo "llvm2c failed to translate $f!"
+		rm orig
+		rm temp.ll
+	else
+		clang temp.c -o new 2>/dev/null
+		if [[ $? != 0 ]]; then
+			echo "Clang could not compile translated file $f!"
+			rm orig
+			rm temp.ll
+			rm temp.c
+		else
+			for i in `seq -10 10`; do
+				./orig $i
+				ORIG=$?
+				./new $i
+				if [[ $ORIG != $? ]]; then
+					echo "Test $f failed with input $i!"
+					STRUCT=$((STRUCT+1))
+				fi
+			done
+		fi
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
+	fi
+done
+
+if [[ $STRUCT -eq 0 ]]; then
+	echo "All struct tests passed!"
+else
+	echo "$STRUCT struct tests failed!"
+fi
