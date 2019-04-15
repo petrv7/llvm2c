@@ -484,14 +484,6 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 usedReg = getAsmUsedRegString(IA->ParseConstraints());
             }
 
-            //converts numbers to corresponding input constraints
-            for (auto& input : inputStrings) {
-                try {
-                    int i = std::stoi(input.substr(1, input.size() - 2));
-                    input = "\"" + outputStrings[i].substr(2, outputStrings[i].size() - 2);
-                } catch (std::invalid_argument e) { }
-            }
-
             std::vector<Expr*> args;
             for (const llvm::Use& arg : callInst->arg_operands()) {
                 if (!func->getExpr(arg.get())) {
@@ -1059,11 +1051,21 @@ std::string Block::toRawString(const std::string& str) const {
 
     pos = 0;
     while ((pos = ret.find("\"", pos)) != std::string::npos) {
-        ret.replace(pos, 2, "\\\"");
+        ret.replace(pos, 1, "\\\"");
         pos += 2;
     }
 
-    ret.erase(std::remove(ret.begin(), ret.end(), '\n'), ret.end());
+    pos = 0;
+    while ((pos = ret.find("\n", pos)) != std::string::npos) {
+        ret.replace(pos, 1, "\\n");
+        pos += 2;
+    }
+
+    pos = 0;
+    while ((pos = ret.find("\t", pos)) != std::string::npos) {
+        ret.replace(pos, 1, "\\t");
+        pos += 2;
+    }
 
     return ret;
 }
