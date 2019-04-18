@@ -427,7 +427,7 @@ std::string CallExpr::toString() const {
         first = false;
     }
 
-    if (auto VT = dynamic_cast<VoidType*>(getType())) {
+    if (const auto VT = dynamic_cast<VoidType*>(getType())) {
         return ret + ");";
     }
     return ret + ")";
@@ -439,8 +439,6 @@ PointerMove::PointerMove(std::unique_ptr<Type> ptrType, Expr* pointer, Expr* mov
       move(move) {
     if (auto PT = dynamic_cast<PointerType*>(this->ptrType.get())) {
         setType(PT->type->clone());
-    } else if (auto TD = dynamic_cast<TypeDef*>(this->ptrType.get())) {
-        setType(TD->getDerefType());
     }
 }
 

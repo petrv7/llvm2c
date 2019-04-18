@@ -260,7 +260,7 @@ void Program::print() {
 
     if (typeHandler.hasTypeDefs()) {
         llvm::outs() << "//typedefs\n";
-        for (auto elem : typeHandler.getSortedTypeDefs()) {
+        for (auto elem : typeHandler.sortedTypeDefs) {
             llvm::outs() << elem->defToString() << "\n";
         }
         llvm::outs() << "\n";
@@ -421,7 +421,7 @@ void Program::saveFile(const std::string& fileName) {
 
     if (typeHandler.hasTypeDefs()) {
         file << "//typedefs\n";
-        for (auto elem : typeHandler.getSortedTypeDefs()) {
+        for (auto elem : typeHandler.sortedTypeDefs) {
             file << elem->defToString() << "\n";
         }
         file << "\n";

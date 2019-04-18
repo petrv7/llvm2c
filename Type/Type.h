@@ -5,6 +5,9 @@
 #include <string>
 #include <memory>
 
+/**
+ * @brief The Type class is an abstract class for all types.
+ */
 class Type {
 public:
     virtual ~Type() = default;
@@ -29,30 +32,32 @@ public:
     }
 };
 
+/**
+ * @brief The TypeDef class represents typedef for function pointer.
+ * It contains all the information needed for printing the typedef definition.
+ */
 class TypeDef : public Type {
 friend class TypeHandler;
 private:
+    //type is split into two string so the name can be printed separately
     std::string type;
     std::string name;
     std::string typeEnd;
 
-    std::unique_ptr<Type> derefType;
-
 public:
-    TypeDef(std::unique_ptr<Type>, const std::string&, const std::string&, const std::string& = "");
+    TypeDef(const std::string&, const std::string&, const std::string&);
     TypeDef(const TypeDef&);
 
     std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
 
-    std::unique_ptr<Type> getDerefType() {
-        return derefType->clone();
-    }
-
     std::string defToString() const;
 };
 
+/**
+ * @brief The FunctionType class is used for storing information about function in function pointer.
+ */
 class FunctionType : public Type {
 friend class TypeHandler;
 private:
@@ -69,11 +74,22 @@ public:
     void print() const override;
     std::string toString() const override;
 
-    void addParam(std::unique_ptr<Type>);
-    void printParams() const;
+    /**
+     * @brief addParam Adds parameter to the function.
+     * @param type Type of the parameter
+     */
+    void addParam(std::unique_ptr<Type> type);
+
+    /**
+     * @brief paramsToString Returns function parameters in form of string.
+     * @return String containing function parameters
+     */
     std::string paramsToString() const;
 };
 
+/**
+ * @brief The StructType class represents struct as a type.
+ */
 class StructType : public Type {
 public:
     std::string name;
@@ -86,28 +102,19 @@ public:
     std::string toString() const override;
 };
 
-class UnnamedStructType : public Type {
-public:
-    std::string structString;
-
-    UnnamedStructType(const std::string&);
-    UnnamedStructType(const UnnamedStructType&);
-
-    std::unique_ptr<Type> clone() const override;
-    void print() const override;
-    std::string toString() const override;
-};
-
+/**
+ * @brief The PointerType class represents pointer.
+ */
 class PointerType : public Type {
 public:
     std::unique_ptr<Type> type;
-    unsigned levels;
+    unsigned levels; //number of pointers (for instance int** is level 2), used for easier printing
 
-    bool isArrayPointer;
-    std::string sizes;
+    bool isArrayPointer; //indicates whether the pointer is pointing to array
+    std::string sizes; //sizes of arrays
 
-    bool isStructPointer;
-    std::string structName;
+    bool isStructPointer; //indicates whether the pointer is pointing to struct
+    std::string structName; //name of the struct
 
     PointerType(std::unique_ptr<Type>);
     PointerType(const PointerType& other);
@@ -117,16 +124,19 @@ public:
     std::string toString() const override;
 };
 
+/**
+ * @brief The ArrayType class represents array.
+ */
 class ArrayType : public Type {
 public:
     std::unique_ptr<Type> type;
     unsigned int size;
 
-    bool isStructArray;
-    std::string structName;
+    bool isStructArray; //indicates whether the array contains structs
+    std::string structName; //name of the structs
 
-    bool isPointerArray;
-    PointerType* pointer;
+    bool isPointerArray; //indicates whether the array contains pointers
+    PointerType* pointer; //pointers contained in array
 
     ArrayType(std::unique_ptr<Type>, unsigned int);
     ArrayType(const ArrayType&);
@@ -139,6 +149,9 @@ public:
     std::string sizeToString() const;
 };
 
+/**
+ * @brief The VoidType class represents void.
+ */
 class VoidType : public Type {
 public:
     std::unique_ptr<Type> clone() const override;
@@ -146,6 +159,9 @@ public:
     std::string toString() const override;
 };
 
+/**
+ * @brief The IntegerType class is a base class for all integer types.
+ */
 class IntegerType : public Type {
 private:
     std::string name;
@@ -161,6 +177,9 @@ public:
     std::string toString() const override;
 };
 
+/**
+ * @brief The CharType class represents char.
+ */
 class CharType : public IntegerType {
 public:
     CharType(bool);
@@ -168,6 +187,9 @@ public:
     std::unique_ptr<Type> clone() const override;
 };
 
+/**
+ * @brief The IntType class represents int.
+ */
 class IntType : public IntegerType {
 public:
     IntType(bool);
@@ -175,6 +197,9 @@ public:
     std::unique_ptr<Type> clone() const override;
 };
 
+/**
+ * @brief The ShortType class represents short.
+ */
 class ShortType : public IntegerType {
 public:
     ShortType(bool);
@@ -182,6 +207,9 @@ public:
     std::unique_ptr<Type> clone() const override;
 };
 
+/**
+ * @brief The LongType class represents long.
+ */
 class LongType : public IntegerType {
 public:
     LongType(bool);
@@ -189,6 +217,9 @@ public:
     std::unique_ptr<Type> clone() const override;
 };
 
+/**
+ * @brief The Int128 class represents __int128.
+ */
 class Int128 : public IntegerType {
 public:
     Int128();
@@ -196,6 +227,9 @@ public:
     std::unique_ptr<Type> clone() const override;
 };
 
+/**
+ * @brief The FloatingPointType class is a base class for all floating point types.
+ */
 class FloatingPointType : public Type {
 private:
     std::string name;
@@ -209,6 +243,9 @@ public:
     std::string toString() const override;
 };
 
+/**
+ * @brief The FloatType class represents float.
+ */
 class FloatType : public FloatingPointType {
 public:
     FloatType();
@@ -216,6 +253,9 @@ public:
     std::unique_ptr<Type> clone() const override;
 };
 
+/**
+ * @brief The DoubleType class represents double.
+ */
 class DoubleType : public FloatingPointType {
 public:
     DoubleType();
@@ -223,6 +263,9 @@ public:
     std::unique_ptr<Type> clone() const override;
 };
 
+/**
+ * @brief The LongDoubleType class represents long double.
+ */
 class LongDoubleType : public FloatingPointType {
 public:
     LongDoubleType();

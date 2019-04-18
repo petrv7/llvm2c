@@ -24,6 +24,8 @@ private:
     }
 
 public:
+    std::vector<const TypeDef*> sortedTypeDefs;
+
     TypeHandler(const Program* program)
         : program(program) { }
 
@@ -48,12 +50,6 @@ public:
      * @return New struct name
      */
     static std::string getStructName(const std::string& structName);
-
-    /**
-     * @brief getSortedTypeDefs Sorts typedefs and returns them as vector of pointers
-     * @return Vector of sorted typedefs
-     */
-    std::vector<TypeDef*> getSortedTypeDefs();
 
     bool hasTypeDefs() const {
         return !typeDefs.empty();

@@ -75,7 +75,8 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
                 functionType.isVarArg = FT->isVarArg();
             }
 
-            typeDefs[type] = std::make_unique<TypeDef>(std::make_unique<FunctionType>(getType(FT->getReturnType(), voidType)), functionType.toString() + "(*", getTypeDefName(), ")" + functionType.paramsToString());
+            typeDefs[type] = std::make_unique<TypeDef>(functionType.toString() + "(*", getTypeDefName(), ")" + functionType.paramsToString());
+            sortedTypeDefs.push_back(static_cast<TypeDef*>(typeDefs[type].get()));
             return typeDefs[type]->clone();
         }
 
@@ -178,20 +179,4 @@ std::string TypeHandler::getStructName(const std::string& structName) {
     }
 
     return name;
-}
-
-std::vector<TypeDef*> TypeHandler::getSortedTypeDefs() {
-    std::vector<TypeDef*> ret;
-
-    for (unsigned i = 0; i < typeDefCount; i++) {
-        for (auto& elem : typeDefs) {
-            auto TD = static_cast<TypeDef*>(elem.second.get());
-            if (TD->toString().compare("typeDef_" + std::to_string(i)) == 0) {
-                ret.push_back(TD);
-                break;
-            }
-        }
-    }
-
-    return ret;
 }

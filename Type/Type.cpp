@@ -3,15 +3,13 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/Support/raw_ostream.h"
 
-TypeDef::TypeDef(std::unique_ptr<Type> derefType, const std::string& type, const std::string& name, const std::string& typeEnd)
+TypeDef::TypeDef(const std::string& type, const std::string& name, const std::string& typeEnd)
     : type(type),
       name(name),
-      typeEnd(typeEnd),
-      derefType(std::move(derefType)) { }
+      typeEnd(typeEnd) { }
 
 
 TypeDef::TypeDef(const TypeDef& other) {
-    derefType = other.derefType->clone();
     type = other.type;
     name = other.name;
     typeEnd = other.typeEnd;
@@ -26,7 +24,7 @@ std::string TypeDef::toString() const {
 }
 
 std::unique_ptr<Type> TypeDef::clone() const {
-    return std::make_unique<TypeDef>(derefType->clone(), type, name, typeEnd);
+    return std::make_unique<TypeDef>(type, name, typeEnd);
 }
 
 std::string TypeDef::defToString() const {
@@ -49,10 +47,6 @@ FunctionType::FunctionType(const FunctionType& other) {
 
 void FunctionType::addParam(std::unique_ptr<Type> param) {
     params.push_back(std::move(param));
-}
-
-void FunctionType::printParams() const {
-    llvm::outs() << paramsToString();
 }
 
 std::string FunctionType::paramsToString() const {
@@ -121,25 +115,6 @@ std::string StructType::toString() const {
     std::string ret = getConstStaticString();
 
     return ret + "struct " + name;
-}
-
-UnnamedStructType::UnnamedStructType(const std::string& structString)
-    : structString(structString) { }
-
-UnnamedStructType::UnnamedStructType(const UnnamedStructType& other) {
-    structString = other.structString;
-}
-
-std::unique_ptr<Type> UnnamedStructType::clone() const {
-    return std::make_unique<UnnamedStructType>(structString);
-}
-
-void UnnamedStructType::print() const {
-    llvm::outs() << toString();
-}
-
-std::string UnnamedStructType::toString() const {
-    return structString;
 }
 
 ArrayType::ArrayType(std::unique_ptr<Type> type, unsigned int size)
