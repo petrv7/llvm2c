@@ -1,0 +1,51 @@
+#!/bin/bash
+
+if ! [[ -e llvm2c ]]; then
+	echo "llvm2c not found!"
+	exit 1
+fi
+
+echo "Running loop tests..."
+
+LOOP=0
+
+for f in loops/*.c; do
+	clang "$f" -o orig 2>/dev/null
+	clang "$f" -emit-llvm -S -o temp.ll 2>/dev/null
+	./llvm2c temp.ll --o temp.c >> /dev/null
+	if [[ $? != 0 ]]; then
+		echo "llvm2c failed to translate $f!"
+		LOOP=$((LOOP+1))
+		rm orig
+		rm temp.ll
+	else
+		clang temp.c -o new 2>/dev/null
+		if [[ $? != 0 ]]; then
+			echo "Clang could not compile translated file $f!"
+			LOOP=$((LOOP+1))
+			rm orig
+			rm temp.ll
+			rm temp.c
+		else
+			for i in `seq -10 10`; do
+				./orig $i
+				ORIG=$?
+				./new $i
+				if [[ $ORIG != $? ]]; then
+					echo "Test $f failed with input $i!"
+					LOOP=$((LOOP+1))
+				fi
+			done
+		fi
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
+	fi
+done
+
+if [[ $LOOP -eq 0 ]]; then
+	echo "All loop tests passed!"
+else
+	echo "$LOOP loop tests failed!"
+fi

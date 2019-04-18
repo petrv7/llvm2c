@@ -14,12 +14,14 @@ clang asm/basic_add.c -emit-llvm -S -o temp.ll 2>/dev/null
 ./llvm2c temp.ll --o temp.c >> /dev/null
 if [[ $? != 0 ]]; then
 	echo "llvm2c failed to translate asm/basic_add.c!"
+	ASM=$((ASM+1))
 	rm orig
 	rm temp.ll
 else
 	clang temp.c -o new 2>/dev/null
 	if [[ $? != 0 ]]; then
 		echo "Clang could not compile translated file asm/basic_add.c!"
+		ASM=$((ASM+1))
 		rm orig
 		rm temp.ll
 		rm temp.c
@@ -45,12 +47,14 @@ clang asm/multiple_asm.c -emit-llvm -S -o temp.ll 2>/dev/null
 ./llvm2c temp.ll --o temp.c >> /dev/null
 if [[ $? != 0 ]]; then
 	echo "llvm2c failed to translate asm/multiple_asm.c!"
+	ASM=$((ASM+1))
 	rm orig
 	rm temp.ll
 else
 	clang temp.c -o new 2>/dev/null
 	if [[ $? != 0 ]]; then
 		echo "Clang could not compile translated file asm/multiple_asm.c!"
+		ASM=$((ASM+1))
 		rm orig
 		rm temp.ll
 		rm temp.c
@@ -76,12 +80,14 @@ clang asm/mov.c -emit-llvm -S -o temp.ll 2>/dev/null
 ./llvm2c temp.ll --o temp.c >> /dev/null
 if [[ $? != 0 ]]; then
 	echo "llvm2c failed to translate asm/mov.c!"
+	ASM=$((ASM+1))
 	rm orig
 	rm temp.ll
 else
 	clang temp.c -o new 2>/dev/null
 	if [[ $? != 0 ]]; then
 		echo "Clang could not compile translated file asm/mov.c!"
+		ASM=$((ASM+1))
 		rm orig
 		rm temp.ll
 		rm temp.c

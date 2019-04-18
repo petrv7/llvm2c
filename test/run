@@ -5,6 +5,8 @@ if ! [[ -e llvm2c ]]; then
 	exit 1
 fi
 
+./run_loops
+echo
 ./run_math
 echo
 ./run_asm
@@ -12,3 +14,7 @@ echo
 ./run_struct
 echo
 ./run_pointer
+echo
+./run_branching
+echo
+./run_statements

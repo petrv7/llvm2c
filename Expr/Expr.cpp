@@ -299,7 +299,13 @@ std::string SwitchExpr::toString() const {
         ret += ";\n";
     }
 
-    return ret + "}";
+    if (!def.empty()) {
+        ret += "    default:\n        goto ";
+        ret += def;
+        ret += ";\n";
+    }
+
+    return ret + "    }";
 }
 
 AsmExpr::AsmExpr(const std::string& inst, const std::vector<std::pair<std::string, Expr*>>& output, const std::vector<std::pair<std::string, Expr*>>& input, const std::string& clobbers)

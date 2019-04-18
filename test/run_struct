@@ -15,12 +15,14 @@ for f in struct/*.c; do
 	./llvm2c temp.ll --o temp.c >> /dev/null
 	if [[ $? != 0 ]]; then
 		echo "llvm2c failed to translate $f!"
+		STRUCT=$((STRUCT+1))
 		rm orig
 		rm temp.ll
 	else
 		clang temp.c -o new 2>/dev/null
 		if [[ $? != 0 ]]; then
 			echo "Clang could not compile translated file $f!"
+			STRUCT=$((STRUCT+1))
 			rm orig
 			rm temp.ll
 			rm temp.c

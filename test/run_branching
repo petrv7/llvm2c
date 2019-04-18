@@ -1,0 +1,51 @@
+#!/bin/bash
+
+if ! [[ -e llvm2c ]]; then
+	echo "llvm2c not found!"
+	exit 1
+fi
+
+echo "Running branching tests..."
+
+BR=0
+
+for f in branching/*.c; do
+	clang "$f" -o orig 2>/dev/null
+	clang "$f" -emit-llvm -S -o temp.ll 2>/dev/null
+	./llvm2c temp.ll --o temp.c >> /dev/null
+	if [[ $? != 0 ]]; then
+		echo "llvm2c failed to translate $f!"
+		BR=$((BR+1))
+		rm orig
+		rm temp.ll
+	else
+		clang temp.c -o new 2>/dev/null
+		if [[ $? != 0 ]]; then
+			echo "Clang could not compile translated file $f!"
+			BR=$((BR+1))
+			rm orig
+			rm temp.ll
+			rm temp.c
+		else
+			for i in `seq -10 10`; do
+				./orig $i
+				ORIG=$?
+				./new $i
+				if [[ $ORIG != $? ]]; then
+					echo "Test $f failed with input $i!"
+					BR=$((BR+1))
+				fi
+			done
+		fi
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
+	fi
+done
+
+if [[ $BR -eq 0 ]]; then
+	echo "All branching tests passed!"
+else
+	echo "$BR branching tests failed!"
+fi

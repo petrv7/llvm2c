@@ -15,12 +15,14 @@ for f in math/math_single_arg/*.c; do
 	./llvm2c temp.ll --o temp.c >> /dev/null
 	if [[ $? != 0 ]]; then
 		echo "llvm2c failed to translate $f!"
+		MATH=$((MATH+1))
 		rm orig
 		rm temp.ll
 	else
 		clang temp.c -o new 2>/dev/null
 		if [[ $? != 0 ]]; then
 			echo "Clang could not compile translated file $f!"
+			MATH=$((MATH+1))
 			rm orig
 			rm temp.ll
 			rm temp.c
@@ -48,12 +50,14 @@ for f in math/math_two_args/*.c; do
 	./llvm2c temp.ll --o temp.c >> /dev/null
 	if [[ $? != 0 ]]; then
 		echo "llvm2c failed to translate $f!"
+		MATH=$((MATH+1))
 		rm orig
 		rm temp.ll
 	else
 		clang temp.c -o new 2>/dev/null
 		if [[ $? != 0 ]]; then
 			echo "Clang could not compile translated file $f!"
+			MATH=$((MATH+1))
 			rm orig
 			rm temp.ll
 			rm temp.c
