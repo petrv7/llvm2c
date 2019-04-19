@@ -10,9 +10,9 @@
 #include "llvm/ADT/APInt.h"
 
 #include "Func.h"
-#include "Type/Type.h"
-#include "Expr/BinaryExpr.h"
-#include "Expr/UnaryExpr.h"
+#include "../type/Type.h"
+#include "../expr/BinaryExpr.h"
+#include "../expr/UnaryExpr.h"
 
 #include <utility>
 #include <cstdint>

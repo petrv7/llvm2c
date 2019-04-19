@@ -7,7 +7,7 @@
 
 #include "llvm/Support/raw_ostream.h"
 
-#include "../Type/Type.h"
+#include "../type/Type.h"
 
 /**
  * @brief The Expr class is an abstract class for all expressions.

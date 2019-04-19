@@ -5,7 +5,7 @@
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/IR/Constants.h"
 
-#include "Type/Type.h"
+#include "../type/Type.h"
 
 #include <fstream>
 #include <exception>

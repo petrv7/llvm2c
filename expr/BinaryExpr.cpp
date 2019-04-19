@@ -2,7 +2,7 @@
 
 #include "llvm/Support/raw_ostream.h"
 
-#include "../Type/TypeHandler.h"
+#include "../type/TypeHandler.h"
 
 /*
  * BinaryExpr classes

@@ -4,7 +4,7 @@
 #include <llvm/IR/Metadata.h>
 #include <llvm/Support/raw_ostream.h>
 
-#include "Type/Type.h"
+#include "../type/Type.h"
 
 #include <utility>
 #include <cstdint>

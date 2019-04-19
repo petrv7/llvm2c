@@ -7,8 +7,8 @@
 #include "llvm/ADT/DenseMap.h"
 
 #include "Func.h"
-#include "Expr/Expr.h"
-#include "Type/TypeHandler.h"
+#include "../expr/Expr.h"
+#include "../type/TypeHandler.h"
 
 /**
  * @brief The Program class represents the whole parsed LLVM program.

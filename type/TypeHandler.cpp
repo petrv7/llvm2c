@@ -2,7 +2,7 @@
 
 #include "llvm/IR/DerivedTypes.h"
 
-#include "../Program.h"
+#include "../core/Program.h"
 
 #include <boost/lambda/lambda.hpp>
 

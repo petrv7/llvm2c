@@ -1,7 +1,7 @@
 project(llvm2c)
 cmake_minimum_required(VERSION 2.8)
 aux_source_directory(. SRC_LIST)
-set(FILES Func.h Func.cpp Block.h Block.cpp Program.h Program.cpp Type/Type.h Type/Type.cpp Type/TypeHandler.h Type/TypeHandler.cpp Expr/Expr.h Expr/Expr.cpp Expr/BinaryExpr.h Expr/BinaryExpr.cpp Expr/UnaryExpr.h Expr/UnaryExpr.cpp)
+set(FILES core/Func.h core/Func.cpp core/Block.h core/Block.cpp core/Program.h core/Program.cpp type/Type.h type/Type.cpp type/TypeHandler.h type/TypeHandler.cpp expr/Expr.h expr/Expr.cpp expr/BinaryExpr.h expr/BinaryExpr.cpp expr/UnaryExpr.h expr/UnaryExpr.cpp)
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${FILES})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -g -Wextra -pedantic -fpermissive -lboost_program_options")
 

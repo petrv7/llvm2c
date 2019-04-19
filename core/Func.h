@@ -7,9 +7,9 @@
 
 class Program;
 
-#include "Expr/Expr.h"
-#include "Expr/UnaryExpr.h"
-#include "Expr/BinaryExpr.h"
+#include "../expr/Expr.h"
+#include "../expr/UnaryExpr.h"
+#include "../expr/BinaryExpr.h"
 #include "Block.h"
 #include "Program.h"
 
