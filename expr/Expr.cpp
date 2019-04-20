@@ -465,7 +465,7 @@ std::string PointerMove::toString() const {
 
     if (PT->isArrayPointer) {
         ret += "(";
-        for (int i = 0; i < PT->levels; i++) {
+        for (unsigned i = 0; i < PT->levels; i++) {
             ret += "*";
         }
         ret += ")" + PT->sizes;
