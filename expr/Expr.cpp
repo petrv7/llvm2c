@@ -132,7 +132,7 @@ std::string Value::toString() const {
 
     if (!init) {
         std::string ret;
-        if (auto PT = dynamic_cast<PointerType*>(getType())) {
+        if (auto PT = dynamic_cast<const PointerType*>(getType())) {
             if (PT->isArrayPointer && valueName.compare("0") != 0) {
                 ret = "(";
                 for (unsigned i = 0; i < PT->levels; i++) {
@@ -150,7 +150,7 @@ std::string Value::toString() const {
             }
         }
 
-        if (auto AT = dynamic_cast<ArrayType*>(getType())) {
+        if (auto AT = dynamic_cast<const ArrayType*>(getType())) {
             if (AT->isPointerArray && AT->pointer->isArrayPointer) {
                 ret = "(";
                 for (unsigned i = 0; i < AT->pointer->levels; i++) {
@@ -177,7 +177,7 @@ void GlobalValue::print() const {
 std::string GlobalValue::toString() const {   
     if (!init) {
         std::string ret = getType()->toString() + " ";
-        if (ArrayType* AT = dynamic_cast<ArrayType*>(getType())) {
+        if (auto AT = dynamic_cast<const ArrayType*>(getType())) {
             if (AT->isPointerArray && AT->pointer->isArrayPointer) {
                 ret += "(";
                 for (unsigned i = 0; i < AT->pointer->levels; i++) {
@@ -187,7 +187,7 @@ std::string GlobalValue::toString() const {
             } else {
                 ret += " " + valueName + AT->sizeToString();;
             }
-        } else if (auto PT = dynamic_cast<PointerType*>(getType())) {
+        } else if (auto PT = dynamic_cast<const PointerType*>(getType())) {
             if (PT->isArrayPointer && valueName.compare("0") != 0) {
                 ret += "(";
                 for (unsigned i = 0; i < PT->levels; i++) {
@@ -223,7 +223,7 @@ std::string GlobalValue::toString() const {
 
 std::string GlobalValue::declToString() const {
     std::string ret = getType()->toString();
-    if (ArrayType* AT = dynamic_cast<ArrayType*>(getType())) {
+    if (auto AT = dynamic_cast<const ArrayType*>(getType())) {
         if (AT->isPointerArray && AT->pointer->isArrayPointer) {
             ret += " (";
             for (unsigned i = 0; i < AT->pointer->levels; i++) {
@@ -233,7 +233,7 @@ std::string GlobalValue::declToString() const {
         } else {
             ret += " " + valueName + AT->sizeToString();;
         }
-    } else if (auto PT = dynamic_cast<PointerType*>(getType())) {
+    } else if (auto PT = dynamic_cast<const PointerType*>(getType())) {
         if (PT->isArrayPointer && valueName.compare("0") != 0) {
             ret += "(";
             for (unsigned i = 0; i < PT->levels; i++) {
@@ -433,7 +433,7 @@ std::string CallExpr::toString() const {
         first = false;
     }
 
-    if (const auto VT = dynamic_cast<VoidType*>(getType())) {
+    if (const auto VT = dynamic_cast<const VoidType*>(getType())) {
         return ret + ");";
     }
     return ret + ")";

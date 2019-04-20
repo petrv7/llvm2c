@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
                 program.saveFile(vars["o"].as<std::string>());
             }
         } catch (std::invalid_argument e) {
-            llvm::outs() << e.what();
+            llvm::errs() << e.what();
             return 1;
         }
     } catch (error& e) {

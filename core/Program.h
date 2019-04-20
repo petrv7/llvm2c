@@ -74,7 +74,7 @@ private:
     void printStruct(Struct* strct);
 
     /**
-     * @brief parseProgram Parses the whole program (structs, functions and global variables0.
+     * @brief parseProgram Parses the whole program (structs, functions and global variables).
      */
     void parseProgram();
 
@@ -113,12 +113,6 @@ public:
     Program(const std::string& file);
 
     /**
-     * @brief Program Constructor for testing purpouses.
-     * @param module LLVM Module
-     */
-    Program(std::unique_ptr<llvm::Module>& module);
-
-    /**
      * @brief print Prints the translated program in the llvm::outs() stream.
      */
     void print();
@@ -148,7 +142,7 @@ public:
      * @param val llvm global variable
      * @return RefExpr expression or nullptr
      */
-    const RefExpr* getGlobalVar(const llvm::Value* val) const;
+    RefExpr* getGlobalVar(const llvm::Value* val);
 
     /**
      * @brief addDeclaration Adds new declaration of given function.

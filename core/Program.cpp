@@ -30,12 +30,6 @@ Program::Program(const std::string &file)
     parseProgram();
 }
 
-Program::Program(std::unique_ptr<llvm::Module>& module)
-    : typeHandler(TypeHandler(this)) {
-    this->module = std::move(module);
-    parseProgram();
-}
-
 void Program::parseProgram() {
     llvm::outs() << "Translating module...\n";
 
@@ -148,19 +142,19 @@ std::string Program::getInitValue(const llvm::Constant* val) {
             return "0";
         }
 
-        if (llvm::ConstantPointerNull* CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
+        if (const llvm::ConstantPointerNull* CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
             return "0";
         }
 
-        if (llvm::FunctionType* FT = llvm::dyn_cast<llvm::FunctionType>(PT->getElementType())) {
+        if (const llvm::FunctionType* FT = llvm::dyn_cast<llvm::FunctionType>(PT->getElementType())) {
             return  "&" + name;
         }
 
-        if (llvm::StructType* ST = llvm::dyn_cast<llvm::StructType>(PT->getElementType())) {
+        if (const llvm::StructType* ST = llvm::dyn_cast<llvm::StructType>(PT->getElementType())) {
             return "&" + name;
         }
 
-        if (llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val->getOperand(0))) {
+        if (const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val->getOperand(0))) {
             std::string replacedName = GV->getName().str();
             std::replace(replacedName.begin(), replacedName.end(), '.', '_');
 
@@ -173,11 +167,11 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         return "&" + name;
     }
 
-    if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
+    if (const llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
         return std::to_string(CI->getSExtValue());
     }
 
-    if (llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
+    if (const llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         if (CFP->isInfinity()) {
             this->hasMath = true;
             return "INFINITY";
@@ -197,7 +191,7 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         return ret;
     }
 
-    if (llvm::ConstantDataArray* CDA = llvm::dyn_cast<llvm::ConstantDataArray>(val)) {
+    if (const llvm::ConstantDataArray* CDA = llvm::dyn_cast<llvm::ConstantDataArray>(val)) {
         std::string value = "{";
         bool first = true;
 
@@ -213,7 +207,7 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         return value + "}";
     }
 
-    if (llvm::ConstantStruct* CS = llvm::dyn_cast<llvm::ConstantStruct>(val)) {
+    if (const llvm::ConstantStruct* CS = llvm::dyn_cast<llvm::ConstantStruct>(val)) {
         std::string value = "{";
         bool first = true;
         for (unsigned i = 0; i < CS->getNumOperands(); i++) {
@@ -222,7 +216,7 @@ std::string Program::getInitValue(const llvm::Constant* val) {
             }
             first = false;
 
-            value += getInitValue(val->getOperand(i));
+            value += getInitValue(llvm::cast<llvm::Constant>(val->getOperand(i)));
         }
 
         return value + "}";
@@ -502,7 +496,7 @@ Struct* Program::getStruct(const llvm::StructType* strct) const {
     }
 
     if (unnamedStructs.find(strct) != unnamedStructs.end()) {
-        return unnamedStructs[strct].get();
+        return unnamedStructs.find(strct)->second.get();
     }
 
     return nullptr;
@@ -524,10 +518,10 @@ Struct* Program::getStruct(const std::string& name) const {
     return nullptr;
 }
 
-const RefExpr* Program::getGlobalVar(const llvm::Value* val) const {
+RefExpr* Program::getGlobalVar(const llvm::Value* val) {
     if (const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
         if (globalRefs.count(GV)) {
-            return globalRefs[GV].get();
+            return globalRefs.find(GV)->second.get();
         }
     }
 

@@ -87,14 +87,13 @@ void Block::saveFile(std::ofstream& file) {
 
 void Block::parseAllocaInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
     const auto allocaInst = llvm::cast<const llvm::AllocaInst>(&ins);
-
     const llvm::Value* value = isConstExpr ? val : &ins;
 
-    valueMap.push_back(std::make_unique<Value>(func->getVarName(), func->getType(allocaInst->getAllocatedType())));
-    func->createExpr(value, std::make_unique<RefExpr>(valueMap[valueMap.size() - 1].get()));
+    valueMap[value] = std::make_unique<Value>(func->getVarName(), func->getType(allocaInst->getAllocatedType()));
+    func->createExpr(value, std::make_unique<RefExpr>(valueMap[value].get()));
 
     if (!isConstExpr) {
-        abstractSyntaxTree.push_back(valueMap[valueMap.size() - 1].get());
+        abstractSyntaxTree.push_back(valueMap[value].get());
     }
 }
 
@@ -668,7 +667,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
                 throw std::invalid_argument("Invalid GEP index - access to struct element only allows integer!");
             }
 
-            indices.push_back(std::make_unique<StructElement>(func->getStruct(prevType), prevExpr, CI->getSExtValue()));
+            indices.push_back(std::make_unique<StructElement>(func->getStruct(llvm::cast<llvm::StructType>(prevType)), prevExpr, CI->getSExtValue()));
         }
 
         prevType = it.getIndexedType();
@@ -843,10 +842,10 @@ void Block::unsetAllInit() {
 }
 
 void Block::createConstantValue(const llvm::Value* val) {
-    if (const llvm::ConstantPointerNull* CPN = llvm::dyn_cast<const llvm::ConstantPointerNull>(val)) {
+    if (auto CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
         func->createExpr(val, std::make_unique<Value>("0", func->getType(CPN->getType())));
     }
-    if (auto CI = llvm::dyn_cast<const llvm::ConstantInt>(val)) {
+    if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
         std::string value;
         if (CI->getBitWidth() > 64) {
             const llvm::APInt& API = CI->getValue();
@@ -856,7 +855,7 @@ void Block::createConstantValue(const llvm::Value* val) {
         }
         func->createExpr(val, std::make_unique<Value>(value, std::make_unique<IntType>(false)));
     }
-    if (const llvm::ConstantFP* CFP = llvm::dyn_cast<const llvm::ConstantFP>(val)) {
+    if (auto CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         if (CFP->isInfinity()) {
             func->hasMath();
             func->createExpr(val, std::make_unique<Value>("INFINITY", std::make_unique<FloatType>()));
@@ -913,7 +912,7 @@ bool Block::isVoidType(llvm::DITypeRef type) {
 
 void Block::createFuncCallParam(const llvm::Use& param) {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(param->getType())) {
-        if (const llvm::ConstantPointerNull* CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(param)) {
+        if (auto CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(param)) {
             createConstantValue(param);
         } else if (PT->getElementType()->isFunctionTy() && !param->getName().empty()) {
             func->createExpr(param, std::make_unique<Value>(param->getName().str(), std::make_unique<VoidType>()));

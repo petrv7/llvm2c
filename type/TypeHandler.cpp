@@ -12,7 +12,6 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
     }
 
     if (type->isArrayTy()) {
-        const llvm::ArrayType* AT = llvm::cast<llvm::ArrayType>(type);
         return std::make_unique<ArrayType>(getType(type->getArrayElementType(), voidType), type->getArrayNumElements());
     }
 

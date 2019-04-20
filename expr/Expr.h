@@ -17,6 +17,7 @@ public:
     virtual ~Expr() = default;
     virtual void print() const = 0;
     virtual std::string toString() const = 0;
+    virtual const Type* getType() const = 0;
     virtual Type* getType() = 0;
     virtual void setType(std::unique_ptr<Type>) = 0;
 };
@@ -29,6 +30,10 @@ private:
     std::unique_ptr<Type> type;
 
 public:
+    const Type* getType() const override {
+        return type.get();
+    }
+
     Type* getType() override {
         return type.get();
     }

@@ -11,7 +11,7 @@
 #include <string>
 #include <fstream>
 
-Func::Func(llvm::Function* func, Program* program, bool isDeclaration) {
+Func::Func(const llvm::Function* func, Program* program, bool isDeclaration) {
     this->program = program;
     function = func;
     varCount = 0;
@@ -38,7 +38,7 @@ std::string Func::getBlockName(const llvm::BasicBlock* block) {
 
 Expr* Func::getExpr(const llvm::Value* val) {
     if (exprMap.find(val) == exprMap.end()) {
-        if (llvm::Function* F = llvm::dyn_cast<llvm::Function>(val)) {
+        if (auto F = llvm::dyn_cast<llvm::Function>(val)) {
             createExpr(val, std::make_unique<Value>("&" + F->getName().str(), getType(F->getReturnType())));
             return exprMap.find(val)->second.get();
         }

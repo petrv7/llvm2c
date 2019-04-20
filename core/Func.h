@@ -77,7 +77,7 @@ public:
      * @param program Program to which function belongs
      * @param isDeclaration bool signalizing that function is only being declared
      */
-    Func(llvm::Function* func, Program* program, bool isDeclaration);
+    Func(const llvm::Function* func, Program* program, bool isDeclaration);
 
     /**
      * @brief parseFunction Parses blocks of the llvm::Function.
@@ -128,7 +128,7 @@ public:
     void stackIgnored();
 
     /**
-     * @brief hasInf Indicates that program uses "math.h".
+     * @brief hasMath Indicates that program uses "math.h".
      */
     void hasMath();
 

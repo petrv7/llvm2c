@@ -32,7 +32,7 @@ private:
     std::map<Expr*, std::unique_ptr<Expr>> derefs; //Map used for storing unique pointers to DerefExpr (used in store instruction parsing)
 
     //alloca expressions
-    std::vector<std::unique_ptr<Value>> valueMap; //Vector of Values used in parsing alloca instruction
+    llvm::DenseMap<const llvm::Value*, std::unique_ptr<Value>> valueMap; //map of Values used in parsing alloca instruction
 
     //extractvalue expressions
     std::vector<std::unique_ptr<Value>> values; //Vector of Values used in parsing extractvalue

@@ -77,7 +77,7 @@ void CastExpr::print() const {
 
 std::string CastExpr::toString() const {
     std::string ret = "(" + getType()->toString();
-    if (auto PT = dynamic_cast<PointerType*>(getType())) {
+    if (auto PT = dynamic_cast<const PointerType*>(getType())) {
         if (PT->isArrayPointer) {
             ret += " (";
             for (unsigned i = 0; i < PT->levels; i++) {

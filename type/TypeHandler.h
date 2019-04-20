@@ -12,7 +12,7 @@ class Program;
 
 class TypeHandler {
 private:
-    const Program* program;
+    Program* program;
     llvm::DenseMap<const llvm::Type*, std::unique_ptr<Type>> typeDefs;
 
     unsigned typeDefCount = 0;
@@ -26,7 +26,7 @@ private:
 public:
     std::vector<const TypeDef*> sortedTypeDefs;
 
-    TypeHandler(const Program* program)
+    TypeHandler(Program* program)
         : program(program) { }
 
     /**
