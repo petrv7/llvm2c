@@ -466,11 +466,12 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 std::replace(funcName.begin(), funcName.end(), '.', '_');
             }
         }
-    } else {
+    } else {        
         llvm::PointerType* PT = llvm::cast<llvm::PointerType>(callInst->getCalledValue()->getType());
         llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getPointerElementType());
         type = func->getType(FT->getReturnType());
 
+        //inline ASM parsing
         if (const llvm::InlineAsm* IA = llvm::dyn_cast<const llvm::InlineAsm>(callInst->getCalledValue())) {
             std::string asmString = toRawString(IA->getAsmString());
             std::vector<std::string> inputStrings;
@@ -564,6 +565,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         params.push_back(func->lastArg);
     }
 
+    //call function if it returns void, otherwise store function return value to a new variable and use this variable instead of function call
     if (VoidType* VT = dynamic_cast<VoidType*>(type.get())) {
         func->createExpr(value, std::make_unique<CallExpr>(funcValue, funcName, params, type->clone()));
 
@@ -618,11 +620,8 @@ void Block::parseSelectInstruction(const llvm::Instruction& ins, bool isConstExp
     }
     Expr* val1 = func->getExpr(ins.getOperand(2));
 
-    if (!isConstExpr) {
-        func->createExpr(&ins, std::make_unique<SelectExpr>(cond, val0, val1));
-    } else {
-        func->createExpr(val, std::make_unique<SelectExpr>(cond, val0, val1));
-    }
+    const llvm::Value* value = isConstExpr ? val : &ins;
+    func->createExpr(value, std::make_unique<SelectExpr>(cond, val0, val1));
 }
 
 void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
