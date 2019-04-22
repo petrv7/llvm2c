@@ -131,6 +131,7 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
         isCast = true;
     }
 
+    //asm output handling
     if (isCast) {
         if (llvm::ExtractValueInst* EVI = llvm::dyn_cast<llvm::ExtractValueInst>(inst)) {
             if (!func->getExpr(ins.getOperand(1))) {

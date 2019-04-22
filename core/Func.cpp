@@ -14,8 +14,6 @@
 Func::Func(const llvm::Function* func, Program* program, bool isDeclaration) {
     this->program = program;
     function = func;
-    varCount = 0;
-    blockCount = 0;
     this->isDeclaration = isDeclaration;
     returnType = getType(func->getReturnType());
 
@@ -63,7 +61,6 @@ std::string Func::getVarName() {
 
 void Func::parseFunction() {
     const llvm::Value* larg;
-    isVarArg = false;
 
     std::string name = function->getName().str();
     if (Block::isCFunc(Block::getCFunc(name))) {
@@ -102,14 +99,14 @@ void Func::print() {
 
     if (Block::isCFunc(Block::getCFunc(name))) {
         name = Block::getCFunc(name);
-        if (name.compare("va_start") == 0 || name.compare("va_end") == 0 || name.compare("va_copy") == 0) {
-            return;
-        }
-
-        if (Block::isCMath(name)) {
+        if (name.compare("va_start") == 0
+                || name.compare("va_end") == 0
+                || name.compare("va_copy") == 0
+                || Block::isCMath(name)) {
             return;
         }
     }
+
     if (name.substr(0, 4).compare("llvm") == 0) {
         std::replace(name.begin(), name.end(), '.', '_');
     }
@@ -119,8 +116,13 @@ void Func::print() {
     }
 
     returnType->print();
-    if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
-        llvm::outs() << " " << name << "(";
+    auto PT = dynamic_cast<PointerType*>(returnType.get());
+    if (PT && PT->isArrayPointer) {
+        llvm::outs() << " (";
+        for (unsigned i = 0; i < PT->levels; i++) {
+            llvm::outs() << "*";
+        }
+        llvm::outs() << name << "(";
     } else {
         llvm::outs() << " " << name << "(";
     }
@@ -149,6 +151,10 @@ void Func::print() {
     }
 
     llvm::outs() << ")";
+
+    if (PT && PT->isArrayPointer) {
+        llvm::outs() << ")" + PT->sizes;
+    }
 
     if (isDeclaration) {
         llvm::outs() << ";\n";
@@ -192,10 +198,15 @@ void Func::saveFile(std::ofstream& file) {
     }
 
     file << returnType->toString();
-    if (auto PT = dynamic_cast<PointerType*>(returnType.get())) {
-        file << " " << name << "(";
+    auto PT = dynamic_cast<PointerType*>(returnType.get());
+    if (PT && PT->isArrayPointer) {
+        file << " (";
+        for (unsigned i = 0; i < PT->levels; i++) {
+            file << "*";
+        }
+        file << name << "(";
     } else {
-        file << " " << name << "(";
+       file << " " << name << "(";
     }
 
     bool first = true;
@@ -222,6 +233,10 @@ void Func::saveFile(std::ofstream& file) {
     }
 
     file << ")";
+
+    if (PT && PT->isArrayPointer) {
+        file << ")" + PT->sizes;
+    }
 
     if (isDeclaration) {
         file << ";\n";

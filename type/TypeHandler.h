@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Type.h"
+#include "../expr/Expr.h"
 
 #include "llvm/IR/Type.h"
 #include "llvm/ADT/DenseMap.h"

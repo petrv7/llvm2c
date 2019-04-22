@@ -38,7 +38,15 @@ std::string Struct::toString() const {
             ret += " ";
 
             if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
-                ret += item.second + AT->sizeToString();
+                if (AT->isPointerArray && AT->pointer->isArrayPointer) {
+                    ret += "(";
+                    for (unsigned i = 0; i < AT->pointer->levels; i++) {
+                        ret += "*";
+                    }
+                    ret += item.second + AT->sizeToString() + ")" + AT->pointer->sizes;
+                } else {
+                    ret += item.second + AT->sizeToString();
+                }
             } else {
                 ret += item.second;
             }
@@ -320,7 +328,6 @@ void AsmExpr::print() const {
 
 std::string AsmExpr::toString() const {
     std::string ret = "__asm__(\"" + inst + "\"\n        : ";
-
     if (!output.empty()) {
         bool first = true;
         for (const auto& out : output) {
@@ -333,11 +340,6 @@ std::string AsmExpr::toString() const {
             first = false;
 
             ret += out.first + " (";
-
-            if (auto CE = dynamic_cast<CastExpr*>(out.second)) {
-                llvm::outs() << "WARNING: use of a cast in a inline asm context! Build with \"-fheinous-gnu-extensions\"!\n";
-                llvm::outs().flush();
-            }
 
             if (out.second->toString()[0] == '&') {
                 ret += out.second->toString().substr(2, out.second->toString().size() - 3);
@@ -359,14 +361,7 @@ std::string AsmExpr::toString() const {
             }
             first = false;
 
-            ret += in.first + " ";
-
-            if (auto CE = dynamic_cast<CastExpr*>(in.second)) {
-                llvm::outs() << "WARNING: use of a cast in a inline asm context! Build with \"-fheinous-gnu-extensions\"!\n";
-                llvm::outs().flush();
-            }
-
-            ret += "(";
+            ret += in.first + " (";
 
             if (in.second->toString()[0] == '&') {
                 ret += in.second->toString().substr(1, in.second->toString().size() - 1);

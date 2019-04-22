@@ -28,10 +28,13 @@ private:
     llvm::DenseMap<const llvm::BasicBlock*, std::unique_ptr<Block>> blockMap; //DenseMap used for mapping llvm::BasicBlock to Block
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> exprMap; // DenseMap used for mapping llvm::Value to Expr
 
-    unsigned varCount; //counter for assigning names of variables
-    unsigned blockCount; // counter for assigning names of blocks
+    //variables used for creating names for variables and blocks
+    unsigned varCount = 0;
+    unsigned blockCount = 0;
+
+
     bool isDeclaration; //function is only being declared
-    bool isVarArg; //function has variable number of arguments
+    bool isVarArg = false; //function has variable number of arguments
 
     Expr* lastArg; //last argument before variable arguments
 
