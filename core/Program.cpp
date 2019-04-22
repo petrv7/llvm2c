@@ -98,9 +98,9 @@ void Program::parseGlobalVars() {
         std::string gvarName = gvar.getName().str();
         std::replace(gvarName.begin(), gvarName.end(), '.', '_');
 
-        /*if (gvarName.compare("stdin") != 0) {
+        if (gvarName.compare("index") == 0) {
             gvarName = "g_" + gvarName;
-        }*/
+        }
 
         std::string value;
         if (gvar.hasInitializer()) {
@@ -133,9 +133,10 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         std::string name = val->getName().str();
         if (const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
             std::replace(name.begin(), name.end(), '.', '_');
-            /*if (name.compare("stdin") != 0) {
+
+            if (name.compare("index") == 0) {
                 name = "g_" + name;
-            }*/
+            }
         }
 
         if (val->getName().str().empty()) {
@@ -158,9 +159,10 @@ std::string Program::getInitValue(const llvm::Constant* val) {
             std::string replacedName = GV->getName().str();
             std::replace(replacedName.begin(), replacedName.end(), '.', '_');
 
-            /*if (replacedName.compare("stdin") != 0) {
-                return "g_" + replacedName;
-            }*/
+            if (replacedName.compare("index") == 0) {
+                replacedName = "g_" + replacedName;
+            }
+
             return replacedName;
         }
 

@@ -181,13 +181,13 @@ void Func::saveFile(std::ofstream& file) {
 
     if (Block::isCFunc(Block::getCFunc(name))) {
         name = Block::getCFunc(name);
-        if (name.compare("va_start") == 0 || name.compare("va_end") == 0) {
+        if (name.compare("va_start") == 0
+                || name.compare("va_end") == 0
+                || name.compare("va_copy") == 0
+                || Block::isCMath(name)) {
             return;
         }
 
-        if (Block::isCMath(name)) {
-            return;
-        }
     }
     if (name.substr(0, 4).compare("llvm") == 0) {
         std::replace(name.begin(), name.end(), '.', '_');

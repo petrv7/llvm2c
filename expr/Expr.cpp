@@ -341,11 +341,11 @@ std::string AsmExpr::toString() const {
 
             ret += out.first + " (";
 
-            if (out.second->toString()[0] == '&') {
+            /*if (out.second->toString()[0] == '&') {
                 ret += out.second->toString().substr(2, out.second->toString().size() - 3);
-            } else {
+            } else {*/
                 ret += out.second->toString();
-            }
+            //}
 
             ret += ")";
         }
@@ -363,11 +363,11 @@ std::string AsmExpr::toString() const {
 
             ret += in.first + " (";
 
-            if (in.second->toString()[0] == '&') {
+            /*if (in.second->toString()[0] == '&') {
                 ret += in.second->toString().substr(1, in.second->toString().size() - 1);
-            } else {
+            } else {*/
                 ret += in.second->toString();
-            }
+            //}
 
             ret += ")";
         }

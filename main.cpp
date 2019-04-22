@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
             if (vars.count("o")) {
                 program.saveFile(vars["o"].as<std::string>());
             }
-        } catch (std::invalid_argument e) {
+        } catch (std::invalid_argument& e) {
             llvm::errs() << e.what();
             return 1;
         }
