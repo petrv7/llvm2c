@@ -73,6 +73,13 @@ private:
      */
     void createNewUnnamedStruct(const llvm::StructType* strct);
 
+    /**
+     * @brief isStdLibFunc Checks whether the function is part of stdlib.h
+     * @param func Function name
+     * @return True if function is part of stdlib.h, false otherwise
+     */
+    bool isStdLibFunc(const std::string& func);
+
 public:
     /**
      * @brief Func Constructor for Func.

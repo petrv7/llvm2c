@@ -188,7 +188,7 @@ std::string Program::getInitValue(const llvm::Constant* val) {
             return "NAN";
         }
 
-        std::string ret = std::to_string(CFP->getValueAPF().convertToFloat());
+        std::string ret = std::to_string(CFP->getValueAPF().convertToDouble());
         if (ret.compare("-nan") == 0) {
             hasMath = true;
             return "-NAN";
@@ -565,6 +565,10 @@ std::string Program::getIncludeString() const {
 
     if (hasVarArg) {
         ret += "#include <stdarg.h>\n";
+    }
+
+    if (hasStdLib) {
+        ret += "#include <stdlib.h>\n";
     }
 
     if (!ret.empty()) {

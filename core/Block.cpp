@@ -24,7 +24,7 @@
 
 using CaseHandle = const llvm::SwitchInst::CaseHandleImpl<const llvm::SwitchInst, const llvm::ConstantInt, const llvm::BasicBlock>*;
 
-const std::set<std::string> C_FUNCTIONS = {"memcpy", "memmove", "memset", "sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
+const std::set<std::string> C_FUNCTIONS = {"malloc", "free", "memcpy", "memmove", "memset", "sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
                                            "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
                                            "round", "va_start", "va_end", "va_copy"};
 
@@ -637,10 +637,10 @@ void Block::parseCastInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
     const llvm::CastInst* CI = llvm::cast<const llvm::CastInst>(&ins);
 
-    if (!isConstExpr) {
-        func->createExpr(&ins, std::make_unique<CastExpr>(expr, func->getType(CI->getDestTy())));
-    } else {
-        func->createExpr(val, std::make_unique<CastExpr>(expr, func->getType(CI->getDestTy())));
+    func->createExpr(isConstExpr ? val : &ins, std::make_unique<CastExpr>(expr, func->getType(CI->getDestTy())));
+
+    if (ins.getOpcode() == llvm::Instruction::FPToUI) {
+        static_cast<IntegerType*>(func->getExpr(isConstExpr ? val : &ins)->getType())->unsignedType = true;
     }
 }
 

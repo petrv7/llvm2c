@@ -10,6 +10,12 @@
 #include <cstdint>
 #include <string>
 #include <fstream>
+#include <set>
+
+const std::set<std::string> STDLIB_FUNCTIONS = {"atof", "atoi", "atol", "strtod", "strtol", "strtoul", "calloc",
+                                                "free", "malloc", "realloc", "abort", "atexit", "exit", "getenv",
+                                                "system", "bsearch", "qsort", "abs", "div", "labs", "ldiv",
+                                                "rand", "srand", "mblen", "mbstowcs", "mbtowc", "wcstombs", "wctomb"};
 
 Func::Func(const llvm::Function* func, Program* program, bool isDeclaration) {
     this->program = program;
@@ -72,6 +78,11 @@ void Func::parseFunction() {
         }
     }
 
+    if (isStdLibFunc(name)) {
+        program->hasStdLib = true;
+        return;
+    }
+
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
@@ -105,6 +116,10 @@ void Func::print() {
                 || Block::isCMath(name)) {
             return;
         }
+    }
+
+    if (isStdLibFunc(name)) {
+        return;
     }
 
     if (name.substr(0, 4).compare("llvm") == 0) {
@@ -189,6 +204,12 @@ void Func::saveFile(std::ofstream& file) {
         }
 
     }
+
+    if (isStdLibFunc(name)) {
+        return;
+    }
+
+
     if (name.substr(0, 4).compare("llvm") == 0) {
         std::replace(name.begin(), name.end(), '.', '_');
     }
@@ -206,7 +227,7 @@ void Func::saveFile(std::ofstream& file) {
         }
         file << name << "(";
     } else {
-       file << " " << name << "(";
+        file << " " << name << "(";
     }
 
     bool first = true;
@@ -288,4 +309,8 @@ std::unique_ptr<Type> Func::getType(const llvm::Type* type, bool voidType) {
 
 void Func::hasMath() {
     program->hasMath = true;
+}
+
+bool Func::isStdLibFunc(const std::string& func) {
+    return STDLIB_FUNCTIONS.find(func) != STDLIB_FUNCTIONS.end();
 }
