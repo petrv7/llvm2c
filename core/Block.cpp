@@ -839,9 +839,9 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());
 
         if (llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(localVar->getType())) {
-            if (dtype->getTag() == llvm::dwarf::DW_TAG_const_type) {
+            /*if (dtype->getTag() == llvm::dwarf::DW_TAG_const_type) {
                 variable->getType()->isConst = true;
-            }
+            }*/
 
             if (isVoidType(dtype)) {
                 llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
