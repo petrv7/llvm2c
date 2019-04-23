@@ -339,15 +339,7 @@ std::string AsmExpr::toString() const {
             }
             first = false;
 
-            ret += out.first + " (";
-
-            /*if (out.second->toString()[0] == '&') {
-                ret += out.second->toString().substr(2, out.second->toString().size() - 3);
-            } else {*/
-                ret += out.second->toString();
-            //}
-
-            ret += ")";
+            ret += out.first + " (" + out.second->toString() + ")";
         }
     }
 
@@ -361,15 +353,7 @@ std::string AsmExpr::toString() const {
             }
             first = false;
 
-            ret += in.first + " (";
-
-            /*if (in.second->toString()[0] == '&') {
-                ret += in.second->toString().substr(1, in.second->toString().size() - 1);
-            } else {*/
-                ret += in.second->toString();
-            //}
-
-            ret += ")";
+            ret += in.first + " (" + in.second->toString() + ")";
         }
     }
 

@@ -181,6 +181,7 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
             return;
         }
     }
+    //asm output handling end
 
     if (!func->getExpr(ins.getOperand(0))) {
         createConstantValue(ins.getOperand(0));
@@ -505,7 +506,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(arg.get());
                 llvm::ConstantExpr* CE = llvm::dyn_cast<llvm::ConstantExpr>(arg.get());
 
-                //creates new variable for every alloca, getelementptr and cast instruction that inline asm takes as a parameter
+                //creates new variable for every alloca, getelementptr and cast instruction and global variable that inline asm takes as a parameter
                 //as inline asm has problem with casts and expressions containing "&" symbol
                 if (GI || CI || AI || GV) {
                     vars.push_back(std::make_unique<Value>(func->getVarName(), func->getExpr(arg.get())->getType()->clone()));
@@ -545,9 +546,6 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
             std::vector<std::pair<std::string, Expr*>> input;
             unsigned arg = args.size() - 1;
             for (int i = inputStrings.size() - 1; i >= 0; i--) {
-                /*if (inputStrings[i].find('*') != std::string::npos) {
-                    continue;
-                }*/
                 //handle number constraint reffering to multiple option constraint
                 std::string inputString = inputStrings[i].substr(1, inputStrings[i].size() - 2);
                 std::string::const_iterator it = inputString.begin();
@@ -859,8 +857,7 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         }
 
         std::regex varName("var[0-9]+");
-        std::regex constGlobalVarName("ConstGlobalVar_.+");
-        if (!std::regex_match(localVar->getName().str(), varName) && !std::regex_match(localVar->getName().str(), constGlobalVarName)) {
+        if (!std::regex_match(localVar->getName().str(), varName)) {
             variable->valueName = localVar->getName();
         }
 

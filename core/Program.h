@@ -30,9 +30,8 @@ private:
     llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<RefExpr>> globalRefs; //map containing references to global variables
     llvm::DenseMap<const llvm::StructType*, std::unique_ptr<Struct>> unnamedStructs; // map containing unnamed structs
 
-    //variables used for creating names for structs, global variables and anonymous structs
+    //variables used for creating names for structs and anonymous structs
     unsigned structVarCount = 0;
-    unsigned gvarCount = 0;
     unsigned anonStructCount = 0;
 
     /**
@@ -89,9 +88,15 @@ private:
     void parseFunctions();
 
     /**
-     * @brief parseGlobalVars Parses global variables.
+     * @brief parseGlobalVars Parses all global variables.
      */
     void parseGlobalVars();
+
+    /**
+     * @brief parseGlobalVar Parses global variable.
+     * @param gvar LLVM GlobalVariable
+     */
+    void parseGlobalVar(const llvm::GlobalVariable& gvar);
 
     /**
      * @brief getIncludeString Returns string containing all includes program uses.

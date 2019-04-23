@@ -139,6 +139,8 @@ public:
     void print() const override;
     std::string toString() const override;
 
+    bool isDefined = false;
+
     /**
      * @brief declToString Returns string containing declaration only.
      * @return String containing declaration of the global variable;

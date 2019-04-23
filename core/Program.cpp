@@ -94,24 +94,28 @@ void Program::parseGlobalVars() {
             continue;
         }
 
-        bool isPrivate = gvar.hasPrivateLinkage();
-        std::string gvarName = gvar.getName().str();
-        std::replace(gvarName.begin(), gvarName.end(), '.', '_');
-
-        if (gvarName.compare("index") == 0) {
-            gvarName = "g_" + gvarName;
-        }
-
-        std::string value;
-        if (gvar.hasInitializer()) {
-            value = getInitValue(gvar.getInitializer());
-        }
-
-        llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
-        globalVars.push_back(std::make_unique<GlobalValue>(gvarName, value, getType(PI->getElementType())));
-        globalVars.at(globalVars.size() - 1)->getType()->isStatic = isPrivate;
-        globalRefs[&gvar] = std::make_unique<RefExpr>(globalVars.at(globalVars.size() - 1).get());
+        parseGlobalVar(gvar);
     }
+}
+
+void Program::parseGlobalVar(const llvm::GlobalVariable &gvar) {
+    bool isPrivate = gvar.hasPrivateLinkage();
+    std::string gvarName = gvar.getName().str();
+    std::replace(gvarName.begin(), gvarName.end(), '.', '_');
+
+    if (gvarName.compare("index") == 0) {
+        gvarName = "g_" + gvarName;
+    }
+
+    std::string value;
+    if (gvar.hasInitializer()) {
+        value = getInitValue(gvar.getInitializer());
+    }
+
+    llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
+    globalVars.push_back(std::make_unique<GlobalValue>(gvarName, value, getType(PI->getElementType())));
+    globalVars.at(globalVars.size() - 1)->getType()->isStatic = isPrivate;
+    globalRefs[&gvar] = std::make_unique<RefExpr>(globalVars.at(globalVars.size() - 1).get());
 }
 
 std::string Program::getStructVarName() {
@@ -156,14 +160,14 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         }
 
         if (const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val->getOperand(0))) {
-            std::string replacedName = GV->getName().str();
-            std::replace(replacedName.begin(), replacedName.end(), '.', '_');
-
-            if (replacedName.compare("index") == 0) {
-                replacedName = "g_" + replacedName;
+            auto RE = static_cast<RefExpr*>(globalRefs[GV].get());
+            auto GVAL = static_cast<GlobalValue*>(RE->expr);
+            if (!GVAL->isDefined) {
+                parseGlobalVar(*GV);
             }
 
-            return replacedName;
+            GVAL->isDefined = true;
+            return GVAL->toString();
         }
 
         return "&" + name;
