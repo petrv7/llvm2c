@@ -17,10 +17,11 @@ const std::set<std::string> STDLIB_FUNCTIONS = {"atof", "atoi", "atol", "strtod"
                                                 "system", "bsearch", "qsort", "abs", "div", "labs", "ldiv",
                                                 "rand", "srand", "mblen", "mbstowcs", "mbtowc", "wcstombs", "wctomb"};
 
-Func::Func(const llvm::Function* func, Program* program, bool isDeclaration) {
+Func::Func(const llvm::Function* func, Program* program, bool isDeclaration, bool isExtern) {
     this->program = program;
     function = func;
     this->isDeclaration = isDeclaration;
+    this->isExtern = isExtern;
     returnType = getType(func->getReturnType());
 
     parseFunction();
@@ -78,11 +79,6 @@ void Func::parseFunction() {
         }
     }
 
-    if (isStdLibFunc(name)) {
-        program->hasStdLib = true;
-        return;
-    }
-
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
@@ -118,7 +114,7 @@ void Func::print() {
         }
     }
 
-    if (isStdLibFunc(name)) {
+    if (isStdLibFunc(name) && isExtern) {
         return;
     }
 
@@ -128,6 +124,10 @@ void Func::print() {
 
     if (name.compare("memcpy") == 0 && function->arg_size() > 3) {
         return;
+    }
+
+    if (isExtern) {
+        llvm::outs() << "extern ";
     }
 
     returnType->print();
@@ -205,7 +205,7 @@ void Func::saveFile(std::ofstream& file) {
 
     }
 
-    if (isStdLibFunc(name)) {
+    if (isStdLibFunc(name) && isExtern) {
         return;
     }
 
@@ -216,6 +216,10 @@ void Func::saveFile(std::ofstream& file) {
 
     if (name.compare("memcpy") == 0 && function->arg_size() > 3) {
         return;
+    }
+
+    if (isExtern) {
+        file << "extern ";
     }
 
     file << returnType->toString();

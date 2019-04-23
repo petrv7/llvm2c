@@ -75,13 +75,13 @@ void Program::parseFunctions() {
     for(const llvm::Function& func : module->functions()) {
         if (func.hasName()) {
             if (!func.isDeclaration()) {
-                functions.push_back(std::make_unique<Func>(&func, this, false));
-                declarations.push_back(std::make_unique<Func>(&func, this, true));
+                functions.push_back(std::make_unique<Func>(&func, this, false, func.isExternalLinkage(func.getLinkage())));
+                declarations.push_back(std::make_unique<Func>(&func, this, true, func.isExternalLinkage(func.getLinkage())));
             }
 
             if (func.isDeclaration() || llvm::Function::isInternalLinkage(func.getLinkage())) {
                 if (func.getName().str().substr(0, 8) != "llvm.dbg") {
-                    declarations.push_back(std::make_unique<Func>(&func, this, true));
+                    declarations.push_back(std::make_unique<Func>(&func, this, true, func.isExternalLinkage(func.getLinkage())));
                 }
             }
         }
@@ -192,6 +192,13 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         if (ret.compare("-nan") == 0) {
             hasMath = true;
             return "-NAN";
+        }
+
+        llvm::SmallVector<char, 32> string;
+        ret = "";
+        CFP->getValueAPF().toString(string, 32, 0);
+        for (int i = 0; i < string.size(); i++) {
+            ret += string[i];
         }
 
         return ret;
@@ -535,7 +542,7 @@ RefExpr* Program::getGlobalVar(const llvm::Value* val) {
 }
 
 void Program::addDeclaration(llvm::Function* func) {
-    declarations.push_back(std::make_unique<Func>(func, this, true));
+    declarations.push_back(std::make_unique<Func>(func, this, true, func->isExternalLinkage(func->getLinkage())));
 }
 
 void Program::createNewUnnamedStruct(const llvm::StructType *strct) {
@@ -565,10 +572,6 @@ std::string Program::getIncludeString() const {
 
     if (hasVarArg) {
         ret += "#include <stdarg.h>\n";
-    }
-
-    if (hasStdLib) {
-        ret += "#include <stdlib.h>\n";
     }
 
     if (!ret.empty()) {

@@ -476,7 +476,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 std::replace(funcName.begin(), funcName.end(), '.', '_');
             }
         }
-    } else {        
+    } else {
         llvm::PointerType* PT = llvm::cast<llvm::PointerType>(callInst->getCalledValue()->getType());
         llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getPointerElementType());
         type = func->getType(FT->getReturnType());
@@ -903,7 +903,15 @@ void Block::createConstantValue(const llvm::Value* val) {
             if (CFPvalue.compare("-nan") == 0) {
                 func->hasMath();
                 CFPvalue = "-NAN";
+            } else {
+                llvm::SmallVector<char, 32> string;
+                CFPvalue = "";
+                CFP->getValueAPF().toString(string, 32, 0);
+                for (unsigned i = 0; i < string.size(); i++) {
+                    CFPvalue += string[i];
+                }
             }
+
             func->createExpr(val, std::make_unique<Value>(CFPvalue, std::make_unique<FloatType>()));
         }
     }
