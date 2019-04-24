@@ -12,10 +12,25 @@
 #include <fstream>
 #include <set>
 
-const std::set<std::string> STDLIB_FUNCTIONS = {"atof", "atoi", "atol", "strtod", "strtol", "strtoul", "calloc",
+const static std::set<std::string> STDLIB_FUNCTIONS = {"atof", "atoi", "atol", "strtod", "strtol", "strtoul", "calloc",
                                                 "free", "malloc", "realloc", "abort", "atexit", "exit", "getenv",
                                                 "system", "bsearch", "qsort", "abs", "div", "labs", "ldiv",
-                                                "rand", "srand", "mblen", "mbstowcs", "mbtowc", "wcstombs", "wctomb"};
+                                                "rand", "srand", "mblen", "mbstowcs", "mbtowc", "wcstombs", "wctomb",
+                                                "strtoll", "strtoull", "realpath"};
+
+const static std::set<std::string> STRING_FUNCTIONS = {"memchr", "memcmp", "memcpy", "memmove", "memset", "strcat", "strncat",
+                                                "strchr", "strcmp", "strncmp", "strcoll", "strcpy", "strncpy", "strcspn",
+                                                "strerror", "strlen", "strpbrk", "strrchr", "strspn", "strstr", "strtok",
+                                                "strxfrm", "strsep", "strnlen", "strncasecmp", "strcasecmp", "stpcpy",
+                                                "strdup"};
+
+const static std::set<std::string> STDIO_FUNCTIONS = {"fclose", "clearerr", "feof", "ferror", "fflush", "fgetpos", "fopen",
+                                                      "fread", "freopen", "fseek", "fsetpos", "ftell", "fwrite", "remove",
+                                                      "rename", "rewind", "setbuf", "setvbuf", "tmpfile", "tmpnam", "fprintf",
+                                                      "sprintf", "vfprintf", "vsprintf", "fscanf", "scanf", "sscanf", "fgetc",
+                                                      "fgets", "fputc", "fputs", "getc", "getchar", "gets", "putc", "putchar",
+                                                      "puts", "ungetc", "perror", "snprintf", "vsnprintf", "printf", "pclose",
+                                                      "popen", "fileno", "fseeko"};
 
 Func::Func(const llvm::Function* func, Program* program, bool isDeclaration, bool isExtern) {
     this->program = program;
@@ -79,6 +94,18 @@ void Func::parseFunction() {
         }
     }
 
+    if (isExtern && isStdLibFunc(name)) {
+        program->hasStdLib = true;
+    }
+
+    if (isExtern && isStringFunc(name)) {
+        program->hasString = true;
+    }
+
+    if (isExtern && isStdioFunc(name)) {
+        program->hasStdio = true;
+    }
+
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
@@ -114,7 +141,7 @@ void Func::print() {
         }
     }
 
-    if (isStdLibFunc(name) && isExtern) {
+    if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name)) && isExtern) {
         return;
     }
 
@@ -122,11 +149,10 @@ void Func::print() {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
-    if (name.compare("memcpy") == 0 && function->arg_size() > 3) {
-        return;
-    }
-
     if (isExtern) {
+        if (name.compare("_IO_getc") == 0) {
+            return;
+        }
         llvm::outs() << "extern ";
     }
 
@@ -205,20 +231,18 @@ void Func::saveFile(std::ofstream& file) {
 
     }
 
-    if (isStdLibFunc(name) && isExtern) {
+    if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name)) && isExtern) {
         return;
     }
-
 
     if (name.substr(0, 4).compare("llvm") == 0) {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
-    if (name.compare("memcpy") == 0 && function->arg_size() > 3) {
-        return;
-    }
-
     if (isExtern) {
+        if (name.compare("_IO_getc") == 0) {
+            return;
+        }
         file << "extern ";
     }
 
@@ -318,3 +342,12 @@ void Func::hasMath() {
 bool Func::isStdLibFunc(const std::string& func) {
     return STDLIB_FUNCTIONS.find(func) != STDLIB_FUNCTIONS.end();
 }
+
+bool Func::isStringFunc(const std::string& func) {
+    return STRING_FUNCTIONS.find(func) != STRING_FUNCTIONS.end();
+}
+
+bool Func::isStdioFunc(const std::string& func) {
+    return STDIO_FUNCTIONS.find(func) != STDIO_FUNCTIONS.end();
+}
+

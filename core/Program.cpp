@@ -174,7 +174,17 @@ std::string Program::getInitValue(const llvm::Constant* val) {
     }
 
     if (const llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
-        return std::to_string(CI->getSExtValue());
+        std::string value;
+        if (CI->getBitWidth() > 64) {
+            const llvm::APInt& API = CI->getValue();
+            value = std::to_string(API.getLimitedValue());
+        } else if (CI->getBitWidth() == 1) { //bool in LLVM
+            value = std::to_string(-1 * CI->getSExtValue());
+        } else {
+            value = std::to_string(CI->getSExtValue());
+        }
+
+        return value;
     }
 
     if (const llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
@@ -294,6 +304,10 @@ void Program::print() {
     if (!globalVars.empty()) {
         llvm::outs() << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
+            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0) {
+                continue;
+            }
+
             llvm::outs() << gvar->declToString();
             llvm::outs() << "\n";
         }
@@ -321,9 +335,11 @@ void Program::print() {
     if (!globalVars.empty()) {
         llvm::outs() << "//Global variable definitions\n";
         for (auto& gvar : globalVars) {
-            if (gvar->valueName == "last_index") {
-                llvm::outs().flush();
+            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0) {
+                gvar->init = true;
+                continue;
             }
+
             llvm::outs() << gvar->toString();
             gvar->init = true;
             llvm::outs() << "\n";
@@ -455,6 +471,10 @@ void Program::saveFile(const std::string& fileName) {
     if (!globalVars.empty()) {
         file << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
+            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0) {
+                continue;
+            }
+
             file << gvar->declToString();
             file << "\n";
         }
@@ -482,6 +502,11 @@ void Program::saveFile(const std::string& fileName) {
     if (!globalVars.empty()) {
         file << "//Global variable definitions\n";
         for (auto& gvar : globalVars) {
+            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0|| gvar->valueName.compare("stderr") == 0) {
+                gvar->init = true;
+                continue;
+            }
+
             file << gvar->toString();
             gvar->init = true;
             file << "\n";
@@ -572,6 +597,18 @@ std::string Program::getIncludeString() const {
 
     if (hasVarArg) {
         ret += "#include <stdarg.h>\n";
+    }
+
+    if (hasStdLib) {
+        ret += "#include <stdlib.h>\n";
+    }
+
+    if (hasString) {
+        ret += "#include <string.h>\n";
+    }
+
+    if (hasStdio) {
+        ret += "#include <stdio.h>\n";
     }
 
     if (!ret.empty()) {

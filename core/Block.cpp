@@ -588,7 +588,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
     int i = 0;
     for (const llvm::Use& param : callInst->arg_operands()) {
-        if ((funcName == "memcpy")  && i == 3) {
+        if ((funcName.compare("memcpy") == 0 || funcName.compare("memmove") == 0 || funcName.compare("memset") == 0)  && i == 3) {
             break;
         }
 
@@ -838,10 +838,10 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         llvm::DILocalVariable* localVar = llvm::dyn_cast<llvm::DILocalVariable>(varMD);
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());
 
-        if (llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(localVar->getType())) {
-            /*if (dtype->getTag() == llvm::dwarf::DW_TAG_const_type) {
+        /*if (llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(localVar->getType())) {
+            if (dtype->getTag() == llvm::dwarf::DW_TAG_const_type) {
                 variable->getType()->isConst = true;
-            }*/
+            }
 
             if (isVoidType(dtype)) {
                 llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
@@ -854,7 +854,7 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
                 llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
                 variable->setType(func->getType(PT->getElementType(), true));
             }
-        }
+        }*/
 
         std::regex varName("var[0-9]+");
         if (!std::regex_match(localVar->getName().str(), varName)) {
@@ -886,6 +886,8 @@ void Block::createConstantValue(const llvm::Value* val) {
         if (CI->getBitWidth() > 64) {
             const llvm::APInt& API = CI->getValue();
             value = std::to_string(API.getLimitedValue());
+        } else if (CI->getBitWidth() == 1) { //bool in LLVM
+            value = std::to_string(-1 * CI->getSExtValue());
         } else {
             value = std::to_string(CI->getSExtValue());
         }

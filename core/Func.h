@@ -81,6 +81,20 @@ private:
      */
     bool isStdLibFunc(const std::string& func);
 
+    /**
+     * @brief isStringFunc Checks whether the function is part of string.h
+     * @param func Function name
+     * @return True if function is part of string.h, false otherwise
+     */
+    bool isStringFunc(const std::string& func);
+
+    /**
+     * @brief isStdioFunc Checks whether the function is part of stdio.h
+     * @param func Function name
+     * @return True if function is part of stdio.h, false otherwise
+     */
+    bool isStdioFunc(const std::string& func);
+
 public:
     /**
      * @brief Func Constructor for Func.
