@@ -95,6 +95,13 @@ private:
      */
     bool isStdioFunc(const std::string& func);
 
+    /**
+     * @brief isPthreadFunc Checks whether the function is part of pthread.h
+     * @param func Function name
+     * @return True if function is part of pthread.h, false otherwise
+     */
+    bool isPthreadFunc(const std::string& func);
+
 public:
     /**
      * @brief Func Constructor for Func.
@@ -162,5 +169,5 @@ public:
      * @param type llvm::Type for transformation
      * @return unique_ptr to corresponding Type object
      */
-    std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
+    std::unique_ptr<Type> getType(const llvm::Type* type);
 };

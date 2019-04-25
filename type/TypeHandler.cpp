@@ -6,13 +6,13 @@
 
 #include <boost/lambda/lambda.hpp>
 
-std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType) {
+std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type) {
     if (typeDefs.find(type) != typeDefs.end()) {
         return typeDefs[type]->clone();
     }
 
     if (type->isArrayTy()) {
-        return std::make_unique<ArrayType>(getType(type->getArrayElementType(), voidType), type->getArrayNumElements());
+        return std::make_unique<ArrayType>(getType(type->getArrayElementType()), type->getArrayNumElements());
     }
 
     if (type->isVoidTy()) {
@@ -26,9 +26,6 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
         }
 
         if (intType->getBitWidth() <= 8) {
-            if (voidType) {
-                return std::make_unique<VoidType>();
-            }
             return std::make_unique<CharType>(false);
         }
 
@@ -63,12 +60,12 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
         const llvm::PointerType* PT = llvm::cast<const llvm::PointerType>(type);
 
         if (const llvm::FunctionType* FT = llvm::dyn_cast<llvm::FunctionType>(PT->getPointerElementType())) {
-            FunctionType functionType = { getType(FT->getReturnType(), voidType) };
+            FunctionType functionType = { getType(FT->getReturnType()) };
             if (FT->getNumParams() == 0) {
                 functionType.addParam(std::make_unique<VoidType>());
             } else {
                 for (unsigned i = 0; i < FT->getNumParams(); i++) {
-                    functionType.addParam(getType(FT->getParamType(i), voidType));
+                    functionType.addParam(getType(FT->getParamType(i)));
                 }
 
                 functionType.isVarArg = FT->isVarArg();
@@ -79,7 +76,7 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type, bool voidType
             return typeDefs[type]->clone();
         }
 
-        return std::make_unique<PointerType>(getType(PT->getPointerElementType(), voidType));
+        return std::make_unique<PointerType>(getType(PT->getPointerElementType()));
     }
 
     if (type->isStructTy()) {

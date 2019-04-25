@@ -838,24 +838,6 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         llvm::DILocalVariable* localVar = llvm::dyn_cast<llvm::DILocalVariable>(varMD);
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());
 
-        /*if (llvm::DIDerivedType* dtype = llvm::dyn_cast<llvm::DIDerivedType>(localVar->getType())) {
-            if (dtype->getTag() == llvm::dwarf::DW_TAG_const_type) {
-                variable->getType()->isConst = true;
-            }
-
-            if (isVoidType(dtype)) {
-                llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
-                variable->setType(func->getType(PT->getElementType(), true));
-            }
-        }
-
-        if (llvm::DICompositeType* ctype = llvm::dyn_cast<llvm::DICompositeType>(localVar->getType())) {
-            if (isVoidType(ctype)) {
-                llvm::PointerType* PT = llvm::cast<llvm::PointerType>(referredVal->getType());
-                variable->setType(func->getType(PT->getElementType(), true));
-            }
-        }*/
-
         std::regex varName("var[0-9]+");
         if (!std::regex_match(localVar->getName().str(), varName)) {
             variable->valueName = localVar->getName();

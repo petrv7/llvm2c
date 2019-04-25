@@ -304,7 +304,7 @@ void Program::print() {
     if (!globalVars.empty()) {
         llvm::outs() << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
-            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0) {
+            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0) {
                 continue;
             }
 
@@ -335,7 +335,7 @@ void Program::print() {
     if (!globalVars.empty()) {
         llvm::outs() << "//Global variable definitions\n";
         for (auto& gvar : globalVars) {
-            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0) {
+            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0) {
                 gvar->init = true;
                 continue;
             }
@@ -584,8 +584,8 @@ void Program::createNewUnnamedStruct(const llvm::StructType *strct) {
     unnamedStructs[strct] = std::move(structExpr);
 }
 
-std::unique_ptr<Type> Program::getType(const llvm::Type* type, bool voidType) {
-    return typeHandler.getType(type, voidType);
+std::unique_ptr<Type> Program::getType(const llvm::Type* type) {
+    return typeHandler.getType(type);
 }
 
 std::string Program::getIncludeString() const {
@@ -609,6 +609,10 @@ std::string Program::getIncludeString() const {
 
     if (hasStdio) {
         ret += "#include <stdio.h>\n";
+    }
+
+    if (hasPthread) {
+        ret += "#include \"pthread.h\"\n";
     }
 
     if (!ret.empty()) {

@@ -32,6 +32,30 @@ const static std::set<std::string> STDIO_FUNCTIONS = {"fclose", "clearerr", "feo
                                                       "puts", "ungetc", "perror", "snprintf", "vsnprintf", "printf", "pclose",
                                                       "popen", "fileno", "fseeko"};
 
+const static std::set<std::string> PTHREAD_FUNCTIONS = {"pthread_attr_destroy", "pthread_attr_getdetachstate", "pthread_attr_getguardsize",
+                                                        "pthread_attr_getinheritsched", "pthread_attr_getschedparam", "pthread_attr_getschedpolicy",
+                                                        "pthread_attr_getscope", "pthread_attr_getstackaddr", "pthread_attr_getstacksize",
+                                                        "pthread_attr_init", "pthread_attr_setdetachstate", "pthread_attr_setguardsize",
+                                                        "pthread_attr_setinheritsched", "pthread_attr_setschedparam", "pthread_attr_setschedpolicy",
+                                                        "pthread_attr_setscope", "pthread_attr_setstackaddr", "pthread_attr_setstacksize",
+                                                        "pthread_cancel", "pthread_cleanup_push", "pthread_cleanup_pop", "pthread_cond_broadcast",
+                                                        "pthread_cond_destroy", "pthread_cond_init", "pthread_cond_signal", "pthread_cond_timedwait",
+                                                        "pthread_cond_wait", "pthread_condattr_destroy", "pthread_condattr_getpshared",
+                                                        "pthread_condattr_init", "pthread_condattr_setpshared","pthread_create",  "pthread_detach",
+                                                        "pthread_equal", "pthread_exit", "pthread_getconcurrency", "pthread_getschedparam","pthread_getspecific",
+                                                        "pthread_join", "pthread_key_create", "pthread_key_delete", "pthread_mutex_destroy",
+                                                        "pthread_mutex_getprioceiling", "pthread_mutex_init", "pthread_mutex_lock",
+                                                        "pthread_mutex_setprioceiling", "pthread_mutex_trylock", "pthread_mutex_unlock",
+                                                        "pthread_mutexattr_destroy", "pthread_mutexattr_getprioceiling", "pthread_mutexattr_getprotocol",
+                                                        "pthread_mutexattr_getpshared", "pthread_mutexattr_gettype", "pthread_mutexattr_init",
+                                                        "pthread_mutexattr_setprioceiling", "pthread_mutexattr_setprotocol", "pthread_mutexattr_setpshared",
+                                                        "pthread_mutexattr_settype", "pthread_once","pthread_rwlock_destroy", "pthread_rwlock_init",
+                                                        "pthread_rwlock_rdlock", "pthread_rwlock_tryrdlock", "pthread_rwlock_trywrlock",
+                                                        "pthread_rwlock_unlock", "pthread_rwlock_wrlock","pthread_rwlockattr_destroy",
+                                                        "pthread_rwlockattr_getpshared", "pthread_rwlockattr_init", "pthread_rwlockattr_setpshared",
+                                                        "pthread_self","pthread_setcancelstate",  "pthread_setcanceltype", "pthread_setconcurrency",
+                                                        "pthread_setschedparam", "pthread_setspecific", "pthread_testcancel"};
+
 Func::Func(const llvm::Function* func, Program* program, bool isDeclaration, bool isExtern) {
     this->program = program;
     function = func;
@@ -106,6 +130,10 @@ void Func::parseFunction() {
         program->hasStdio = true;
     }
 
+    if (isExtern && isPthreadFunc(name)) {
+        program->hasPthread = true;
+    }
+
     for (const llvm::Value& arg : function->args()) {
         std::string varName = "var";
         varName += std::to_string(varCount);
@@ -141,7 +169,7 @@ void Func::print() {
         }
     }
 
-    if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name)) && isExtern) {
+    if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
         return;
     }
 
@@ -231,7 +259,7 @@ void Func::saveFile(std::ofstream& file) {
 
     }
 
-    if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name)) && isExtern) {
+    if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
         return;
     }
 
@@ -331,8 +359,8 @@ void Func::createNewUnnamedStruct(const llvm::StructType* strct) {
     program->createNewUnnamedStruct(strct);
 }
 
-std::unique_ptr<Type> Func::getType(const llvm::Type* type, bool voidType) {
-    return program->getType(type, voidType);
+std::unique_ptr<Type> Func::getType(const llvm::Type* type) {
+    return program->getType(type);
 }
 
 void Func::hasMath() {
@@ -350,4 +378,9 @@ bool Func::isStringFunc(const std::string& func) {
 bool Func::isStdioFunc(const std::string& func) {
     return STDIO_FUNCTIONS.find(func) != STDIO_FUNCTIONS.end();
 }
+
+bool Func::isPthreadFunc(const std::string& func) {
+    return PTHREAD_FUNCTIONS.find(func) != PTHREAD_FUNCTIONS.end();
+}
+
 

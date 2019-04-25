@@ -35,7 +35,7 @@ public:
      * @param type llvm::Type for transformation
      * @return unique_ptr to corresponding Type object
      */
-    std::unique_ptr<Type> getType(const llvm::Type* type, bool voidType = false);
+    std::unique_ptr<Type> getType(const llvm::Type* type);
 
     /**
      * @brief getBinaryType Returns type that would be result of a binary operation
