@@ -75,13 +75,17 @@ void Program::parseFunctions() {
     for(const llvm::Function& func : module->functions()) {
         if (func.hasName()) {
             if (!func.isDeclaration()) {
-                functions.push_back(std::make_unique<Func>(&func, this, false, func.isExternalLinkage(func.getLinkage())));
-                declarations.push_back(std::make_unique<Func>(&func, this, true, func.isExternalLinkage(func.getLinkage())));
+                functions[&func] = std::make_unique<Func>(&func, this, false, func.isExternalLinkage(func.getLinkage()));
+                if (!declarations.count(&func)) {
+                    declarations[&func] = std::make_unique<Func>(&func, this, true, func.isExternalLinkage(func.getLinkage()));
+                }
             }
 
             if (func.isDeclaration() || llvm::Function::isInternalLinkage(func.getLinkage())) {
                 if (func.getName().str().substr(0, 8) != "llvm.dbg") {
-                    declarations.push_back(std::make_unique<Func>(&func, this, true, func.isExternalLinkage(func.getLinkage())));
+                    if (!declarations.count(&func)) {
+                        declarations[&func] = std::make_unique<Func>(&func, this, true, func.isExternalLinkage(func.getLinkage()));
+                    }
                 }
             }
         }
@@ -207,7 +211,7 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         llvm::SmallVector<char, 32> string;
         ret = "";
         CFP->getValueAPF().toString(string, 32, 0);
-        for (int i = 0; i < string.size(); i++) {
+        for (unsigned i = 0; i < string.size(); i++) {
             ret += string[i];
         }
 
@@ -317,7 +321,7 @@ void Program::print() {
     if (!declarations.empty()) {
         llvm::outs() << "//Function declarations\n";
         for (const auto& func : declarations) {
-            func->print();
+            func.second->print();
         }
         llvm::outs() << "\n";
     }
@@ -350,7 +354,7 @@ void Program::print() {
     if (!functions.empty()) {
         llvm::outs() << "//Function definitions\n";
         for (const auto& func : functions) {
-            func->print();
+            func.second->print();
         }
     }
     llvm::outs().flush();
@@ -484,7 +488,7 @@ void Program::saveFile(const std::string& fileName) {
     if (!declarations.empty()) {
         file << "//Function declarations\n";
         for (const auto& func : declarations) {
-            func->saveFile(file);
+            func.second->saveFile(file);
         }
         file << "\n";
     }
@@ -516,7 +520,7 @@ void Program::saveFile(const std::string& fileName) {
 
     file << "//Function definitions\n";
     for (const auto& func : functions) {
-        func->saveFile(file);
+        func.second->saveFile(file);
     }
 
     file.close();
@@ -567,7 +571,9 @@ RefExpr* Program::getGlobalVar(const llvm::Value* val) {
 }
 
 void Program::addDeclaration(llvm::Function* func) {
-    declarations.push_back(std::make_unique<Func>(func, this, true, func->isExternalLinkage(func->getLinkage())));
+    if (!declarations.count(func)) {
+        declarations[func] = std::make_unique<Func>(func, this, true, func->isExternalLinkage(func->getLinkage()));
+    }
 }
 
 void Program::createNewUnnamedStruct(const llvm::StructType *strct) {

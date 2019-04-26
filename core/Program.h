@@ -23,8 +23,8 @@ private:
     TypeHandler typeHandler;
 
     //expressions
-    std::vector<std::unique_ptr<Func>> functions; // vector of parsed functions
-    std::vector<std::unique_ptr<Func>> declarations; // vector of function declarations
+    llvm::DenseMap<const llvm::Function*, std::unique_ptr<Func>> functions; //map containing function definitions
+    llvm::DenseMap<const llvm::Function*, std::unique_ptr<Func>> declarations; //map containing function declarations
     std::vector<std::unique_ptr<Struct>> structs; // vector of parsed structs
     std::vector<std::unique_ptr<GlobalValue>> globalVars; // vector of parsed global variables
     llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<RefExpr>> globalRefs; //map containing references to global variables
