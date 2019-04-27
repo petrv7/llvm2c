@@ -37,9 +37,10 @@ private:
     //extractvalue expressions
     std::vector<std::unique_ptr<Value>> values; //Vector of Values used in parsing extractvalue
 
-    //inline asm expressions
-    std::vector<std::unique_ptr<Expr>> vars; //Vector of Values used in parsing inline asm
-    std::vector<std::unique_ptr<Expr>> stores; //Vector of EqualsExpr used in parsing inline asm
+    //inline asm and load expressions
+    std::vector<std::unique_ptr<Expr>> vars; //Vector of Values used in parsing inline asm and load
+    std::vector<std::unique_ptr<Expr>> stores; //Vector of EqualsExpr used in parsing inline asm and load
+    std::vector<std::unique_ptr<Expr>> loadDerefs; //Vector of DerefExpr used in parsing load
 
     //call expressions
     std::vector<std::unique_ptr<Expr>> callExprMap; //Vector of CallExpr used in parsing call instruction

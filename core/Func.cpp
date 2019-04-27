@@ -177,7 +177,12 @@ void Func::print() {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
+    /*if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
+        return;
+    }*/
+
     if (isExtern) {
+        //temporary fix for sv-benchmarks
         if (name.compare("_IO_getc") == 0) {
             return;
         }
@@ -267,7 +272,12 @@ void Func::saveFile(std::ofstream& file) {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
+    /*if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
+        return;
+    }*/
+
     if (isExtern) {
+        //temporary fix for sv-benchmarks
         if (name.compare("_IO_getc") == 0) {
             return;
         }

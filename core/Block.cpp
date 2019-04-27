@@ -102,7 +102,13 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins, bool isConstExpr,
         createConstantValue(ins.getOperand(0));
     }
 
-    func->createExpr(isConstExpr ? val : &ins, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
+    loadDerefs.push_back(std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
+    func->createExpr(isConstExpr ? val : &ins, std::make_unique<Value>(func->getVarName(), loadDerefs[loadDerefs.size() - 1]->getType()->clone()));
+    stores.push_back(std::make_unique<EqualsExpr>(func->getExpr(isConstExpr ? val : &ins), loadDerefs[loadDerefs.size() - 1].get()));
+
+    //func->createExpr(isConstExpr ? val : &ins, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
+    abstractSyntaxTree.push_back(func->getExpr(isConstExpr ? val : &ins));
+    abstractSyntaxTree.push_back(stores[stores.size() - 1].get());
 }
 
 void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
