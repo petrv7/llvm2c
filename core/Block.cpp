@@ -38,8 +38,30 @@ Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* 
       blockName(blockName) { }
 
 void Block::parseLLVMBlock() {
-    for (const auto& ins : *block) {
+    /*for (const auto& ins : *block) {
         parseLLVMInstruction(ins, false, nullptr);
+    }*/
+    for (const auto& ins : *block) {
+        if (ins.getOpcode() == llvm::Instruction::Alloca) {
+            parseLLVMInstruction(ins, false, nullptr);
+        }
+
+        if (ins.getOpcode() == llvm::Instruction::Call) {
+            const llvm::CallInst* CI = llvm::cast<llvm::CallInst>(&ins);
+            if (CI->getCalledFunction()) {
+                if (CI->getCalledFunction()->getName().str().compare("llvm.dbg.declare") == 0) {
+                    setMetadataInfo(CI);
+                }
+            }
+        }
+    }
+
+    for (const auto& ins : *block) {
+        if (ins.getOpcode() != llvm::Instruction::Alloca) {
+            parseLLVMInstruction(ins, false, nullptr);
+        } else {
+            func->createExpr(&ins, std::make_unique<RefExpr>(valueMap[&ins].get()));
+        }
     }
 }
 
@@ -90,7 +112,7 @@ void Block::parseAllocaInstruction(const llvm::Instruction& ins, bool isConstExp
     const llvm::Value* value = isConstExpr ? val : &ins;
 
     valueMap[value] = std::make_unique<Value>(func->getVarName(), func->getType(allocaInst->getAllocatedType()));
-    func->createExpr(value, std::make_unique<RefExpr>(valueMap[value].get()));
+    //func->createExpr(value, std::make_unique<RefExpr>(valueMap[value].get()));
 
     if (!isConstExpr) {
         abstractSyntaxTree.push_back(valueMap[value].get());
@@ -460,7 +482,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         type = func->getType(callInst->getCalledFunction()->getReturnType());
 
         if (funcName.compare("llvm.dbg.declare") == 0) {
-            setMetadataInfo(callInst);
+            //setMetadataInfo(callInst);
             return;
         }
 
