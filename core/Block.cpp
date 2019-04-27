@@ -38,9 +38,6 @@ Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* 
       blockName(blockName) { }
 
 void Block::parseLLVMBlock() {
-    /*for (const auto& ins : *block) {
-        parseLLVMInstruction(ins, false, nullptr);
-    }*/
     for (const auto& ins : *block) {
         if (ins.getOpcode() == llvm::Instruction::Alloca) {
             parseLLVMInstruction(ins, false, nullptr);
@@ -112,7 +109,6 @@ void Block::parseAllocaInstruction(const llvm::Instruction& ins, bool isConstExp
     const llvm::Value* value = isConstExpr ? val : &ins;
 
     valueMap[value] = std::make_unique<Value>(func->getVarName(), func->getType(allocaInst->getAllocatedType()));
-    //func->createExpr(value, std::make_unique<RefExpr>(valueMap[value].get()));
 
     if (!isConstExpr) {
         abstractSyntaxTree.push_back(valueMap[value].get());
@@ -128,7 +124,6 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins, bool isConstExpr,
     func->createExpr(isConstExpr ? val : &ins, std::make_unique<Value>(func->getVarName(), loadDerefs[loadDerefs.size() - 1]->getType()->clone()));
     stores.push_back(std::make_unique<EqualsExpr>(func->getExpr(isConstExpr ? val : &ins), loadDerefs[loadDerefs.size() - 1].get()));
 
-    //func->createExpr(isConstExpr ? val : &ins, std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
     abstractSyntaxTree.push_back(func->getExpr(isConstExpr ? val : &ins));
     abstractSyntaxTree.push_back(stores[stores.size() - 1].get());
 }

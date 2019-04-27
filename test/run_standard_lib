@@ -1,0 +1,50 @@
+#!/bin/bash
+
+if ! [[ -e llvm2c ]]; then
+	echo "llvm2c not found!"
+	exit 1
+fi
+
+echo "Running standard library tests..."
+
+STD=0
+
+for f in standard_lib/*.c; do
+	clang "$f" -lm -o orig 2>/dev/null
+	clang "$f" -emit-llvm -S -o temp.ll 2>/dev/null
+	./llvm2c temp.ll --o temp.c >> /dev/null
+	if [[ $? != 0 ]]; then
+		echo "llvm2c failed to translate $f!"
+		STD=$((STD+1))
+		rm orig
+		rm temp.ll
+	else
+		clang temp.c -o new -lm 2>/dev/null
+		if [[ $? != 0 ]]; then
+			echo "Clang could not compile translated file $f!"
+			STD=$((STD+1))
+			rm orig
+			rm temp.ll
+			rm temp.c
+		else
+			./orig >> orig_output
+			./new >> new_output
+			cmp orig_output new_output
+			if ! [[ $? -eq 0 ]]; then
+				STD=$((STD+1))
+			fi
+			rm orig_output
+			rm new_output
+		fi
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
+	fi
+done
+
+if [[ $STD -eq 0 ]]; then
+	echo "All standard library tests passed!"
+else
+	echo "$STD standard library tests failed!"
+fi

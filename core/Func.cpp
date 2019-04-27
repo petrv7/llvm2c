@@ -169,7 +169,7 @@ void Func::print() {
         }
     }
 
-    if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
+    if ((Block::isCMath(name) || isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
         return;
     }
 
@@ -264,7 +264,7 @@ void Func::saveFile(std::ofstream& file) {
 
     }
 
-    if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
+    if ((Block::isCMath(name) || isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
         return;
     }
 
