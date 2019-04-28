@@ -14,10 +14,14 @@ class Program;
 class TypeHandler {
 private:
     Program* program;
-    llvm::DenseMap<const llvm::Type*, std::unique_ptr<Type>> typeDefs;
+    llvm::DenseMap<const llvm::Type*, std::unique_ptr<Type>> typeDefs; //map containing typedefs
 
-    unsigned typeDefCount = 0;
+    unsigned typeDefCount = 0; //variable used for creating new name for typedef
 
+    /**
+     * @brief getTypeDefName Creates new name for a typedef.
+     * @return String containing new name for a typedef
+     */
     std::string getTypeDefName() {
         std::string ret = "typeDef_" + std::to_string(typeDefCount);
         typeDefCount++;
@@ -25,7 +29,7 @@ private:
     }
 
 public:
-    std::vector<const TypeDef*> sortedTypeDefs;
+    std::vector<const TypeDef*> sortedTypeDefs; //vector of sorted typedefs, used in output
 
     TypeHandler(Program* program)
         : program(program) { }
@@ -52,6 +56,10 @@ public:
      */
     static std::string getStructName(const std::string& structName);
 
+    /**
+     * @brief hasTypeDefs Returns whether the program has any typedefs.
+     * @return True if program has typedefs, false otherwise
+     */
     bool hasTypeDefs() const {
         return !typeDefs.empty();
     }

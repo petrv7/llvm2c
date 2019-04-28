@@ -11,8 +11,9 @@
 #include <exception>
 #include <algorithm>
 
-Program::Program(const std::string &file)
-    : typeHandler(TypeHandler(this)) {
+Program::Program(const std::string &file, bool includes)
+    : typeHandler(TypeHandler(this)),
+      includes(includes) {
     fileName = file;
     unsigned idx = fileName.find_last_of("\\/");
     fileName.erase(0, idx + 1);
@@ -107,10 +108,6 @@ void Program::parseGlobalVar(const llvm::GlobalVariable &gvar) {
     std::string gvarName = gvar.getName().str();
     std::replace(gvarName.begin(), gvarName.end(), '.', '_');
 
-    if (gvarName.compare("index") == 0) {
-        gvarName = "g_" + gvarName;
-    }
-
     std::string value;
     if (gvar.hasInitializer()) {
         value = getInitValue(gvar.getInitializer());
@@ -132,7 +129,7 @@ std::string Program::getStructVarName() {
 
 std::string Program::getAnonStructName() {
     std::string name = "anonymous_struct" + std::to_string(anonStructCount);
-    anonStructCount += 1;
+    anonStructCount++;
     return name;
 }
 
@@ -141,10 +138,6 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         std::string name = val->getName().str();
         if (const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
             std::replace(name.begin(), name.end(), '.', '_');
-
-            if (name.compare("index") == 0) {
-                name = "g_" + name;
-            }
         }
 
         if (val->getName().str().empty()) {
@@ -308,7 +301,7 @@ void Program::print() {
     if (!globalVars.empty()) {
         llvm::outs() << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
-            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0) {
+            if (includes && (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0)) {
                 continue;
             }
 
@@ -339,7 +332,7 @@ void Program::print() {
     if (!globalVars.empty()) {
         llvm::outs() << "//Global variable definitions\n";
         for (auto& gvar : globalVars) {
-            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0) {
+            if (includes && (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0)) {
                 gvar->init = true;
                 continue;
             }
@@ -475,7 +468,7 @@ void Program::saveFile(const std::string& fileName) {
     if (!globalVars.empty()) {
         file << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
-            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0) {
+            if (includes && (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0)) {
                 continue;
             }
 
@@ -506,7 +499,7 @@ void Program::saveFile(const std::string& fileName) {
     if (!globalVars.empty()) {
         file << "//Global variable definitions\n";
         for (auto& gvar : globalVars) {
-            if (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0|| gvar->valueName.compare("stderr") == 0) {
+            if (includes && (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0)) {
                 gvar->init = true;
                 continue;
             }

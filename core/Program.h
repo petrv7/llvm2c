@@ -116,11 +116,14 @@ public:
     bool hasStdio = false; //program uses "stdio.h"
     bool hasPthread = false; //program uses "pthread.h"
 
+    bool includes;
+
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.
      * @param file Path to a file for parsing.
+     * @param includes Program uses includes instead of declarations.
      */
-    Program(const std::string& file);
+    Program(const std::string& file, bool includes);
 
     /**
      * @brief print Prints the translated program in the llvm::outs() stream.

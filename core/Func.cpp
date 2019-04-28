@@ -13,16 +13,16 @@
 #include <set>
 
 const static std::set<std::string> STDLIB_FUNCTIONS = {"atof", "atoi", "atol", "strtod", "strtol", "strtoul", "calloc",
-                                                "free", "malloc", "realloc", "abort", "atexit", "exit", "getenv",
-                                                "system", "bsearch", "qsort", "abs", "div", "labs", "ldiv",
-                                                "rand", "srand", "mblen", "mbstowcs", "mbtowc", "wcstombs", "wctomb",
-                                                "strtoll", "strtoull", "realpath"};
+                                                       "free", "malloc", "realloc", "abort", "atexit", "exit", "getenv",
+                                                       "system", "bsearch", "qsort", "abs", "div", "labs", "ldiv",
+                                                       "rand", "srand", "mblen", "mbstowcs", "mbtowc", "wcstombs", "wctomb",
+                                                       "strtoll", "strtoull", "realpath"};
 
 const static std::set<std::string> STRING_FUNCTIONS = {"memchr", "memcmp", "memcpy", "memmove", "memset", "strcat", "strncat",
-                                                "strchr", "strcmp", "strncmp", "strcoll", "strcpy", "strncpy", "strcspn",
-                                                "strerror", "strlen", "strpbrk", "strrchr", "strspn", "strstr", "strtok",
-                                                "strxfrm", "strsep", "strnlen", "strncasecmp", "strcasecmp", "stpcpy",
-                                                "strdup"};
+                                                       "strchr", "strcmp", "strncmp", "strcoll", "strcpy", "strncpy", "strcspn",
+                                                       "strerror", "strlen", "strpbrk", "strrchr", "strspn", "strstr", "strtok",
+                                                       "strxfrm", "strsep", "strnlen", "strncasecmp", "strcasecmp", "stpcpy",
+                                                       "strdup"};
 
 const static std::set<std::string> STDIO_FUNCTIONS = {"fclose", "clearerr", "feof", "ferror", "fflush", "fgetpos", "fopen",
                                                       "fread", "freopen", "fseek", "fsetpos", "ftell", "fwrite", "remove",
@@ -118,20 +118,22 @@ void Func::parseFunction() {
         }
     }
 
-    if (isExtern && isStdLibFunc(name)) {
-        program->hasStdLib = true;
-    }
+    if (program->includes) {
+        if (isExtern && isStdLibFunc(name)) {
+            program->hasStdLib = true;
+        }
 
-    if (isExtern && isStringFunc(name)) {
-        program->hasString = true;
-    }
+        if (isExtern && isStringFunc(name)) {
+            program->hasString = true;
+        }
 
-    if (isExtern && isStdioFunc(name)) {
-        program->hasStdio = true;
-    }
+        if (isExtern && isStdioFunc(name)) {
+            program->hasStdio = true;
+        }
 
-    if (isExtern && isPthreadFunc(name)) {
-        program->hasPthread = true;
+        if (isExtern && isPthreadFunc(name)) {
+            program->hasPthread = true;
+        }
     }
 
     for (const llvm::Value& arg : function->args()) {
@@ -169,23 +171,25 @@ void Func::print() {
         }
     }
 
-    if ((Block::isCMath(name) || isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
+    if (Block::isCMath(name) && isExtern) {
         return;
+    }
+
+    if (program->includes) {
+        if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
+            return;
+        }
+    } else {
+        if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
+            return;
+        }
     }
 
     if (name.substr(0, 4).compare("llvm") == 0) {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
-    /*if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
-        return;
-    }*/
-
     if (isExtern) {
-        //temporary fix for sv-benchmarks
-        if (name.compare("_IO_getc") == 0) {
-            return;
-        }
         llvm::outs() << "extern ";
     }
 
@@ -264,23 +268,25 @@ void Func::saveFile(std::ofstream& file) {
 
     }
 
-    if ((Block::isCMath(name) || isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
+    if (Block::isCMath(name) && isExtern) {
         return;
+    }
+
+    if (program->includes) {
+        if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
+            return;
+        }
+    } else {
+        if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
+            return;
+        }
     }
 
     if (name.substr(0, 4).compare("llvm") == 0) {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
-    /*if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
-        return;
-    }*/
-
     if (isExtern) {
-        //temporary fix for sv-benchmarks
-        if (name.compare("_IO_getc") == 0) {
-            return;
-        }
         file << "extern ";
     }
 

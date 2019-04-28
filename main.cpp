@@ -14,7 +14,8 @@ int main(int argc, char** argv) {
             ("h", "Help message")
             ("p", "Print translated program")
             ("o", value<std::string>(), "Output translated program into file specified by arg")
-            ("debug", "Prints only information about translation");
+            ("debug", "Prints only information about translation")
+            ("add-includes", "Uses includes instead of declarations. For experimental purposes.");
     variables_map vars;
     try {
         store(parse_command_line(argc, argv, desc), vars);
@@ -32,7 +33,7 @@ int main(int argc, char** argv) {
         }
 
         try {
-            Program program(argv[1]);
+            Program program(argv[1], vars.count("add-includes"));
 
             if (vars.count("p")) {
                 program.print();

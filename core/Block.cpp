@@ -120,6 +120,7 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins, bool isConstExpr,
         createConstantValue(ins.getOperand(0));
     }
 
+    //create new variable for every load instruction
     loadDerefs.push_back(std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
     func->createExpr(isConstExpr ? val : &ins, std::make_unique<Value>(func->getVarName(), loadDerefs[loadDerefs.size() - 1]->getType()->clone()));
     stores.push_back(std::make_unique<EqualsExpr>(func->getExpr(isConstExpr ? val : &ins), loadDerefs[loadDerefs.size() - 1].get()));
@@ -353,6 +354,7 @@ void Block::parseCmpInstruction(const llvm::Instruction& ins, bool isConstExpr, 
 void Block::parseBrInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
     const llvm::Value* value = isConstExpr ? val : &ins;
 
+    //no condition
     if (ins.getNumOperands() == 1) {
         std::string trueBlock = func->getBlockName((llvm::BasicBlock*)ins.getOperand(0));
         func->createExpr(value, std::make_unique<IfExpr>(trueBlock));
@@ -439,12 +441,12 @@ void Block::parseAsmInst(const llvm::Instruction& ins, bool isConstExpr, const l
 }
 
 void Block::parseShiftInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
-    if (func->getExpr(ins.getOperand(0)) == nullptr) {
+    if (!func->getExpr(ins.getOperand(0))) {
         createConstantValue(ins.getOperand(0));
     }
     Expr* val0 = func->getExpr(ins.getOperand(0));
 
-    if (func->getExpr(ins.getOperand(1)) == nullptr) {
+    if (!func->getExpr(ins.getOperand(1))) {
         createConstantValue(ins.getOperand(1));
     }
     Expr* val1 = func->getExpr(ins.getOperand(1));
@@ -466,7 +468,7 @@ void Block::parseShiftInstruction(const llvm::Instruction& ins, bool isConstExpr
 
 void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
     const llvm::Value* value = isConstExpr ? val : &ins;
-    const llvm::CallInst* callInst = llvm::cast<const llvm::CallInst>(&ins);
+    const llvm::CallInst* callInst = llvm::cast<llvm::CallInst>(&ins);
     Expr* funcValue = nullptr;
     std::string funcName;
     std::vector<Expr*> params;
@@ -477,7 +479,6 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         type = func->getType(callInst->getCalledFunction()->getReturnType());
 
         if (funcName.compare("llvm.dbg.declare") == 0) {
-            //setMetadataInfo(callInst);
             return;
         }
 
@@ -671,12 +672,12 @@ void Block::parseSelectInstruction(const llvm::Instruction& ins, bool isConstExp
     const llvm::SelectInst* SI = llvm::cast<const llvm::SelectInst>(&ins);
     Expr* cond = func->getExpr(SI->getCondition());
 
-    if (func->getExpr(ins.getOperand(1)) == nullptr) {
+    if (!func->getExpr(ins.getOperand(1))) {
         createConstantValue(ins.getOperand(1));
     }
     Expr* val0 = func->getExpr(ins.getOperand(1));
 
-    if (func->getExpr(ins.getOperand(2)) == nullptr) {
+    if (!func->getExpr(ins.getOperand(2))) {
         createConstantValue(ins.getOperand(2));
     }
     Expr* val1 = func->getExpr(ins.getOperand(2));
@@ -886,6 +887,7 @@ void Block::createConstantValue(const llvm::Value* val) {
     if (auto CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
         func->createExpr(val, std::make_unique<Value>("0", func->getType(CPN->getType())));
     }
+
     if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
         std::string value;
         if (CI->getBitWidth() > 64) {
@@ -898,6 +900,7 @@ void Block::createConstantValue(const llvm::Value* val) {
         }
         func->createExpr(val, std::make_unique<Value>(value, std::make_unique<IntType>(false)));
     }
+
     if (auto CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         if (CFP->isInfinity()) {
             func->hasMath();
@@ -922,6 +925,7 @@ void Block::createConstantValue(const llvm::Value* val) {
             func->createExpr(val, std::make_unique<Value>(CFPvalue, std::make_unique<FloatType>()));
         }
     }
+
     if (auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
         parseLLVMInstruction(*CE->getAsInstruction(), true, val);
     }
@@ -982,7 +986,6 @@ std::vector<std::string> Block::getAsmOutputStrings(llvm::InlineAsm::ConstraintI
         if (iter->Type != llvm::InlineAsm::isOutput) {
             continue;
         }
-
 
         std::string output;
         if (iter->isMultipleAlternative) {
