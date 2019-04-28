@@ -116,7 +116,7 @@ public:
     bool hasStdio = false; //program uses "stdio.h"
     bool hasPthread = false; //program uses "pthread.h"
 
-    bool includes;
+    bool includes; //program uses includes instead of declarations for standard library functions, for testing purposes only
 
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.

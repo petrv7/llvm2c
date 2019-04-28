@@ -185,7 +185,7 @@ std::string Program::getInitValue(const llvm::Constant* val) {
 
     if (const llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         if (CFP->isInfinity()) {
-            this->hasMath = true;
+            hasMath = true;
             return "INFINITY";
         }
 
@@ -590,7 +590,7 @@ std::string Program::getIncludeString() const {
     std::string ret;
 
     if (hasMath) {
-        ret+= "#include \"math.h\"\n";
+        ret+= "#include <math.h>\n";
     }
 
     if (hasVarArg) {
@@ -610,7 +610,7 @@ std::string Program::getIncludeString() const {
     }
 
     if (hasPthread) {
-        ret += "#include \"pthread.h\"\n";
+        ret += "#include <pthread.h>\n";
     }
 
     if (!ret.empty()) {

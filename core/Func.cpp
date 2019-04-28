@@ -111,16 +111,6 @@ void Func::parseFunction() {
     std::string name = function->getName().str();
     if (Block::isCFunc(Block::getCFunc(name))) {
         name = Block::getCFunc(name);
-
-        if (Block::isCMath(name)) {
-            program->hasMath = true;
-            return;
-        }
-    }
-
-    if (Block::isCMath(name)) {
-        program->hasMath = true;
-        return;
     }
 
     if (program->includes) {
@@ -176,7 +166,7 @@ void Func::print() {
         }
     }
 
-    if (Block::isCMath(name) && isExtern) {
+    if (Block::isCMath(name) && isExtern && program->hasMath) {
         return;
     }
 
@@ -185,6 +175,7 @@ void Func::print() {
             return;
         }
     } else {
+        //sometimes LLVM uses these functions with more arguments than their C counterparts
         if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
             return;
         }
@@ -273,7 +264,7 @@ void Func::saveFile(std::ofstream& file) {
 
     }
 
-    if (Block::isCMath(name) && isExtern) {
+    if (Block::isCMath(name) && isExtern && program->hasMath) {
         return;
     }
 
@@ -282,6 +273,7 @@ void Func::saveFile(std::ofstream& file) {
             return;
         }
     } else {
+        //sometimes LLVM uses these functions with more arguments than their C counterparts
         if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
             return;
         }

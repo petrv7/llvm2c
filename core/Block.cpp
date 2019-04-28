@@ -24,7 +24,7 @@
 
 using CaseHandle = const llvm::SwitchInst::CaseHandleImpl<const llvm::SwitchInst, const llvm::ConstantInt, const llvm::BasicBlock>*;
 
-const std::set<std::string> C_FUNCTIONS = {"malloc", "free", "memcpy", "memmove", "memset", "sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
+const std::set<std::string> C_FUNCTIONS = {"memcpy", "memmove", "memset", "sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
                                            "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
                                            "round", "va_start", "va_end", "va_copy"};
 
@@ -38,6 +38,7 @@ Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* 
       blockName(blockName) { }
 
 void Block::parseLLVMBlock() {
+    //parse alloca and metadata first, so the types are set correctly
     for (const auto& ins : *block) {
         if (ins.getOpcode() == llvm::Instruction::Alloca) {
             parseLLVMInstruction(ins, false, nullptr);
@@ -612,6 +613,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
     int i = 0;
     for (const llvm::Use& param : callInst->arg_operands()) {
+        //sometimes LLVM uses these functions with more arguments than their C counterparts
         if ((funcName.compare("memcpy") == 0 || funcName.compare("memmove") == 0 || funcName.compare("memset") == 0)  && i == 3) {
             break;
         }
