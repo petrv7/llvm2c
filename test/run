@@ -18,3 +18,5 @@ echo
 ./run_branching
 echo
 ./run_statements
+echo
+./run_standard_lib

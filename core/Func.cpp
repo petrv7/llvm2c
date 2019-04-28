@@ -118,6 +118,11 @@ void Func::parseFunction() {
         }
     }
 
+    if (Block::isCMath(name)) {
+        program->hasMath = true;
+        return;
+    }
+
     if (program->includes) {
         if (isExtern && isStdLibFunc(name)) {
             program->hasStdLib = true;

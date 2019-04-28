@@ -104,7 +104,6 @@ void Program::parseGlobalVars() {
 }
 
 void Program::parseGlobalVar(const llvm::GlobalVariable &gvar) {
-    bool isPrivate = gvar.hasPrivateLinkage();
     std::string gvarName = gvar.getName().str();
     std::replace(gvarName.begin(), gvarName.end(), '.', '_');
 
@@ -115,7 +114,7 @@ void Program::parseGlobalVar(const llvm::GlobalVariable &gvar) {
 
     llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
     globalVars.push_back(std::make_unique<GlobalValue>(gvarName, value, getType(PI->getElementType())));
-    globalVars.at(globalVars.size() - 1)->getType()->isStatic = isPrivate;
+    globalVars.at(globalVars.size() - 1)->getType()->isStatic = gvar.hasInternalLinkage();
     globalRefs[&gvar] = std::make_unique<RefExpr>(globalVars.at(globalVars.size() - 1).get());
 }
 
