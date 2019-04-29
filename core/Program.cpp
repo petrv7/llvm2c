@@ -15,10 +15,15 @@ Program::Program(const std::string &file, bool includes)
     : typeHandler(TypeHandler(this)),
       includes(includes) {
     fileName = file;
-    unsigned idx = fileName.find_last_of("\\/");
-    fileName.erase(0, idx + 1);
+    size_t idx = fileName.find_last_of("\\/");
+    if (idx != std::string::npos) {
+        fileName.erase(0, idx + 1);
+    }
+
     idx = fileName.find_last_of("\\.");
-    fileName.erase(idx, fileName.size());
+    if (idx != std::string::npos) {
+        fileName.erase(idx, fileName.size());
+    }
 
     error = llvm::SMDiagnostic();
     module = llvm::parseIRFile(file, error, context);

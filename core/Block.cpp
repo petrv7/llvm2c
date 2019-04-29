@@ -6,7 +6,6 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/GetElementPtrTypeIterator.h"
-#include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/ADT/APInt.h"
 
 #include "Func.h"
