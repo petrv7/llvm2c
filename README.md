@@ -17,8 +17,9 @@ Translation of LLVM bitcode to C
     cd llvm2c
     mkdir build
     cd build
-    cmake ..
+    cmake .. -DCMAKE_INSTALL_PREFIX=../
     make
+    make install
 
 ## Authors
 
