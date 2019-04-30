@@ -105,8 +105,6 @@ private:
     std::string getIncludeString() const;
 
 public:
-    std::string fileName;
-
     bool stackIgnored = false; //instruction stacksave was ignored
 
     bool hasMath = false; //program uses "math.h"

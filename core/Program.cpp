@@ -14,21 +14,10 @@
 Program::Program(const std::string &file, bool includes)
     : typeHandler(TypeHandler(this)),
       includes(includes) {
-    fileName = file;
-    size_t idx = fileName.find_last_of("\\/");
-    if (idx != std::string::npos) {
-        fileName.erase(0, idx + 1);
-    }
-
-    idx = fileName.find_last_of("\\.");
-    if (idx != std::string::npos) {
-        fileName.erase(idx, fileName.size());
-    }
-
     error = llvm::SMDiagnostic();
     module = llvm::parseIRFile(file, error, context);
     if(!module) {
-        throw std::invalid_argument("Error loading module - invalid input file \"" + fileName + "\"!\n");
+        throw std::invalid_argument("Error loading module - invalid input file:\n" + file + "\n");
     }
 
     llvm::outs() << "IR file successfuly parsed.\n";
