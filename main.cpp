@@ -1,6 +1,7 @@
 #include "core/Program.h"
 
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 
 #include <iostream>
 #include <string>
@@ -21,13 +22,15 @@ int main(int argc, char** argv) {
         store(parse_command_line(argc, argv, desc), vars);
         notify(vars);
 
-        if (vars.count("-h")) {
+        if (vars.count("h")) {
+            std::cout << "USAGE: llvm2c <input> [options]\n\n";
             std::cout << desc << "\n";
             return 0;
         }
 
         if (!vars.count("o") && !vars.count("p") && !vars.count("debug")) {
             std::cout << "Output method not specified!\n\n";
+            std::cout << "USAGE: llvm2c <input> [options]\n\n";
             std::cout << desc << "\n";
             return 0;
         }
@@ -48,7 +51,9 @@ int main(int argc, char** argv) {
         }
     } catch (error& e) {
         llvm::errs() << e.what() << "\n\n";
+        std::cout << "USAGE: llvm2c <input> [options]\n\n";
         std::cout << desc << "\n";
     }
+
     return 0;
 }
