@@ -106,8 +106,8 @@ void Program::parseGlobalVar(const llvm::GlobalVariable &gvar) {
         value = getInitValue(gvar.getInitializer());
     }
 
-    llvm::PointerType* PI = llvm::cast<llvm::PointerType>(gvar.getType());
-    globalVars.push_back(std::make_unique<GlobalValue>(gvarName, value, getType(PI->getElementType())));
+    llvm::PointerType* PT = llvm::cast<llvm::PointerType>(gvar.getType());
+    globalVars.push_back(std::make_unique<GlobalValue>(gvarName, value, getType(PT->getElementType())));
     globalVars.at(globalVars.size() - 1)->getType()->isStatic = gvar.hasInternalLinkage();
     globalRefs[&gvar] = std::make_unique<RefExpr>(globalVars.at(globalVars.size() - 1).get());
 }
@@ -421,6 +421,10 @@ void Program::saveFile(const std::string& fileName) {
 
     std::ofstream file;
     file.open(fileName);
+
+    if (!file.is_open()) {
+        throw std::invalid_argument("Output file cannot be opened!");
+    }
 
     file << getIncludeString();
 
