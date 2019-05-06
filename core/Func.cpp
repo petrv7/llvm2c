@@ -160,15 +160,14 @@ void Func::print() {
         name = Block::getCFunc(name);
         if (name.compare("va_start") == 0
                 || name.compare("va_end") == 0
-                || name.compare("va_copy") == 0
-                || Block::isCMath(name)) {
+                || name.compare("va_copy") == 0) {
             return;
         }
     }
 
-    if (Block::isCMath(name) && isExtern && program->hasMath) {
+    /*if (Block::isCMath(name) && isExtern && program->hasMath) {
         return;
-    }
+    }*/
 
     if (program->includes) {
         if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
@@ -257,16 +256,15 @@ void Func::saveFile(std::ofstream& file) {
         name = Block::getCFunc(name);
         if (name.compare("va_start") == 0
                 || name.compare("va_end") == 0
-                || name.compare("va_copy") == 0
-                || Block::isCMath(name)) {
+                || name.compare("va_copy") == 0) {
             return;
         }
 
     }
 
-    if (Block::isCMath(name) && isExtern && program->hasMath) {
+    /*if (Block::isCMath(name) && isExtern && program->hasMath) {
         return;
-    }
+    }*/
 
     if (program->includes) {
         if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {

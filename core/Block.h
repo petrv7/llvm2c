@@ -278,7 +278,7 @@ public:
      * @param func Name of the function
      * @return True if function is in math.h, false otherwise
      */
-    static bool isCMath(const std::string& func);
+    //static bool isCMath(const std::string& func);
 
     /**
      * @brief getCFunc Takes LLVM intrinsic function and returns name of the corresponding C function.

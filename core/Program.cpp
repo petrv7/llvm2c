@@ -179,19 +179,22 @@ std::string Program::getInitValue(const llvm::Constant* val) {
 
     if (const llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         if (CFP->isInfinity()) {
-            hasMath = true;
-            return "INFINITY";
+            //hasMath = true;
+            //return "INFINITY";
+            return "__builtin_inff ()";
         }
 
         if (CFP->isNaN()) {
-            hasMath = true;
-            return "NAN";
+            //hasMath = true;
+            //return "NAN";
+            return "__builtin_nanf ("")";
         }
 
         std::string ret = std::to_string(CFP->getValueAPF().convertToDouble());
         if (ret.compare("-nan") == 0) {
-            hasMath = true;
-            return "-NAN";
+            //hasMath = true;
+            //return "-NAN";
+            return "-(__builtin_nanf (""))";
         }
 
         llvm::SmallVector<char, 32> string;

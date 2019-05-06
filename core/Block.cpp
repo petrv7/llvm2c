@@ -27,10 +27,10 @@ const std::set<std::string> C_FUNCTIONS = {"memcpy", "memmove", "memset", "sqrt"
                                            "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
                                            "round", "va_start", "va_end", "va_copy"};
 
-const std::set<std::string> C_MATH = {"sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
+/*const std::set<std::string> C_MATH = {"sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
                                       "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
                                       "round"};
-
+*/
 Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* func)
     : block(block),
       func(func),
@@ -904,16 +904,19 @@ void Block::createConstantValue(const llvm::Value* val) {
 
     if (auto CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         if (CFP->isInfinity()) {
-            func->hasMath();
-            func->createExpr(val, std::make_unique<Value>("INFINITY", std::make_unique<FloatType>()));
+            //func->hasMath();
+            //func->createExpr(val, std::make_unique<Value>("INFINITY", std::make_unique<FloatType>()));
+            func->createExpr(val, std::make_unique<Value>("__builtin_inff ()", std::make_unique<FloatType>()));
         } else if (CFP->isNaN()){
-            func->hasMath();
-            func->createExpr(val, std::make_unique<Value>("NAN", std::make_unique<FloatType>()));
+            //func->hasMath();
+            //func->createExpr(val, std::make_unique<Value>("NAN", std::make_unique<FloatType>()));
+            func->createExpr(val, std::make_unique<Value>("__builtin_nanf ("")", std::make_unique<FloatType>()));
         } else {
             std::string CFPvalue = std::to_string(CFP->getValueAPF().convertToDouble());
             if (CFPvalue.compare("-nan") == 0) {
-                func->hasMath();
-                CFPvalue = "-NAN";
+                //func->hasMath();
+                //CFPvalue = "-NAN";
+                CFPvalue = "-(__builtin_nanf (""))";
             } else {
                 llvm::SmallVector<char, 32> string;
                 CFPvalue = "";
@@ -1163,6 +1166,6 @@ std::string Block::toRawString(const std::string& str) const {
     return ret;
 }
 
-bool Block::isCMath(const std::string& func) {
+/*bool Block::isCMath(const std::string& func) {
     return C_MATH.find(func) != C_MATH.end();
-}
+}*/
