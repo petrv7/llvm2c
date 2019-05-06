@@ -15,7 +15,8 @@ int main(int argc, char** argv) {
             ("p", "Print translated program")
             ("o", value<std::string>(), "Output translated program into file specified by arg")
             ("debug", "Prints only information about translation")
-            ("add-includes", "Uses includes instead of declarations. For experimental purposes.");
+            ("add-includes", "Uses includes instead of declarations. For experimental purposes.")
+            ("no-function-call-casts", "Removes casted function calls. For experimental purposes.");
     variables_map vars;
     try {
         store(parse_command_line(argc, argv, desc), vars);
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
         }
 
         try {
-            Program program(argv[1], vars.count("add-includes"));
+            Program program(argv[1], vars.count("add-includes"), vars.count("no-function-call-casts"));
 
             if (vars.count("p")) {
                 program.print();

@@ -394,6 +394,22 @@ std::string CallExpr::toString() const {
     } else {
         ret += funcName + "(";
     }
+
+    ret += paramsToString();
+
+    if (const auto VT = dynamic_cast<const VoidType*>(getType())) {
+        return ret + ");";
+    }
+    return ret + ")";
+}
+
+void CallExpr::printParams() const {
+    llvm::outs() << paramsToString();
+}
+
+std::string CallExpr::paramsToString() const {
+    std::string ret;
+
     if (funcName.compare("va_start") == 0 || funcName.compare("va_end") == 0) {
         ret += "(void*)(";
     }
@@ -412,10 +428,7 @@ std::string CallExpr::toString() const {
         first = false;
     }
 
-    if (const auto VT = dynamic_cast<const VoidType*>(getType())) {
-        return ret + ");";
-    }
-    return ret + ")";
+    return ret;
 }
 
 PointerMove::PointerMove(std::unique_ptr<Type> ptrType, Expr* pointer, Expr* move)

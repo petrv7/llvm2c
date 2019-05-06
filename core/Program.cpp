@@ -11,9 +11,10 @@
 #include <exception>
 #include <algorithm>
 
-Program::Program(const std::string &file, bool includes)
+Program::Program(const std::string &file, bool includes, bool casts)
     : typeHandler(TypeHandler(this)),
-      includes(includes) {
+      includes(includes),
+      noFuncCasts(casts) {
     error = llvm::SMDiagnostic();
     module = llvm::parseIRFile(file, error, context);
     if(!module) {
@@ -187,14 +188,14 @@ std::string Program::getInitValue(const llvm::Constant* val) {
         if (CFP->isNaN()) {
             //hasMath = true;
             //return "NAN";
-            return "__builtin_nanf ("")";
+            return "__builtin_nanf (\"\")";
         }
 
         std::string ret = std::to_string(CFP->getValueAPF().convertToDouble());
         if (ret.compare("-nan") == 0) {
             //hasMath = true;
             //return "-NAN";
-            return "-(__builtin_nanf (""))";
+            return "-(__builtin_nanf (\"\"))";
         }
 
         llvm::SmallVector<char, 32> string;

@@ -160,7 +160,8 @@ void Func::print() {
         name = Block::getCFunc(name);
         if (name.compare("va_start") == 0
                 || name.compare("va_end") == 0
-                || name.compare("va_copy") == 0) {
+                || name.compare("va_copy") == 0
+                || Block::isCMath(name)) {
             return;
         }
     }
@@ -256,7 +257,8 @@ void Func::saveFile(std::ofstream& file) {
         name = Block::getCFunc(name);
         if (name.compare("va_start") == 0
                 || name.compare("va_end") == 0
-                || name.compare("va_copy") == 0) {
+                || name.compare("va_copy") == 0
+                || Block::isCMath(name)) {
             return;
         }
 

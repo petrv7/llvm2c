@@ -210,15 +210,27 @@ public:
  */
 class CallExpr : public ExprBase {
 private:
-    Expr* funcValue; //expression in case of calling function pointer
     std::string funcName; //name of the called function
     std::vector<Expr*> params; //parameters of the function call
 
 public:
+    Expr* funcValue; //expression in case of calling function pointer
+
     CallExpr(Expr*, const std::string&, std::vector<Expr*>, std::unique_ptr<Type>);
 
     void print() const override;
     std::string toString() const override;
+
+    /**
+     * @brief printParams Prints parameters of function call.
+     */
+    void printParams() const;
+
+    /**
+     * @brief paramsToString Returns parameters of function call as string.
+     * @return String with parameters.
+     */
+    std::string paramsToString() const;
 };
 
 /**

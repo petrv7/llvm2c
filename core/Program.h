@@ -115,13 +115,15 @@ public:
     bool hasPthread = false; //program uses "pthread.h"
 
     bool includes; //program uses includes instead of declarations for standard library functions, for testing purposes only
+    bool noFuncCasts; //program removes any function call casts, for testing purposes only
 
     /**
      * @brief Program Constructor of a Program class, parses given file into a llvm::Module.
      * @param file Path to a file for parsing.
      * @param includes Program uses includes instead of declarations.
+     * @param casts Program removes function call casts.
      */
-    Program(const std::string& file, bool includes);
+    Program(const std::string& file, bool includes, bool casts);
 
     /**
      * @brief print Prints the translated program in the llvm::outs() stream.

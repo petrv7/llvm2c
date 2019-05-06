@@ -27,10 +27,10 @@ const std::set<std::string> C_FUNCTIONS = {"memcpy", "memmove", "memset", "sqrt"
                                            "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
                                            "round", "va_start", "va_end", "va_copy"};
 
-/*const std::set<std::string> C_MATH = {"sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
+const std::set<std::string> C_MATH = {"sqrt", "powi", "sin", "cos", "pow", "exp", "exp2", "log", "log10", "log2",
                                       "fma", "fabs", "minnum", "maxnum", "minimum", "maximum", "copysign", "floor", "ceil", "trunc", "rint", "nearbyint",
                                       "round"};
-*/
+
 Block::Block(const std::string &blockName, const llvm::BasicBlock* block, Func* func)
     : block(block),
       func(func),
@@ -66,20 +66,65 @@ void Block::print() {
     unsetAllInit();
 
     for (const auto expr : abstractSyntaxTree) {
-        if (auto val = dynamic_cast<Value*>(expr)) {
+        if (auto V = dynamic_cast<Value*>(expr)) {
             llvm::outs() << "    ";
-            if (!val->init) {
-                val->getType()->print();
+            if (!V->init) {
+                V->getType()->print();
                 llvm::outs() << " ";
                 expr->print();
                 llvm::outs() << ";\n";
-                val->init = true;
+                V->init = true;
             }
-        } else {
-            llvm::outs() << "    ";
-            expr->print();
-            llvm::outs() << "\n";
+            continue;
         }
+
+        if (auto CE = dynamic_cast<CallExpr*>(expr)) {
+            if (func->program->noFuncCasts) {
+                auto call = CE->funcValue;
+                bool hasCast = false;
+                while (auto CAST = dynamic_cast<CastExpr*>(call)) {
+                    hasCast = true;
+                    call = CAST->expr;
+                }
+
+                if (hasCast) {
+                    llvm::outs() << "    ";
+                    llvm::outs() << call->toString().substr(1, call->toString().size() - 1);
+                    llvm::outs() << "(";
+                    CE->printParams();
+                    llvm::outs() << ");\n";
+                    continue;
+                }
+            }
+        }
+
+        if (auto EE = dynamic_cast<EqualsExpr*>(expr)) {
+            if (func->program->noFuncCasts) {
+                if (auto CE = dynamic_cast<CallExpr*>(EE->right)) {
+                    auto call = CE->funcValue;
+                    bool hasCast = false;
+                    while (auto CAST = dynamic_cast<CastExpr*>(call)) {
+                        hasCast = true;
+                        call = CAST->expr;
+                    }
+
+                    if (hasCast) {
+                        llvm::outs() << "    (";
+                        EE->left->print();
+                        llvm::outs() << ") = ";
+                        llvm::outs() << call->toString().substr(1, call->toString().size() - 1);
+                        llvm::outs() << "(";
+                        CE->printParams();
+                        llvm::outs() << ");\n";
+                        continue;
+                    }
+                }
+            }
+        }
+
+        llvm::outs() << "    ";
+        expr->print();
+        llvm::outs() << "\n";
         llvm::outs().flush();
     }
 }
@@ -87,20 +132,61 @@ void Block::print() {
 void Block::saveFile(std::ofstream& file) {
     unsetAllInit();
     for (const auto expr : abstractSyntaxTree) {
-        if (auto val = dynamic_cast<Value*>(expr)) {
+        if (auto V = dynamic_cast<Value*>(expr)) {
             file << "    ";
-            if (!val->init) {
-                file << val->getType()->toString();
+            if (!V->init) {
+                file << V->getType()->toString();
                 file << " ";
                 file << expr->toString();
                 file << ";\n";
-                val->init = true;
+                V->init = true;
             }
-        } else {
-            file << "    ";
-            file << expr->toString();
-            file << "\n";
+            continue;
         }
+
+        if (auto CE = dynamic_cast<CallExpr*>(expr)) {
+            if (func->program->noFuncCasts) {
+                auto call = CE->funcValue;
+                bool hasCast = false;
+                while (auto CAST = dynamic_cast<CastExpr*>(call)) {
+                    hasCast = true;
+                    call = CAST->expr;
+                }
+
+                if (hasCast) {
+                    file << "    ";
+                    file << call->toString().substr(1, call->toString().size() - 1);
+                    file << "(" << CE->paramsToString() << ");\n";
+                    continue;
+                }
+            }
+        }
+
+        if (auto EE = dynamic_cast<EqualsExpr*>(expr)) {
+            if (func->program->noFuncCasts) {
+                if (auto CE = dynamic_cast<CallExpr*>(EE->right)) {
+                    auto call = CE->funcValue;
+                    bool hasCast = false;
+                    while (auto CAST = dynamic_cast<CastExpr*>(call)) {
+                        hasCast = true;
+                        call = CAST->expr;
+                    }
+
+                    if (hasCast) {
+                        file << "    (";
+                        file << EE->left->toString();
+                        file << ") = ";
+                        file << call->toString().substr(1, call->toString().size() - 1);
+                        file << "(" << CE->paramsToString() << ");\n";
+                        continue;
+                    }
+                }
+            }
+        }
+
+        file << "    ";
+        file << expr->toString();
+        file << "\n";
     }
 }
 
@@ -910,13 +996,13 @@ void Block::createConstantValue(const llvm::Value* val) {
         } else if (CFP->isNaN()){
             //func->hasMath();
             //func->createExpr(val, std::make_unique<Value>("NAN", std::make_unique<FloatType>()));
-            func->createExpr(val, std::make_unique<Value>("__builtin_nanf ("")", std::make_unique<FloatType>()));
+            func->createExpr(val, std::make_unique<Value>("__builtin_nanf (\"\")", std::make_unique<FloatType>()));
         } else {
             std::string CFPvalue = std::to_string(CFP->getValueAPF().convertToDouble());
             if (CFPvalue.compare("-nan") == 0) {
                 //func->hasMath();
                 //CFPvalue = "-NAN";
-                CFPvalue = "-(__builtin_nanf (""))";
+                CFPvalue = "-(__builtin_nanf (\"\"))";
             } else {
                 llvm::SmallVector<char, 32> string;
                 CFPvalue = "";
@@ -1166,6 +1252,6 @@ std::string Block::toRawString(const std::string& str) const {
     return ret;
 }
 
-/*bool Block::isCMath(const std::string& func) {
+bool Block::isCMath(const std::string& func) {
     return C_MATH.find(func) != C_MATH.end();
-}*/
+}
