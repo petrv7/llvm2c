@@ -180,21 +180,15 @@ std::string Program::getInitValue(const llvm::Constant* val) {
 
     if (const llvm::ConstantFP* CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         if (CFP->isInfinity()) {
-            //hasMath = true;
-            //return "INFINITY";
             return "__builtin_inff ()";
         }
 
         if (CFP->isNaN()) {
-            //hasMath = true;
-            //return "NAN";
             return "__builtin_nanf (\"\")";
         }
 
         std::string ret = std::to_string(CFP->getValueAPF().convertToDouble());
         if (ret.compare("-nan") == 0) {
-            //hasMath = true;
-            //return "-NAN";
             return "-(__builtin_nanf (\"\"))";
         }
 
@@ -590,10 +584,6 @@ std::unique_ptr<Type> Program::getType(const llvm::Type* type) {
 
 std::string Program::getIncludeString() const {
     std::string ret;
-
-    if (hasMath) {
-        ret+= "#include <math.h>\n";
-    }
 
     if (hasVarArg) {
         ret += "#include <stdarg.h>\n";

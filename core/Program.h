@@ -107,7 +107,6 @@ private:
 public:
     bool stackIgnored = false; //instruction stacksave was ignored
 
-    bool hasMath = false; //program uses "math.h"
     bool hasVarArg = false; //program uses "stdarg.h"
     bool hasStdLib = false; //program uses "stdlib.h"
     bool hasString = false; //program uses "string.h"

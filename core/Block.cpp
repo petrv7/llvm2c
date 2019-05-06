@@ -990,18 +990,12 @@ void Block::createConstantValue(const llvm::Value* val) {
 
     if (auto CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
         if (CFP->isInfinity()) {
-            //func->hasMath();
-            //func->createExpr(val, std::make_unique<Value>("INFINITY", std::make_unique<FloatType>()));
             func->createExpr(val, std::make_unique<Value>("__builtin_inff ()", std::make_unique<FloatType>()));
         } else if (CFP->isNaN()){
-            //func->hasMath();
-            //func->createExpr(val, std::make_unique<Value>("NAN", std::make_unique<FloatType>()));
             func->createExpr(val, std::make_unique<Value>("__builtin_nanf (\"\")", std::make_unique<FloatType>()));
         } else {
             std::string CFPvalue = std::to_string(CFP->getValueAPF().convertToDouble());
             if (CFPvalue.compare("-nan") == 0) {
-                //func->hasMath();
-                //CFPvalue = "-NAN";
                 CFPvalue = "-(__builtin_nanf (\"\"))";
             } else {
                 llvm::SmallVector<char, 32> string;

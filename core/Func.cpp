@@ -166,10 +166,6 @@ void Func::print() {
         }
     }
 
-    /*if (Block::isCMath(name) && isExtern && program->hasMath) {
-        return;
-    }*/
-
     if (program->includes) {
         if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
             return;
@@ -263,10 +259,6 @@ void Func::saveFile(std::ofstream& file) {
         }
 
     }
-
-    /*if (Block::isCMath(name) && isExtern && program->hasMath) {
-        return;
-    }*/
 
     if (program->includes) {
         if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
@@ -374,10 +366,6 @@ void Func::createNewUnnamedStruct(const llvm::StructType* strct) {
 
 std::unique_ptr<Type> Func::getType(const llvm::Type* type) {
     return program->getType(type);
-}
-
-void Func::hasMath() {
-    program->hasMath = true;
 }
 
 bool Func::isStdLibFunc(const std::string& func) {

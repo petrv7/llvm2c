@@ -160,11 +160,6 @@ public:
     void stackIgnored();
 
     /**
-     * @brief hasMath Indicates that program uses "math.h".
-     */
-    void hasMath();
-
-    /**
      * @brief getType Transforms llvm::Type into corresponding Type object
      * @param type llvm::Type for transformation
      * @return unique_ptr to corresponding Type object
