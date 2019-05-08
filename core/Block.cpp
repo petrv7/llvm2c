@@ -626,7 +626,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                     abstractSyntaxTree.push_back(vars[vars.size() - 1].get());
                     abstractSyntaxTree.push_back(stores[stores.size() - 1].get());
                 } else if (CE) {
-                    if (llvm::GetElementPtrInst* GEP = llvm::dyn_cast<llvm::GetElementPtrInst>(CE->getAsInstruction())) {
+                    if (llvm::isa<llvm::GetElementPtrInst>(CE->getAsInstruction())) {
                         vars.push_back(std::make_unique<Value>(func->getVarName(), func->getExpr(arg.get())->getType()->clone()));
                         stores.push_back(std::make_unique<EqualsExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
                         args.push_back(vars[vars.size() - 1].get());
@@ -1051,7 +1051,7 @@ bool Block::isVoidType(llvm::DITypeRef type) {
 
 void Block::createFuncCallParam(const llvm::Use& param) {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(param->getType())) {
-        if (auto CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(param)) {
+        if (llvm::isa<llvm::ConstantPointerNull>(param)) {
             createConstantValue(param);
         } else if (PT->getElementType()->isFunctionTy() && !param->getName().empty()) {
             func->createExpr(param, std::make_unique<Value>(param->getName().str(), std::make_unique<VoidType>()));

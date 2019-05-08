@@ -90,7 +90,7 @@ void Program::parseFunctions() {
 
 void Program::parseGlobalVars() {
     for (const llvm::GlobalVariable& gvar : module->globals()) {
-        if (const llvm::Function* F = llvm::dyn_cast<llvm::Function>(&gvar)) {
+        if (llvm::isa<llvm::Function>(&gvar)) {
             continue;
         }
 
@@ -130,7 +130,7 @@ std::string Program::getAnonStructName() {
 std::string Program::getInitValue(const llvm::Constant* val) {
     if (llvm::PointerType* PT = llvm::dyn_cast<llvm::PointerType>(val->getType())) {
         std::string name = val->getName().str();
-        if (const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
+        if (llvm::isa<llvm::GlobalVariable>(val)) {
             std::replace(name.begin(), name.end(), '.', '_');
         }
 
@@ -138,15 +138,15 @@ std::string Program::getInitValue(const llvm::Constant* val) {
             return "0";
         }
 
-        if (const llvm::ConstantPointerNull* CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
+        if (llvm::isa<llvm::ConstantPointerNull>(val)) {
             return "0";
         }
 
-        if (const llvm::FunctionType* FT = llvm::dyn_cast<llvm::FunctionType>(PT->getElementType())) {
+        if (llvm::isa<llvm::FunctionType>(PT->getElementType())) {
             return  "&" + name;
         }
 
-        if (const llvm::StructType* ST = llvm::dyn_cast<llvm::StructType>(PT->getElementType())) {
+        if (llvm::isa<llvm::StructType>(PT->getElementType())) {
             return "&" + name;
         }
 

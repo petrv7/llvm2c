@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
         llvm::errs() << e.what() << "\n\n";
         std::cout << "USAGE: llvm2c <input> [options]\n\n";
         std::cout << desc << "\n";
+        return 1;
     }
 
     try {
