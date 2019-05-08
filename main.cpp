@@ -34,25 +34,25 @@ int main(int argc, char** argv) {
             std::cout << desc << "\n";
             return 0;
         }
-
-        try {
-            Program program(argv[1], vars.count("add-includes"), vars.count("no-function-call-casts"));
-
-            if (vars.count("p")) {
-                program.print();
-            }
-
-            if (vars.count("o")) {
-                program.saveFile(vars["o"].as<std::string>());
-            }
-        } catch (std::invalid_argument& e) {
-            llvm::errs() << e.what();
-            return 1;
-        }
     } catch (error& e) {
         llvm::errs() << e.what() << "\n\n";
         std::cout << "USAGE: llvm2c <input> [options]\n\n";
         std::cout << desc << "\n";
+    }
+
+    try {
+        Program program(argv[1], vars.count("add-includes"), vars.count("no-function-call-casts"));
+
+        if (vars.count("p")) {
+            program.print();
+        }
+
+        if (vars.count("o")) {
+            program.saveFile(vars["o"].as<std::string>());
+        }
+    } catch (std::invalid_argument& e) {
+        llvm::errs() << e.what();
+        return 1;
     }
 
     return 0;
