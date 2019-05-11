@@ -38,11 +38,11 @@ public:
 };
 
 /**
- * @brief The EqualsExpr class represents assingment.
+ * @brief The AssignExpr class represents assingment.
  */
-class EqualsExpr : public BinaryExpr {
+class AssignExpr : public BinaryExpr {
 public:
-    EqualsExpr(Expr*, Expr*);
+    AssignExpr(Expr*, Expr*);
 
     void print() const override;
     std::string toString() const override;

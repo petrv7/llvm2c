@@ -37,14 +37,14 @@ std::string SubExpr::toString() const {
     return "(" + left->toString() + ") - (" + right->toString() + ")";
 }
 
-EqualsExpr::EqualsExpr(Expr* l, Expr* r) :
+AssignExpr::AssignExpr(Expr* l, Expr* r) :
     BinaryExpr(l, r) { }
 
-void EqualsExpr::print() const {
+void AssignExpr::print() const {
     llvm::outs() << toString();
 }
 
-std::string EqualsExpr::toString() const {
+std::string AssignExpr::toString() const {
     return left->toString() + " = " + right->toString() + ";";
 }
 

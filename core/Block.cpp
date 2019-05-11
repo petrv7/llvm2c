@@ -98,7 +98,7 @@ void Block::print() {
             }
         }
 
-        if (auto EE = dynamic_cast<EqualsExpr*>(expr)) {
+        if (auto EE = dynamic_cast<AssignExpr*>(expr)) {
             if (func->program->noFuncCasts) {
                 if (auto CE = dynamic_cast<CallExpr*>(EE->right)) {
                     auto call = CE->funcValue;
@@ -162,7 +162,7 @@ void Block::saveFile(std::ofstream& file) {
             }
         }
 
-        if (auto EE = dynamic_cast<EqualsExpr*>(expr)) {
+        if (auto EE = dynamic_cast<AssignExpr*>(expr)) {
             if (func->program->noFuncCasts) {
                 if (auto CE = dynamic_cast<CallExpr*>(EE->right)) {
                     auto call = CE->funcValue;
@@ -209,7 +209,7 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins, bool isConstExpr,
     //create new variable for every load instruction
     loadDerefs.push_back(std::make_unique<DerefExpr>(func->getExpr(ins.getOperand(0))));
     func->createExpr(isConstExpr ? val : &ins, std::make_unique<Value>(func->getVarName(), loadDerefs[loadDerefs.size() - 1]->getType()->clone()));
-    stores.push_back(std::make_unique<EqualsExpr>(func->getExpr(isConstExpr ? val : &ins), loadDerefs[loadDerefs.size() - 1].get()));
+    stores.push_back(std::make_unique<AssignExpr>(func->getExpr(isConstExpr ? val : &ins), loadDerefs[loadDerefs.size() - 1].get()));
 
     abstractSyntaxTree.push_back(func->getExpr(isConstExpr ? val : &ins));
     abstractSyntaxTree.push_back(stores[stores.size() - 1].get());
@@ -321,10 +321,10 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
     }
 
     if (!isConstExpr) {
-        func->createExpr(&ins, std::make_unique<EqualsExpr>(derefs[val1].get(), val0));
+        func->createExpr(&ins, std::make_unique<AssignExpr>(derefs[val1].get(), val0));
         abstractSyntaxTree.push_back(func->getExpr(&ins));
     } else {
-        func->createExpr(val, std::make_unique<EqualsExpr>(derefs[val1].get(), val0));
+        func->createExpr(val, std::make_unique<AssignExpr>(derefs[val1].get(), val0));
     }
 }
 
@@ -620,7 +620,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 //as inline asm has problem with casts and expressions containing "&" symbol
                 if (GI || CI || AI || GV) {
                     vars.push_back(std::make_unique<Value>(func->getVarName(), func->getExpr(arg.get())->getType()->clone()));
-                    stores.push_back(std::make_unique<EqualsExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
+                    stores.push_back(std::make_unique<AssignExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
                     args.push_back(vars[vars.size() - 1].get());
 
                     abstractSyntaxTree.push_back(vars[vars.size() - 1].get());
@@ -628,7 +628,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
                 } else if (CE) {
                     if (llvm::isa<llvm::GetElementPtrInst>(CE->getAsInstruction())) {
                         vars.push_back(std::make_unique<Value>(func->getVarName(), func->getExpr(arg.get())->getType()->clone()));
-                        stores.push_back(std::make_unique<EqualsExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
+                        stores.push_back(std::make_unique<AssignExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
                         args.push_back(vars[vars.size() - 1].get());
 
                         abstractSyntaxTree.push_back(vars[vars.size() - 1].get());
@@ -725,7 +725,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         callExprMap.push_back(std::make_unique<CallExpr>(funcValue, funcName, params, type->clone()));
 
         func->createExpr(value, std::make_unique<Value>(func->getVarName(), type->clone()));
-        callValueMap.push_back(std::make_unique<EqualsExpr>(func->getExpr(value), callExprMap[callExprMap.size() - 1].get()));
+        callValueMap.push_back(std::make_unique<AssignExpr>(func->getExpr(value), callExprMap[callExprMap.size() - 1].get()));
 
         if (!isConstExpr) {
             abstractSyntaxTree.push_back(func->getExpr(&ins));
