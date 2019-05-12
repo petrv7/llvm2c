@@ -52,39 +52,11 @@ public:
     void print() const override;
     std::string toString() const override;
 
+    /**
+     * @brief defToString Returns definition of typedef as a string.
+     * @return String with typedef definition
+     */
     std::string defToString() const;
-};
-
-/**
- * @brief The FunctionType class is used for storing information about function in function pointer.
- */
-class FunctionType : public Type {
-friend class TypeHandler;
-private:
-    std::unique_ptr<Type> retType;
-    std::vector<std::unique_ptr<Type>> params;
-
-public:
-    bool isVarArg = false;
-
-    FunctionType(std::unique_ptr<Type>);
-    FunctionType(const FunctionType&);
-
-    std::unique_ptr<Type> clone() const override;
-    void print() const override;
-    std::string toString() const override;
-
-    /**
-     * @brief addParam Adds parameter to the function.
-     * @param type Type of the parameter
-     */
-    void addParam(std::unique_ptr<Type> type);
-
-    /**
-     * @brief paramsToString Returns function parameters in form of string.
-     * @return String containing function parameters
-     */
-    std::string paramsToString() const;
 };
 
 /**

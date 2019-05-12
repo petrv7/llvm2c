@@ -8,7 +8,6 @@ TypeDef::TypeDef(const std::string& type, const std::string& name, const std::st
       name(name),
       typeEnd(typeEnd) { }
 
-
 TypeDef::TypeDef(const TypeDef& other) {
     type = other.type;
     name = other.name;
@@ -33,67 +32,6 @@ std::string TypeDef::defToString() const {
     }
 
     return "typedef " + type + name + typeEnd + ";";
-}
-
-FunctionType::FunctionType(std::unique_ptr<Type> retType)
-    : retType(std::move(retType)) { }
-
-FunctionType::FunctionType(const FunctionType& other) {
-    retType = other.retType->clone();
-    for (auto& param : other.params) {
-        params.push_back(param->clone());
-    }
-}
-
-void FunctionType::addParam(std::unique_ptr<Type> param) {
-    params.push_back(std::move(param));
-}
-
-std::string FunctionType::paramsToString() const {
-    std::string ret = "(";
-    bool first = true;
-    for (const auto& param : params) {
-        if (!first) {
-            ret += ", ";
-        }
-        first = false;
-
-        ret += param->toString();
-
-        if (auto PT = dynamic_cast<PointerType*>(param.get())) {
-            if (PT->isArrayPointer) {
-                ret += " (";
-                for (unsigned i = 0; i < PT->levels; i++) {
-                    ret += "*";
-                }
-                ret += ")" + PT->sizes;
-            }
-        }
-
-        if (auto AT = dynamic_cast<ArrayType*>(param.get())) {
-            ret += AT->sizeToString();
-        }
-    }
-
-    if (isVarArg) {
-        ret += ", ...";
-    }
-
-    return ret + ")";
-}
-
-std::unique_ptr<Type> FunctionType::clone() const {
-    return std::make_unique<FunctionType>(*this);
-}
-
-void FunctionType::print() const {
-    llvm::outs() << toString();
-}
-
-std::string FunctionType::toString() const {
-    std::string ret = getConstStaticString();
-
-    return ret + retType->toString();
 }
 
 StructType::StructType(const std::string& name)

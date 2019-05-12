@@ -60,18 +60,51 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type) {
         const llvm::PointerType* PT = llvm::cast<const llvm::PointerType>(type);
 
         if (const llvm::FunctionType* FT = llvm::dyn_cast<llvm::FunctionType>(PT->getPointerElementType())) {
-            FunctionType functionType = { getType(FT->getReturnType()) };
+            std::vector<std::string> params;
             if (FT->getNumParams() == 0) {
-                functionType.addParam(std::make_unique<VoidType>());
+                params.push_back("void");
             } else {
+                std::string param;
+                //parsing params to string
                 for (unsigned i = 0; i < FT->getNumParams(); i++) {
-                    functionType.addParam(getType(FT->getParamType(i)));
+                    auto paramType = getType(FT->getParamType(i));
+                    param = paramType->toString();
+
+                    if (auto PT = dynamic_cast<PointerType*>(paramType.get())) {
+                        if (PT->isArrayPointer) {
+                            param += " (";
+                            for (unsigned i = 0; i < PT->levels; i++) {
+                                param += "*";
+                            }
+                            param += ")" + PT->sizes;
+                        }
+                    }
+
+                    if (auto AT = dynamic_cast<ArrayType*>(paramType.get())) {
+                        param += AT->sizeToString();
+                    }
+
+                    params.push_back(param);
                 }
 
-                functionType.isVarArg = FT->isVarArg();
+                if (FT->isVarArg()) {
+                    params.push_back("...");
+                }
             }
 
-            typeDefs[type] = std::make_unique<TypeDef>(functionType.toString() + "(*", getTypeDefName(), ")" + functionType.paramsToString());
+            std::string paramsToString = "(";
+            bool first = true;
+            for (const auto& param : params) {
+                if (!first) {
+                    paramsToString += ", ";
+                }
+                first = false;
+
+                paramsToString += param;
+            }
+            paramsToString += ")";
+
+            typeDefs[type] = std::make_unique<TypeDef>(getType(FT->getReturnType())->toString() + "(*", getTypeDefName(), ")" + paramsToString);
             sortedTypeDefs.push_back(static_cast<TypeDef*>(typeDefs[type].get()));
             return typeDefs[type]->clone();
         }
