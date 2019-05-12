@@ -71,16 +71,16 @@ void Program::parseFunctions() {
     for(const llvm::Function& func : module->functions()) {
         if (func.hasName()) {
             if (!func.isDeclaration()) {
-                functions[&func] = std::make_unique<Func>(&func, this, false, func.isExternalLinkage(func.getLinkage()));
+                functions[&func] = std::make_unique<Func>(&func, this, false);
                 if (!declarations.count(&func)) {
-                    declarations[&func] = std::make_unique<Func>(&func, this, true, func.isExternalLinkage(func.getLinkage()));
+                    declarations[&func] = std::make_unique<Func>(&func, this, true);
                 }
             }
 
             if (func.isDeclaration() || llvm::Function::isInternalLinkage(func.getLinkage())) {
                 if (func.getName().str().substr(0, 8) != "llvm.dbg") {
                     if (!declarations.count(&func)) {
-                        declarations[&func] = std::make_unique<Func>(&func, this, true, func.isExternalLinkage(func.getLinkage()));
+                        declarations[&func] = std::make_unique<Func>(&func, this, true);
                     }
                 }
             }
@@ -560,7 +560,7 @@ RefExpr* Program::getGlobalVar(const llvm::Value* val) {
 
 void Program::addDeclaration(llvm::Function* func) {
     if (!declarations.count(func)) {
-        declarations[func] = std::make_unique<Func>(func, this, true, func->isExternalLinkage(func->getLinkage()));
+        declarations[func] = std::make_unique<Func>(func, this, true);
     }
 }
 

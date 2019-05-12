@@ -56,11 +56,10 @@ const static std::set<std::string> PTHREAD_FUNCTIONS = {"pthread_attr_destroy", 
                                                         "pthread_self","pthread_setcancelstate",  "pthread_setcanceltype", "pthread_setconcurrency",
                                                         "pthread_setschedparam", "pthread_setspecific", "pthread_testcancel"};
 
-Func::Func(const llvm::Function* func, Program* program, bool isDeclaration, bool isExtern) {
+Func::Func(const llvm::Function* func, Program* program, bool isDeclaration) {
     this->program = program;
     function = func;
     this->isDeclaration = isDeclaration;
-    this->isExtern = isExtern;
     returnType = getType(func->getReturnType());
 
     parseFunction();
@@ -114,19 +113,19 @@ void Func::parseFunction() {
     }
 
     if (program->includes) {
-        if (isExtern && isStdLibFunc(name)) {
+        if (isStdLibFunc(name)) {
             program->hasStdLib = true;
         }
 
-        if (isExtern && isStringFunc(name)) {
+        if (isStringFunc(name)) {
             program->hasString = true;
         }
 
-        if (isExtern && isStdioFunc(name)) {
+        if (isStdioFunc(name)) {
             program->hasStdio = true;
         }
 
-        if (isExtern && isPthreadFunc(name)) {
+        if (isPthreadFunc(name)) {
             program->hasPthread = true;
         }
     }
@@ -167,7 +166,7 @@ void Func::print() {
     }
 
     if (program->includes) {
-        if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
+        if (isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) {
             return;
         }
     } else {
@@ -179,10 +178,6 @@ void Func::print() {
 
     if (name.substr(0, 4).compare("llvm") == 0) {
         std::replace(name.begin(), name.end(), '.', '_');
-    }
-
-    if (isExtern) {
-        llvm::outs() << "extern ";
     }
 
     returnType->print();
@@ -261,7 +256,7 @@ void Func::saveFile(std::ofstream& file) {
     }
 
     if (program->includes) {
-        if ((isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) && isExtern) {
+        if (isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) {
             return;
         }
     } else {
@@ -273,10 +268,6 @@ void Func::saveFile(std::ofstream& file) {
 
     if (name.substr(0, 4).compare("llvm") == 0) {
         std::replace(name.begin(), name.end(), '.', '_');
-    }
-
-    if (isExtern) {
-        file << "extern ";
     }
 
     file << returnType->toString();

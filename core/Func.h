@@ -35,7 +35,6 @@ private:
 
     bool isDeclaration; //function is only being declared
     bool isVarArg = false; //function has variable number of arguments
-    bool isExtern; //function is extern
 
     Expr* lastArg; //last argument before variable arguments
 
@@ -107,9 +106,9 @@ public:
      * @brief Func Constructor for Func.
      * @param func llvm::Function for parsing
      * @param program Program to which function belongs
-     * @param isDeclaration bool signalizing that function is only being declared
+     * @param isDeclaration function is only being declared
      */
-    Func(const llvm::Function* func, Program* program, bool isDeclaration, bool isExtern);
+    Func(const llvm::Function* func, Program* program, bool isDeclaration);
 
     /**
      * @brief parseFunction Parses blocks of the llvm::Function.
