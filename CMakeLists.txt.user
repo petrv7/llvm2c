@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.5.2, 2019-05-12T16:15:58. -->
+<!-- Written by QtCreator 4.5.2, 2019-05-13T12:36:37. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -341,7 +341,7 @@
      <value type="int">14</value>
     </valuelist>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguation.Title">llvm2c</value>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">/home/xvitovs2/Projects/sv-llvm/205_9a_array_safes_linux-3.16-rc1.tar.xz-205_9a-drivers--net--arcnet--com90xx.ko-entry_point.cil.out.ll --o test.c</value>
+    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">/home/xvitovs2/Projects/testllvm/test2.bc --o test.c</value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory"></value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory.default">/home/xvitovs2/Projects/build-llvm2c-Desktop-Default</value>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>

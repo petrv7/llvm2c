@@ -971,6 +971,11 @@ void Block::unsetAllInit() {
 }
 
 void Block::createConstantValue(const llvm::Value* val) {
+    if (llvm::isa<llvm::UndefValue>(val)) {
+        func->createExpr(val, std::make_unique<Value>("0", func->getType(val->getType())));
+        return;
+    }
+
     if (auto CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
         func->createExpr(val, std::make_unique<Value>("0", func->getType(CPN->getType())));
     }
