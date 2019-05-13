@@ -262,3 +262,19 @@ public:
     void print() const override;
     std::string toString() const override;
 };
+
+/**
+ * @brief The SelectExpr class represents select instruction in C (comp ? left : right).
+ */
+class SelectExpr : public ExprBase {
+private:
+    Expr* left;
+    Expr* right;
+    Expr* comp;
+
+public:
+    SelectExpr(Expr*, Expr*, Expr*);
+
+    void print() const override;
+    std::string toString() const override;
+};

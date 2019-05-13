@@ -176,17 +176,3 @@ void ShlExpr::print() const {
 std::string ShlExpr::toString() const {
     return "(" + left->toString() + ") << (" + right->toString() + ")";
 }
-
-SelectExpr::SelectExpr(Expr* comp, Expr* l, Expr* r) :
-    BinaryExpr(l, r),
-    comp(comp) {
-    setType(l->getType()->clone());
-}
-
-void SelectExpr::print() const {
-    llvm::outs() << toString();
-}
-
-std::string SelectExpr::toString() const {
-    return "(" + comp->toString() + ") ? " + left->toString() + " : " + right->toString();
-}

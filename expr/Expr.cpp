@@ -376,9 +376,9 @@ void AsmExpr::addOutputExpr(Expr* expr, unsigned pos) {
 }
 
 CallExpr::CallExpr(Expr* funcValue, const std::string &funcName, std::vector<Expr*> params, std::unique_ptr<Type> type)
-    : funcValue(funcValue),
-      funcName(funcName),
-      params(params) {
+    : funcName(funcName),
+      params(params),
+      funcValue(funcValue) {
     setType(std::move(type));
 }
 
@@ -481,3 +481,19 @@ void GepExpr::print() const {
 std::string GepExpr::toString() const {
     return indices[indices.size() - 1]->toString();
 }
+
+SelectExpr::SelectExpr(Expr* comp, Expr* l, Expr* r) :
+    left(l),
+    right(r),
+    comp(comp) {
+    setType(l->getType()->clone());
+}
+
+void SelectExpr::print() const {
+    llvm::outs() << toString();
+}
+
+std::string SelectExpr::toString() const {
+    return "(" + comp->toString() + ") ? " + left->toString() + " : " + right->toString();
+}
+
