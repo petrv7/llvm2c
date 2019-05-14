@@ -217,7 +217,7 @@ void Block::parseLoadInstruction(const llvm::Instruction& ins, bool isConstExpr,
 
 void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
     auto type = func->getType(ins.getOperand(0)->getType());
-    if (auto PT = dynamic_cast<PointerType*>(type.get())) {
+    if (dynamic_cast<PointerType*>(type.get())) {
         if (llvm::Function* function = llvm::dyn_cast<llvm::Function>(ins.getOperand(0))) {
             if (!func->getExpr(ins.getOperand(0))) {
                 func->createExpr(ins.getOperand(0), std::make_unique<Value>("&" + function->getName().str(), std::make_unique<VoidType>()));
@@ -625,7 +625,7 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
     }
 
     //call function if it returns void, otherwise store function return value to a new variable and use this variable instead of function call
-    if (VoidType* VT = dynamic_cast<VoidType*>(type.get())) {
+    if (dynamic_cast<VoidType*>(type.get())) {
         func->createExpr(value, std::make_unique<CallExpr>(funcValue, funcName, params, type->clone()));
 
         if (!isConstExpr) {
@@ -834,7 +834,7 @@ void Block::parseExtractValueInstruction(const llvm::Instruction& ins, bool isCo
     std::unique_ptr<Type> prevType = func->getType(ins.getOperand(0)->getType());
     Expr* expr = func->getExpr(ins.getOperand(0));
 
-    if (auto AE = dynamic_cast<AsmExpr*>(expr)) {
+    if (dynamic_cast<AsmExpr*>(expr)) {
         return;
     }
 
@@ -845,7 +845,7 @@ void Block::parseExtractValueInstruction(const llvm::Instruction& ins, bool isCo
             element = std::make_unique<StructElement>(func->getStruct(ST->name), expr, idx);
         }
 
-        if (ArrayType* AT = dynamic_cast<ArrayType*>(prevType.get())) {
+        if (dynamic_cast<ArrayType*>(prevType.get())) {
             values.push_back(std::make_unique<Value>(std::to_string(idx), std::make_unique<IntType>(true)));
             element = std::make_unique<ArrayElement>(expr, values[values.size() - 1].get());
         }
