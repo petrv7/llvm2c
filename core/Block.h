@@ -159,7 +159,7 @@ private:
     void parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
 
     /**
-     * @brief parseExtractValueInstruction Parses extractvalue instruction into GepExpr. ?????????????????????????????????????
+     * @brief parseExtractValueInstruction Parses extractvalue instruction into ExtractValueExpr.
      * @param ins extractvalue instruction
      * @param isConstExpr indicated that ConstantExpr is being parsed
      * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
@@ -173,6 +173,12 @@ private:
      * @param val pointer to the original ConstantExpr (ins contains ConstantExpr as instruction)
      */
     void parseLLVMInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val);
+
+    /**
+     * @brief parseInlineASM Parses inline assembly into AsmExpr.
+     * @param ins Call instruction with inline asm
+     */
+    void parseInlineASM(const llvm::Instruction& ins);
 
     /**
      * @brief setMetadataInfo Uses metadata to add additional information to variables (e.g. original name, unsigness)

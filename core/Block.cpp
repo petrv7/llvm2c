@@ -591,98 +591,8 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
         llvm::FunctionType* FT = llvm::cast<llvm::FunctionType>(PT->getPointerElementType());
         type = func->getType(FT->getReturnType());
 
-        //inline ASM parsing
-        if (const llvm::InlineAsm* IA = llvm::dyn_cast<const llvm::InlineAsm>(callInst->getCalledValue())) {
-            std::string asmString = toRawString(IA->getAsmString());
-            std::vector<std::string> inputStrings;
-            std::vector<std::string> outputStrings;
-            std::string usedReg;
-
-            if (!IA->getConstraintString().empty()) {
-                outputStrings = getAsmOutputStrings(IA->ParseConstraints());
-                inputStrings = getAsmInputStrings(IA->ParseConstraints());
-                usedReg = getAsmUsedRegString(IA->ParseConstraints());
-            }
-
-            std::vector<Expr*> args;
-            for (const llvm::Use& arg : callInst->arg_operands()) {
-                if (!func->getExpr(arg.get())) {
-                    createFuncCallParam(arg);
-                }
-
-                const llvm::AllocaInst* AI = llvm::dyn_cast<llvm::AllocaInst>(arg.get());
-                const llvm::GetElementPtrInst* GI = llvm::dyn_cast<llvm::GetElementPtrInst>(arg.get());
-                const llvm::CastInst* CI = llvm::dyn_cast<llvm::CastInst>(arg.get());
-                const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(arg.get());
-                llvm::ConstantExpr* CE = llvm::dyn_cast<llvm::ConstantExpr>(arg.get());
-
-                //creates new variable for every alloca, getelementptr and cast instruction and global variable that inline asm takes as a parameter
-                //as inline asm has problem with casts and expressions containing "&" symbol
-                if (GI || CI || AI || GV) {
-                    vars.push_back(std::make_unique<Value>(func->getVarName(), func->getExpr(arg.get())->getType()->clone()));
-                    stores.push_back(std::make_unique<AssignExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
-                    args.push_back(vars[vars.size() - 1].get());
-
-                    abstractSyntaxTree.push_back(vars[vars.size() - 1].get());
-                    abstractSyntaxTree.push_back(stores[stores.size() - 1].get());
-                } else if (CE) {
-                    if (llvm::isa<llvm::GetElementPtrInst>(CE->getAsInstruction())) {
-                        vars.push_back(std::make_unique<Value>(func->getVarName(), func->getExpr(arg.get())->getType()->clone()));
-                        stores.push_back(std::make_unique<AssignExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
-                        args.push_back(vars[vars.size() - 1].get());
-
-                        abstractSyntaxTree.push_back(vars[vars.size() - 1].get());
-                        abstractSyntaxTree.push_back(stores[stores.size() - 1].get());
-                    } else {
-                        args.push_back(func->getExpr(arg.get()));
-                    }
-                } else {
-                    args.push_back(func->getExpr(arg.get()));
-                }
-            }
-
-            std::vector<std::pair<std::string, Expr*>> output;
-            Expr* expr = nullptr;
-            unsigned pos = 0;
-            for (const auto& str : outputStrings) {
-                if (str.find('*') == std::string::npos) {
-                    output.push_back({str, expr});
-                } else {
-                    output.push_back({str, args[pos]});
-                    pos++;
-                }
-            }
-
-            std::vector<std::pair<std::string, Expr*>> input;
-            unsigned arg = args.size() - 1;
-            for (int i = inputStrings.size() - 1; i >= 0; i--) {
-                //handle number constraint reffering to multiple option constraint
-                std::string inputString = inputStrings[i].substr(1, inputStrings[i].size() - 2);
-                std::string::const_iterator it = inputString.begin();
-                while (it != inputString.end() && std::isdigit(*it)) {
-                    ++it;
-                }
-
-                if (it == inputString.end()) {
-                    int num = std::stoi(inputString);
-                    std::string outputString = output[num].first;
-                    if (outputString.find(',') != std::string::npos) {
-                        output[num].first = "\"+" + outputString.substr(3, outputString.size() - 3);
-                        arg--;
-                        continue;
-                    }
-                }
-
-                input.push_back({inputStrings[i], args[arg]});
-                arg--;
-            }
-
-            func->createExpr(value, std::make_unique<AsmExpr>(asmString, output, input, usedReg));
-
-            if (!isConstExpr) {
-                abstractSyntaxTree.push_back(func->getExpr(&ins));
-            }
-
+        if (llvm::isa<llvm::InlineAsm>(callInst->getCalledValue())) {
+            parseInlineASM(ins);
             return;
         }
 
@@ -732,6 +642,98 @@ void Block::parseCallInstruction(const llvm::Instruction& ins, bool isConstExpr,
             abstractSyntaxTree.push_back(callValueMap[callValueMap.size() - 1].get());
         }
     }
+}
+
+void Block::parseInlineASM(const llvm::Instruction& ins) {
+    const auto callInst = llvm::cast<llvm::CallInst>(&ins);
+    const auto IA = llvm::cast<llvm::InlineAsm>(callInst->getCalledValue());
+
+    std::string asmString = toRawString(IA->getAsmString());
+    std::vector<std::string> inputStrings;
+    std::vector<std::string> outputStrings;
+    std::string usedReg;
+
+    if (!IA->getConstraintString().empty()) {
+        outputStrings = getAsmOutputStrings(IA->ParseConstraints());
+        inputStrings = getAsmInputStrings(IA->ParseConstraints());
+        usedReg = getAsmUsedRegString(IA->ParseConstraints());
+    }
+
+    std::vector<Expr*> args;
+    for (const llvm::Use& arg : callInst->arg_operands()) {
+        if (!func->getExpr(arg.get())) {
+            createFuncCallParam(arg);
+        }
+
+        const llvm::AllocaInst* AI = llvm::dyn_cast<llvm::AllocaInst>(arg.get());
+        const llvm::GetElementPtrInst* GI = llvm::dyn_cast<llvm::GetElementPtrInst>(arg.get());
+        const llvm::CastInst* CI = llvm::dyn_cast<llvm::CastInst>(arg.get());
+        const llvm::GlobalVariable* GV = llvm::dyn_cast<llvm::GlobalVariable>(arg.get());
+        llvm::ConstantExpr* CE = llvm::dyn_cast<llvm::ConstantExpr>(arg.get());
+
+        //creates new variable for every alloca, getelementptr and cast instruction and global variable that inline asm takes as a parameter
+        //as inline asm has problem with casts and expressions containing "&" symbol
+        if (GI || CI || AI || GV) {
+            vars.push_back(std::make_unique<Value>(func->getVarName(), func->getExpr(arg.get())->getType()->clone()));
+            stores.push_back(std::make_unique<AssignExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
+            args.push_back(vars[vars.size() - 1].get());
+
+            abstractSyntaxTree.push_back(vars[vars.size() - 1].get());
+            abstractSyntaxTree.push_back(stores[stores.size() - 1].get());
+        } else if (CE) {
+            if (llvm::isa<llvm::GetElementPtrInst>(CE->getAsInstruction())) {
+                vars.push_back(std::make_unique<Value>(func->getVarName(), func->getExpr(arg.get())->getType()->clone()));
+                stores.push_back(std::make_unique<AssignExpr>(vars[vars.size() - 1].get(), func->getExpr(arg.get())));
+                args.push_back(vars[vars.size() - 1].get());
+
+                abstractSyntaxTree.push_back(vars[vars.size() - 1].get());
+                abstractSyntaxTree.push_back(stores[stores.size() - 1].get());
+            } else {
+                args.push_back(func->getExpr(arg.get()));
+            }
+        } else {
+            args.push_back(func->getExpr(arg.get()));
+        }
+    }
+
+    std::vector<std::pair<std::string, Expr*>> output;
+    Expr* expr = nullptr;
+    unsigned pos = 0;
+    for (const auto& str : outputStrings) {
+        if (str.find('*') == std::string::npos) {
+            output.push_back({str, expr});
+        } else {
+            output.push_back({str, args[pos]});
+            pos++;
+        }
+    }
+
+    std::vector<std::pair<std::string, Expr*>> input;
+    unsigned arg = args.size() - 1;
+    for (int i = inputStrings.size() - 1; i >= 0; i--) {
+        //handle number constraint reffering to multiple option constraint
+        std::string inputString = inputStrings[i].substr(1, inputStrings[i].size() - 2);
+        std::string::const_iterator it = inputString.begin();
+        while (it != inputString.end() && std::isdigit(*it)) {
+            ++it;
+        }
+
+        if (it == inputString.end()) {
+            int num = std::stoi(inputString);
+            std::string outputString = output[num].first;
+            if (outputString.find(',') != std::string::npos) {
+                output[num].first = "\"+" + outputString.substr(3, outputString.size() - 3);
+                arg--;
+                continue;
+            }
+        }
+
+        input.push_back({inputStrings[i], args[arg]});
+        arg--;
+    }
+
+    func->createExpr(&ins, std::make_unique<AsmExpr>(asmString, output, input, usedReg));
+    abstractSyntaxTree.push_back(func->getExpr(&ins));
 }
 
 void Block::parseCastInstruction(const llvm::Instruction& ins, bool isConstExpr, const llvm::Value* val) {
