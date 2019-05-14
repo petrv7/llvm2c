@@ -980,6 +980,7 @@ void Block::createConstantValue(const llvm::Value* val) {
 
     if (auto CPN = llvm::dyn_cast<llvm::ConstantPointerNull>(val)) {
         func->createExpr(val, std::make_unique<Value>("0", func->getType(CPN->getType())));
+        return;
     }
 
     if (auto CI = llvm::dyn_cast<llvm::ConstantInt>(val)) {
@@ -992,7 +993,9 @@ void Block::createConstantValue(const llvm::Value* val) {
         } else {
             value = std::to_string(CI->getSExtValue());
         }
+
         func->createExpr(val, std::make_unique<Value>(value, std::make_unique<IntType>(false)));
+        return;
     }
 
     if (auto CFP = llvm::dyn_cast<llvm::ConstantFP>(val)) {
@@ -1015,6 +1018,7 @@ void Block::createConstantValue(const llvm::Value* val) {
 
             func->createExpr(val, std::make_unique<Value>(CFPvalue, std::make_unique<FloatType>()));
         }
+        return;
     }
 
     if (auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
