@@ -158,6 +158,7 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
         }
     }
 
+    //skip stacksave
     if (llvm::CallInst* CI = llvm::dyn_cast<llvm::CallInst>(ins.getOperand(0))) {
         if (CI->getCalledFunction()) {
             if (CI->getCalledFunction()->getName().str().compare("llvm.stacksave") == 0) {
@@ -174,8 +175,8 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
         isCast = true;
     }
 
-    //asm output handling
     if (isCast) {
+        //inline asm with multiple outputs with casts
         if (llvm::ExtractValueInst* EVI = llvm::dyn_cast<llvm::ExtractValueInst>(inst)) {
             if (!func->getExpr(ins.getOperand(1))) {
                 createConstantValue(ins.getOperand(1));
@@ -193,6 +194,7 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
             }
         }
 
+        //inline asm with single output with cast
         if (AsmExpr* AE = dynamic_cast<AsmExpr*>(func->getExpr(inst))) {
             if (!func->getExpr(ins.getOperand(1))) {
                 createConstantValue(ins.getOperand(1));
@@ -208,6 +210,7 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
         }
     }
 
+    //inline asm with multiple outputs
     if (llvm::ExtractValueInst* EVI = llvm::dyn_cast<llvm::ExtractValueInst>(ins.getOperand(0))) {
         if (!func->getExpr(ins.getOperand(1))) {
             createConstantValue(ins.getOperand(1));
@@ -224,7 +227,6 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
             return;
         }
     }
-    //asm output handling end
 
     if (!func->getExpr(ins.getOperand(0))) {
         createConstantValue(ins.getOperand(0));
@@ -236,6 +238,7 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
     }
     Expr* val1 = func->getExpr(ins.getOperand(1));
 
+    //storing to NULL
     if (val1->toString().compare("0") == 0) {
         casts.push_back(std::make_unique<CastExpr>(val1, func->getType(ins.getOperand(1)->getType())));
         val1 = casts[casts.size() - 1].get();
@@ -245,6 +248,7 @@ void Block::parseStoreInstruction(const llvm::Instruction& ins, bool isConstExpr
         derefs[val1] = std::make_unique<DerefExpr>(val1);
     }
 
+    //inline asm with single output
     if (auto AE = dynamic_cast<AsmExpr*>(val0)) {
         if (auto RE = dynamic_cast<RefExpr*>(val1)) {
             val1 = RE->expr;
@@ -629,6 +633,7 @@ void Block::parseInlineASM(const llvm::Instruction& ins) {
         }
     }
 
+    //output parsing
     std::vector<std::pair<std::string, Expr*>> output;
     Expr* expr = nullptr;
     unsigned pos = 0;
@@ -641,6 +646,7 @@ void Block::parseInlineASM(const llvm::Instruction& ins) {
         }
     }
 
+    //input parsing
     std::vector<std::pair<std::string, Expr*>> input;
     unsigned arg = args.size() - 1;
     for (int i = inputStrings.size() - 1; i >= 0; i--) {
@@ -651,6 +657,7 @@ void Block::parseInlineASM(const llvm::Instruction& ins) {
             ++it;
         }
 
+        //handle number constraint refering to multi-alternative output constraint
         if (it == inputString.end()) {
             int num = std::stoi(inputString);
             std::string outputString = output[num].first;
