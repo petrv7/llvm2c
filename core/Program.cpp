@@ -10,6 +10,7 @@
 #include <fstream>
 #include <exception>
 #include <algorithm>
+#include <regex>
 
 Program::Program(const std::string &file, bool includes, bool casts)
     : typeHandler(TypeHandler(this)),
@@ -101,6 +102,11 @@ void Program::parseGlobalVars() {
 void Program::parseGlobalVar(const llvm::GlobalVariable &gvar) {
     std::string gvarName = gvar.getName().str();
     std::replace(gvarName.begin(), gvarName.end(), '.', '_');
+
+    std::regex varName("var[0-9]+");
+    if (std::regex_match(gvarName, varName)) {
+        globalVarNames.insert(gvarName);
+    }
 
     std::string value;
     if (gvar.hasInitializer()) {

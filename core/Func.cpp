@@ -11,6 +11,7 @@
 #include <string>
 #include <fstream>
 #include <set>
+#include <regex>
 
 const static std::set<std::string> STDLIB_FUNCTIONS = {"atof", "atoi", "atol", "strtod", "strtol", "strtoul", "calloc",
                                                        "free", "malloc", "realloc", "abort", "atexit", "exit", "getenv",
@@ -98,6 +99,9 @@ void Func::createExpr(const llvm::Value* val, std::unique_ptr<Expr> expr) {
 
 std::string Func::getVarName() {
     std::string varName = "var";
+    while (metadataVarNames.count(varName + std::to_string(varCount))) {
+        varCount++;
+    }
     varName += std::to_string(varCount);
     varCount++;
 
@@ -130,11 +134,10 @@ void Func::parseFunction() {
         }
     }
 
+    getMetadataNames();
+
     for (const llvm::Value& arg : function->args()) {
-        std::string varName = "var";
-        varName += std::to_string(varCount);
-        exprMap[&arg] = std::make_unique<Value>(varName, getType(arg.getType()));
-        varCount++;
+        exprMap[&arg] = std::make_unique<Value>(getVarName(), getType(arg.getType()));
         larg = &arg;
     }
 
@@ -149,6 +152,27 @@ void Func::parseFunction() {
 
     for (const auto& block : *function) {
         blockMap[&block]->parseLLVMBlock();
+    }
+}
+
+void Func::getMetadataNames() {
+    metadataVarNames.insert(program->globalVarNames.begin(), program->globalVarNames.end());
+
+    for (const llvm::BasicBlock& block : *function) {
+        for (const llvm::Instruction& ins : block) {
+            if (ins.getOpcode() == llvm::Instruction::Call) {
+                const auto CI = llvm::cast<llvm::CallInst>(&ins);
+                if (CI->getCalledFunction() && CI->getCalledFunction()->getName().str().compare("llvm.dbg.declare") == 0) {
+                    llvm::Metadata* varMD = llvm::dyn_cast<llvm::MetadataAsValue>(ins.getOperand(1))->getMetadata();
+                    llvm::DILocalVariable* localVar = llvm::dyn_cast<llvm::DILocalVariable>(varMD);
+
+                    std::regex varName("var[0-9]+");
+                    if (std::regex_match(localVar->getName().str(), varName)) {
+                        metadataVarNames.insert(localVar->getName().str());
+                    }
+                }
+            }
+        }
     }
 }
 

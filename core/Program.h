@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/IR/Module.h>
@@ -15,6 +16,7 @@
  */
 class Program {
 friend class TypeHandler;
+friend class Func;
 private:
     llvm::LLVMContext context;
     llvm::SMDiagnostic error;
@@ -29,6 +31,9 @@ private:
     std::vector<std::unique_ptr<GlobalValue>> globalVars; // vector of parsed global variables
     llvm::DenseMap<const llvm::GlobalVariable*, std::unique_ptr<RefExpr>> globalRefs; //map containing references to global variables
     llvm::DenseMap<const llvm::StructType*, std::unique_ptr<Struct>> unnamedStructs; // map containing unnamed structs
+
+    //set containing names of global variables that are in "var[0-9]+" format, used in creating variable names in functions
+    std::set<std::string> globalVarNames;
 
     //variables used for creating names for structs and anonymous structs
     unsigned structVarCount = 0;

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 
 #include "llvm/ADT/DenseMap.h"
 
@@ -27,6 +28,9 @@ private:
 
     llvm::DenseMap<const llvm::BasicBlock*, std::unique_ptr<Block>> blockMap; //DenseMap used for mapping llvm::BasicBlock to Block
     llvm::DenseMap<const llvm::Value*, std::unique_ptr<Expr>> exprMap; // DenseMap used for mapping llvm::Value to Expr
+
+    //set containing metadata names of variables (and names of global variables) that are in "var[0-9]+" format, used in creating variable names
+    std::set<std::string> metadataVarNames;
 
     //variables used for creating names for variables and blocks
     unsigned varCount = 0;
@@ -100,6 +104,11 @@ private:
      * @return True if function is part of pthread.h, false otherwise
      */
     bool isPthreadFunc(const std::string& func);
+
+    /**
+     * @brief getMetadataNames Parses variable medatada in function and saves the variable names into the metadataVarNames set.
+     */
+    void getMetadataNames();
 
 public:
     /**
