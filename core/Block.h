@@ -262,15 +262,10 @@ public:
     void parseLLVMBlock();
 
     /**
-     * @brief print Prints the translated block in the llvm::outs() stream.
+     * @brief output Outputs the translated block to the given stream.
+     * @param stream Stream for output
      */
-    void print();
-
-    /**
-     * @brief saveFile Saves the translated block to the given file.
-     * @param file Opened file for saving the block.
-     */
-    void saveFile(std::ofstream& file);
+    void output(std::ostream& stream);
 
     /**
      * @brief isCFunc Determines wether the LLVM function has equivalent in standard C library.

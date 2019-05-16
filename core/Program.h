@@ -109,6 +109,19 @@ private:
      */
     std::string getIncludeString() const;
 
+    /**
+     * @brief output Outputs the translated program to given stream.
+     * @param stream Stream for output
+     */
+    void output(std::ostream& stream);
+
+    /**
+     * @brief outputStruct Outputs parsed Struct to given stream. If Struct contains other Struct, then the other is output first.
+     * @param strct Struct for output
+     * @param stream Stream for output
+     */
+    void outputStruct(Struct* strct, std::ostream& stream);
+
 public:
     bool stackIgnored = false; //instruction stacksave was ignored
 

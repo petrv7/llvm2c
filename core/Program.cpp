@@ -11,6 +11,7 @@
 #include <exception>
 #include <algorithm>
 #include <regex>
+#include <iostream>
 
 Program::Program(const std::string &file, bool includes, bool casts)
     : typeHandler(TypeHandler(this)),
@@ -257,172 +258,10 @@ void Program::unsetAllInit() {
 }
 
 void Program::print() {
-    unsetAllInit();
-
-    llvm::outs() << getIncludeString();
-
-    if (!structs.empty()) {
-        llvm::outs() << "//Struct declarations\n";
-        for (const auto& strct : structs) {
-            llvm::outs() << "struct " << strct->name << ";\n";
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (typeHandler.hasTypeDefs()) {
-        llvm::outs() << "//typedefs\n";
-        for (auto elem : typeHandler.sortedTypeDefs) {
-            llvm::outs() << elem->defToString() << "\n";
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (!structs.empty()) {
-        llvm::outs() << "//Struct definitions\n";
-        for (auto& strct : structs) {
-            if (!strct->isPrinted) {
-                printStruct(strct.get());
-            }
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (!unnamedStructs.empty()) {
-        llvm::outs() << "//Anonymous struct declarations\n";
-        for (const auto& elem : unnamedStructs) {
-            llvm::outs() << "struct " << elem.second->name << ";\n";
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (!globalVars.empty()) {
-        llvm::outs() << "//Global variable declarations\n";
-        for (auto& gvar : globalVars) {
-            if (includes && (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0)) {
-                continue;
-            }
-
-            llvm::outs() << gvar->declToString();
-            llvm::outs() << "\n";
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (!declarations.empty()) {
-        llvm::outs() << "//Function declarations\n";
-        for (const auto& func : declarations) {
-            func.second->print();
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (!unnamedStructs.empty()) {
-        llvm::outs() << "//Anonymous struct definitions\n";
-        for (auto& elem : unnamedStructs) {
-            if (!elem.second->isPrinted) {
-                printStruct(elem.second.get());
-            }
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (!globalVars.empty()) {
-        llvm::outs() << "//Global variable definitions\n";
-        for (auto& gvar : globalVars) {
-            if (includes && (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0)) {
-                gvar->init = true;
-                continue;
-            }
-
-            llvm::outs() << gvar->toString();
-            gvar->init = true;
-            llvm::outs() << "\n";
-        }
-        llvm::outs() << "\n";
-    }
-
-    if (!functions.empty()) {
-        llvm::outs() << "//Function definitions\n";
-        for (const auto& func : functions) {
-            func.second->print();
-        }
-    }
-    llvm::outs().flush();
-}
-
-void Program::printStruct(Struct* strct) {
-    for (auto& item : strct->items) {
-        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
-            if (AT->isStructArray) {
-                printStruct(getStruct(AT->structName));
-            }
-        }
-
-        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
-            if (PT->isStructPointer && PT->isArrayPointer) {
-                printStruct(getStruct(PT->structName));
-            }
-        }
-
-        if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
-            for (auto& s : structs) {
-                if (s->name == ST->name) {
-                    printStruct(s.get());
-                }
-            }
-
-            for (auto& s : unnamedStructs) {
-                if (s.second->name == ST->name) {
-                    printStruct(s.second.get());
-                }
-            }
-        }
-    }
-    if (!strct->isPrinted) {
-        strct->print();
-        strct->isPrinted = true;
-        llvm::outs() << "\n\n";
-    }
-}
-
-void Program::saveStruct(Struct* strct, std::ofstream& file) {
-    for (auto& item : strct->items) {
-        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
-            if (AT->isStructArray) {
-                saveStruct(getStruct(AT->structName), file);
-            }
-        }
-
-        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
-            if (PT->isStructPointer && PT->isArrayPointer) {
-                saveStruct(getStruct(PT->structName), file);
-            }
-        }
-
-        if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
-            for (auto& s : structs) {
-                if (s->name == ST->name) {
-                    saveStruct(s.get(), file);
-                }
-            }
-
-            for (auto& s : unnamedStructs) {
-                if (s.second->name == ST->name) {
-                    saveStruct(s.second.get(), file);
-                }
-            }
-        }
-    }
-    if (!strct->isPrinted) {
-        file << strct->toString();
-        strct->isPrinted = true;
-        file << "\n\n";
-    }
+    output(std::cout);
 }
 
 void Program::saveFile(const std::string& fileName) {
-    unsetAllInit();
-
     std::ofstream file;
     file.open(fileName);
 
@@ -430,96 +269,138 @@ void Program::saveFile(const std::string& fileName) {
         throw std::invalid_argument("Output file cannot be opened!");
     }
 
-    file << getIncludeString();
+    output(file);
+
+    file.close();
+
+    std::cout << "Translated program successfuly saved into " << fileName << "\n";
+}
+
+void Program::outputStruct(Struct* strct, std::ostream& stream) {
+    for (auto& item : strct->items) {
+        if (auto AT = dynamic_cast<ArrayType*>(item.first.get())) {
+            if (AT->isStructArray) {
+                outputStruct(getStruct(AT->structName), stream);
+            }
+        }
+
+        if (auto PT = dynamic_cast<PointerType*>(item.first.get())) {
+            if (PT->isStructPointer && PT->isArrayPointer) {
+                outputStruct(getStruct(PT->structName), stream);
+            }
+        }
+
+        if (auto ST = dynamic_cast<StructType*>(item.first.get())) {
+            for (auto& s : structs) {
+                if (s->name == ST->name) {
+                    outputStruct(s.get(), stream);
+                }
+            }
+
+            for (auto& s : unnamedStructs) {
+                if (s.second->name == ST->name) {
+                    outputStruct(s.second.get(), stream);
+                }
+            }
+        }
+    }
+
+    if (!strct->isPrinted) {
+        stream << strct->toString();
+        strct->isPrinted = true;
+        stream << "\n\n";
+    }
+}
+
+void Program::output(std::ostream &stream) {
+    unsetAllInit();
+
+    stream << getIncludeString();
 
     if (!structs.empty()) {
-        file << "//Struct declarations\n";
+        stream << "//Struct declarations\n";
         for (auto& strct : structs) {
-            file << "struct " << strct->name << ";\n";
+            stream << "struct " << strct->name << ";\n";
         }
-        file << "\n";
+        stream << "\n";
     }
 
     if (typeHandler.hasTypeDefs()) {
-        file << "//typedefs\n";
+        stream << "//typedefs\n";
         for (auto elem : typeHandler.sortedTypeDefs) {
-            file << elem->defToString() << "\n";
+            stream << elem->defToString() << "\n";
         }
-        file << "\n";
+        stream << "\n";
     }
 
     if (!structs.empty()) {
-        file << "//Struct definitions\n";
+        stream << "//Struct definitions\n";
         for (auto& strct : structs) {
             if (!strct->isPrinted) {
-                saveStruct(strct.get(), file);
+                outputStruct(strct.get(), stream);
             }
         }
-        file << "\n";
+        stream << "\n";
     }
 
     if (!unnamedStructs.empty()) {
-        file << "//Anonymous struct declarations\n";
+        stream << "//Anonymous struct declarations\n";
         for (const auto& elem : unnamedStructs) {
-            file << "struct " << elem.second->name << ";\n";
+            stream << "struct " << elem.second->name << ";\n";
         }
-        file << "\n";
+        stream << "\n";
     }
 
     if (!globalVars.empty()) {
-        file << "//Global variable declarations\n";
+        stream << "//Global variable declarations\n";
         for (auto& gvar : globalVars) {
             if (includes && (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0)) {
                 continue;
             }
 
-            file << gvar->declToString();
-            file << "\n";
+            stream << gvar->declToString();
+            stream << "\n";
         }
-        file << "\n";
+        stream << "\n";
     }
 
     if (!declarations.empty()) {
-        file << "//Function declarations\n";
+        stream << "//Function declarations\n";
         for (const auto& func : declarations) {
-            func.second->saveFile(file);
+            func.second->output(stream);
         }
-        file << "\n";
+        stream << "\n";
     }
 
     if (!unnamedStructs.empty()) {
-        file << "//Anonymous struct definitions\n";
+        stream << "//Anonymous struct definitions\n";
         for (auto& elem : unnamedStructs) {
             if (!elem.second->isPrinted) {
-                saveStruct(elem.second.get(), file);
+                outputStruct(elem.second.get(), stream);
             }
         }
-        file << "\n";
+        stream << "\n";
     }
 
     if (!globalVars.empty()) {
-        file << "//Global variable definitions\n";
+        stream << "//Global variable definitions\n";
         for (auto& gvar : globalVars) {
             if (includes && (gvar->valueName.compare("stdin") == 0 || gvar->valueName.compare("stdout") == 0 || gvar->valueName.compare("stderr") == 0)) {
                 gvar->init = true;
                 continue;
             }
 
-            file << gvar->toString();
+            stream << gvar->toString();
             gvar->init = true;
-            file << "\n";
+            stream << "\n";
         }
-        file << "\n";
+        stream << "\n";
     }
 
-    file << "//Function definitions\n";
+    stream << "//Function definitions\n";
     for (const auto& func : functions) {
-        func.second->saveFile(file);
+        func.second->output(stream);
     }
-
-    file.close();
-
-    llvm::outs() << "Translated program successfuly saved into " << fileName << "\n";
 }
 
 Struct* Program::getStruct(const llvm::StructType* strct) const {

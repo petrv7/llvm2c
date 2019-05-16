@@ -62,17 +62,16 @@ void Block::parseLLVMBlock() {
     }
 }
 
-void Block::print() {
+void Block::output(std::ostream& stream) {
     unsetAllInit();
-
     for (const auto expr : abstractSyntaxTree) {
         if (auto V = dynamic_cast<Value*>(expr)) {
-            llvm::outs() << "    ";
+            stream << "    ";
             if (!V->init) {
-                V->getType()->print();
-                llvm::outs() << " ";
-                expr->print();
-                llvm::outs() << ";\n";
+                stream << V->getType()->toString();
+                stream << " ";
+                stream << expr->toString();
+                stream << ";\n";
                 V->init = true;
             }
             continue;
@@ -88,11 +87,9 @@ void Block::print() {
                 }
 
                 if (hasCast) {
-                    llvm::outs() << "    ";
-                    llvm::outs() << call->toString().substr(1, call->toString().size() - 1);
-                    llvm::outs() << "(";
-                    CE->printParams();
-                    llvm::outs() << ");\n";
+                    stream << "    ";
+                    stream << call->toString().substr(1, call->toString().size() - 1);
+                    stream << "(" << CE->paramsToString() << ");\n";
                     continue;
                 }
             }
@@ -109,84 +106,20 @@ void Block::print() {
                     }
 
                     if (hasCast) {
-                        llvm::outs() << "    (";
-                        EE->left->print();
-                        llvm::outs() << ") = ";
-                        llvm::outs() << call->toString().substr(1, call->toString().size() - 1);
-                        llvm::outs() << "(";
-                        CE->printParams();
-                        llvm::outs() << ");\n";
+                        stream << "    (";
+                        stream << EE->left->toString();
+                        stream << ") = ";
+                        stream << call->toString().substr(1, call->toString().size() - 1);
+                        stream << "(" << CE->paramsToString() << ");\n";
                         continue;
                     }
                 }
             }
         }
 
-        llvm::outs() << "    ";
-        expr->print();
-        llvm::outs() << "\n";
-        llvm::outs().flush();
-    }
-}
-
-void Block::saveFile(std::ofstream& file) {
-    unsetAllInit();
-    for (const auto expr : abstractSyntaxTree) {
-        if (auto V = dynamic_cast<Value*>(expr)) {
-            file << "    ";
-            if (!V->init) {
-                file << V->getType()->toString();
-                file << " ";
-                file << expr->toString();
-                file << ";\n";
-                V->init = true;
-            }
-            continue;
-        }
-
-        if (auto CE = dynamic_cast<CallExpr*>(expr)) {
-            if (func->program->noFuncCasts) {
-                auto call = CE->funcValue;
-                bool hasCast = false;
-                while (auto CAST = dynamic_cast<CastExpr*>(call)) {
-                    hasCast = true;
-                    call = CAST->expr;
-                }
-
-                if (hasCast) {
-                    file << "    ";
-                    file << call->toString().substr(1, call->toString().size() - 1);
-                    file << "(" << CE->paramsToString() << ");\n";
-                    continue;
-                }
-            }
-        }
-
-        if (auto EE = dynamic_cast<AssignExpr*>(expr)) {
-            if (func->program->noFuncCasts) {
-                if (auto CE = dynamic_cast<CallExpr*>(EE->right)) {
-                    auto call = CE->funcValue;
-                    bool hasCast = false;
-                    while (auto CAST = dynamic_cast<CastExpr*>(call)) {
-                        hasCast = true;
-                        call = CAST->expr;
-                    }
-
-                    if (hasCast) {
-                        file << "    (";
-                        file << EE->left->toString();
-                        file << ") = ";
-                        file << call->toString().substr(1, call->toString().size() - 1);
-                        file << "(" << CE->paramsToString() << ");\n";
-                        continue;
-                    }
-                }
-            }
-        }
-
-        file << "    ";
-        file << expr->toString();
-        file << "\n";
+        stream << "    ";
+        stream << expr->toString();
+        stream << "\n";
     }
 }
 

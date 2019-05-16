@@ -176,96 +176,7 @@ void Func::getMetadataNames() {
     }
 }
 
-void Func::print() {
-    std::string name = function->getName().str();
-
-    if (Block::isCFunc(Block::getCFunc(name))) {
-        name = Block::getCFunc(name);
-        if (name.compare("va_start") == 0
-                || name.compare("va_end") == 0
-                || name.compare("va_copy") == 0
-                || Block::isCMath(name)) {
-            return;
-        }
-    }
-
-    if (program->includes) {
-        if (isStdLibFunc(name) || isStringFunc(name) || isStdioFunc(name) || isPthreadFunc(name)) {
-            return;
-        }
-    } else {
-        //sometimes LLVM uses these functions with more arguments than their C counterparts
-        if ((name.compare("memcpy") == 0 || name.compare("memset") == 0 || name.compare("memmove") == 0) && function->arg_size() > 3) {
-            return;
-        }
-    }
-
-    if (name.substr(0, 4).compare("llvm") == 0) {
-        std::replace(name.begin(), name.end(), '.', '_');
-    }
-
-    returnType->print();
-    auto PT = dynamic_cast<PointerType*>(returnType.get());
-    if (PT && PT->isArrayPointer) {
-        llvm::outs() << " (";
-        for (unsigned i = 0; i < PT->levels; i++) {
-            llvm::outs() << "*";
-        }
-        llvm::outs() << name << "(";
-    } else {
-        llvm::outs() << " " << name << "(";
-    }
-
-    bool first = true;
-    for (const llvm::Value& arg : function->args()) {
-        if (!first) {
-            llvm::outs() << ", ";
-        }
-        first = false;
-
-        Value* val = static_cast<Value*>(exprMap.find(&arg)->second.get());
-        val->getType()->print();
-        llvm::outs() << " ";
-        val->print();
-
-        val->init = true;
-
-    }
-
-    if (isVarArg) {
-        if (!first) {
-            llvm::outs() << ", ";
-        }
-        llvm::outs() << "...";
-    }
-
-    llvm::outs() << ")";
-
-    if (PT && PT->isArrayPointer) {
-        llvm::outs() << ")" + PT->sizes;
-    }
-
-    if (isDeclaration) {
-        llvm::outs() << ";\n";
-        return;
-    }
-
-    llvm::outs() << " {\n";
-
-    first = true;
-    for (const auto& block : *function) {
-        if (!first) {
-            llvm::outs() << blockMap.find(&block)->second->blockName;
-            llvm::outs() << ":\n    ;\n";
-        }
-        blockMap.find(&block)->second->print();
-        first = false;
-    }
-
-    llvm::outs() << "}\n\n";
-}
-
-void Func::saveFile(std::ofstream& file) {
+void Func::output(std::ostream& stream) {
     std::string name = function->getName().str();
 
     if (Block::isCFunc(Block::getCFunc(name))) {
@@ -294,65 +205,65 @@ void Func::saveFile(std::ofstream& file) {
         std::replace(name.begin(), name.end(), '.', '_');
     }
 
-    file << returnType->toString();
+    stream << returnType->toString();
     auto PT = dynamic_cast<PointerType*>(returnType.get());
     if (PT && PT->isArrayPointer) {
-        file << " (";
+        stream << " (";
         for (unsigned i = 0; i < PT->levels; i++) {
-            file << "*";
+            stream << "*";
         }
-        file << name << "(";
+        stream << name << "(";
     } else {
-        file << " " << name << "(";
+        stream << " " << name << "(";
     }
 
     bool first = true;
 
     for (const llvm::Value& arg : function->args()) {
         if (!first) {
-            file << ", ";
+            stream << ", ";
         }
         first = false;
 
         Value* val = static_cast<Value*>(exprMap.find(&arg)->second.get());
-        file << val->getType()->toString();
-        file << " ";
-        file << val->toString();
+        stream << val->getType()->toString();
+        stream << " ";
+        stream << val->toString();
 
         val->init = true;
     }
 
     if (isVarArg) {
         if (!first) {
-            file << ", ";
+            stream << ", ";
         }
-        file << "...";
+        stream << "...";
     }
 
-    file << ")";
+    stream << ")";
 
     if (PT && PT->isArrayPointer) {
-        file << ")" + PT->sizes;
+        stream << ")" + PT->sizes;
     }
 
     if (isDeclaration) {
-        file << ";\n";
+        stream << ";\n";
         return;
     }
 
-    file << " {\n";
+    stream << " {\n";
 
     first = true;
     for (const auto& block : *function) {
         if (!first) {
-            file << blockMap.find(&block)->second->blockName;
-            file << ":\n    ;\n";
+            stream << blockMap.find(&block)->second->blockName;
+            stream << ":\n    ;\n";
         }
-        blockMap.find(&block)->second->saveFile(file);
+        blockMap.find(&block)->second->output(stream);
         first = false;
     }
 
-    file << "}\n\n";
+    stream << "}\n\n";
 }
 
 Struct* Func::getStruct(const llvm::StructType* strct) const {
