@@ -903,6 +903,7 @@ void Block::unsetAllInit() {
 }
 
 void Block::createConstantValue(const llvm::Value* val) {
+    //undefined value is translated as zero, only for experimental purposes (this value cannot occur in LLVM generated from C)
     if (llvm::isa<llvm::UndefValue>(val)) {
         func->createExpr(val, std::make_unique<Value>("0", func->getType(val->getType())));
         return;
