@@ -1,58 +1,42 @@
 #include "core/Program.h"
 
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 
 #include <iostream>
 #include <string>
-#include <boost/program_options.hpp>
 
-using namespace boost::program_options;
+using namespace llvm;
 
 int main(int argc, char** argv) {
-    options_description desc("Options");
-    desc.add_options()
-            ("h", "Help message")
-            ("p", "Print translated program")
-            ("o", value<std::string>(), "Output translated program into file specified by arg")
-            ("debug", "Prints only information about translation")
-            ("add-includes", "Uses includes instead of declarations. For experimental purposes.")
-            ("no-function-call-casts", "Removes casted function calls. For experimental purposes.");
-    variables_map vars;
-    try {
-        store(parse_command_line(argc, argv, desc), vars);
-        notify(vars);
+    cl::OptionCategory options("llvm2c options");
+    cl::opt<std::string> Output("o", cl::desc("Output filename"), cl::value_desc("filename"), cl::cat(options));
+    cl::opt<std::string> Input(cl::Positional, cl::Required, cl::desc("<input>"), cl::cat(options));
+    cl::opt<bool> Print("p", cl::desc("Print translated program"), cl::cat(options));
+    cl::opt<bool> Debug("debug", cl::desc("Print only information about translation"), cl::cat(options));
+    cl::opt<bool> Includes("add-includes", cl::desc("Uses includes instead of declarations. For experimental purposes."), cl::cat(options));
+    cl::opt<bool> Casts("no-function-call-casts", cl::desc("Removes casts around function calls. For experimental purposes."), cl::cat(options));
 
-        if (vars.count("h")) {
-            std::cout << "USAGE: llvm2c <input> [options]\n\n";
-            std::cout << desc << "\n";
-            return 0;
-        }
+    cl::HideUnrelatedOptions(options);
+    cl::ParseCommandLineOptions(argc, argv);
 
-        if (!vars.count("o") && !vars.count("p") && !vars.count("debug")) {
-            std::cout << "Output method not specified!\n\n";
-            std::cout << "USAGE: llvm2c <input> [options]\n\n";
-            std::cout << desc << "\n";
-            return 0;
-        }
-    } catch (error& e) {
-        llvm::errs() << e.what() << "\n\n";
-        std::cout << "USAGE: llvm2c <input> [options]\n\n";
-        std::cout << desc << "\n";
+    if (Output.empty() && !Print && !Debug) {
+        std::cout << "Output method not specified!\n";
         return 1;
     }
 
     try {
-        Program program(argv[1], vars.count("add-includes"), vars.count("no-function-call-casts"));
+        Program program(Input, Includes, Casts);
 
-        if (vars.count("p")) {
+        if (Print) {
             program.print();
         }
 
-        if (vars.count("o")) {
-            program.saveFile(vars["o"].as<std::string>());
+        if (!Output.empty()) {
+            program.saveFile(Output);
         }
     } catch (std::invalid_argument& e) {
-        llvm::errs() << e.what();
+        std::cerr << e.what();
         return 1;
     }
 
