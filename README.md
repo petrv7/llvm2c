@@ -9,7 +9,6 @@ Translation of LLVM bitcode to C
 | CMake | 2.8+ |
 | LLVM | 4.0 |
 | Clang | 4.0 |
-| Boost library | |
 
 ## Installation
 
