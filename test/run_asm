@@ -31,15 +31,15 @@ else
 			ORIG=$?
 			./new $i $((i+5))
 			if [[ $ORIG != $? ]]; then
-				echo "Test $f failed with input $i $((i+5))!"
+				echo "Test basic_add failed with input $i $((i+5))!"
 				ASM=$((ASM+1))
 			fi
 		done
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
 	fi
-	rm temp.ll
-	rm temp.c
-	rm new
-	rm orig
 fi
 
 clang asm/multiple_asm.c -o orig 2>/dev/null
@@ -64,15 +64,15 @@ else
 			ORIG=$?
 			./new $i $((i+5))
 			if [[ $ORIG != $? ]]; then
-				echo "Test $f failed with input $i $((i+5))!"
+				echo "Test multiple_asm failed with input $i $((i+5))!"
 				ASM=$((ASM+1))
 			fi
 		done
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
 	fi
-	rm temp.ll
-	rm temp.c
-	rm new
-	rm orig
 fi
 
 clang asm/mov.c -o orig 2>/dev/null
@@ -96,15 +96,14 @@ else
 		ORIG=$?
 		./new
 		if [[ $ORIG != $? ]]; then
-			echo "Test $f failed!"
+			echo "Test mov failed!"
 			ASM=$((ASM+1))
 		fi
-
+		rm temp.ll
+		rm temp.c
+		rm new
+		rm orig
 	fi
-	rm temp.ll
-	rm temp.c
-	rm new
-	rm orig
 fi
 
 if [[ $ASM -eq 0 ]]; then

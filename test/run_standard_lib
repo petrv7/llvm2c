@@ -35,11 +35,11 @@ for f in standard_lib/*.c; do
 			fi
 			rm orig_output
 			rm new_output
+			rm temp.ll
+			rm temp.c
+			rm new
+			rm orig
 		fi
-		rm temp.ll
-		rm temp.c
-		rm new
-		rm orig
 	fi
 done
 

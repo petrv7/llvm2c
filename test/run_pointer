@@ -36,11 +36,11 @@ for f in pointer/*.c; do
 					PTR=$((PTR+1))
 				fi
 			done
+			rm temp.ll
+			rm temp.c
+			rm new
+			rm orig
 		fi
-		rm temp.ll
-		rm temp.c
-		rm new
-		rm orig
 	fi
 done
 

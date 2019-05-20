@@ -36,11 +36,11 @@ for f in branching/*.c; do
 					BR=$((BR+1))
 				fi
 			done
+			rm temp.ll
+			rm temp.c
+			rm new
+			rm orig
 		fi
-		rm temp.ll
-		rm temp.c
-		rm new
-		rm orig
 	fi
 done
 
