@@ -891,7 +891,9 @@ void Block::setMetadataInfo(const llvm::CallInst* ins) {
         llvm::DILocalVariable* localVar = llvm::dyn_cast<llvm::DILocalVariable>(varMD);
         llvm::DIBasicType* type = llvm::dyn_cast<llvm::DIBasicType>(localVar->getType());
 
-        variable->valueName = localVar->getName();
+        if (!localVar->getName().empty()) {
+            variable->valueName = localVar->getName();
+        }
 
         if (type && type->getName().str().compare(0, 8, "unsigned") == 0) {
             if (IntegerType* IT = dynamic_cast<IntegerType*>(variable->getType())) {
