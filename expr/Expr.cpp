@@ -78,8 +78,7 @@ void StructElement::print() const {
 }
 
 std::string StructElement::toString() const {
-    std::string ret = "(";
-    if (auto PT = dynamic_cast<PointerType*>(expr->getType())) {
+    if (dynamic_cast<PointerType*>(expr->getType())) {
         return "(" + expr->toString() + ")->" + strct->items[element].second;
     }
 
