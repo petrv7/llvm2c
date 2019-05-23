@@ -3,11 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 aux_source_directory(. SRC_LIST)
 set(FILES core/Func.h core/Func.cpp core/Block.h core/Block.cpp core/Program.h core/Program.cpp type/Type.h type/Type.cpp type/TypeHandler.h type/TypeHandler.cpp expr/Expr.h expr/Expr.cpp expr/BinaryExpr.h expr/BinaryExpr.cpp expr/UnaryExpr.h expr/UnaryExpr.cpp)
 add_executable(llvm2c ${SRC_LIST} ${FILES})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -g -Wextra -pedantic -fpermissive -lboost_program_options")
-
-FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-TARGET_LINK_LIBRARIES(llvm2c ${Boost_LIBRARIES})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -fpermissive")
 
 find_package(LLVM REQUIRED CONFIG)
 if (${LLVM_PACKAGE_VERSION} VERSION_GREATER "3.4")
