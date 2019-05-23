@@ -104,8 +104,8 @@ std::unique_ptr<Type> TypeHandler::getType(const llvm::Type* type) {
             }
             paramsToString += ")";
 
-            typeDefs[type] = std::make_unique<TypeDef>(getType(FT->getReturnType())->toString() + "(*", getTypeDefName(), ")" + paramsToString);
-            sortedTypeDefs.push_back(static_cast<TypeDef*>(typeDefs[type].get()));
+            typeDefs[type] = std::make_unique<FunctionPointerType>(getType(FT->getReturnType())->toString() + "(*", getTypeDefName(), ")" + paramsToString);
+            sortedTypeDefs.push_back(static_cast<FunctionPointerType*>(typeDefs[type].get()));
             return typeDefs[type]->clone();
         }
 

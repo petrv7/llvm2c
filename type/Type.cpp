@@ -3,30 +3,30 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/Support/raw_ostream.h"
 
-TypeDef::TypeDef(const std::string& type, const std::string& name, const std::string& typeEnd)
+FunctionPointerType::FunctionPointerType(const std::string& type, const std::string& name, const std::string& typeEnd)
     : type(type),
       name(name),
       typeEnd(typeEnd) { }
 
-TypeDef::TypeDef(const TypeDef& other) {
+FunctionPointerType::FunctionPointerType(const FunctionPointerType& other) {
     type = other.type;
     name = other.name;
     typeEnd = other.typeEnd;
 }
 
-void TypeDef::print() const {
+void FunctionPointerType::print() const {
     llvm::outs() << toString();
 }
 
-std::string TypeDef::toString() const {
+std::string FunctionPointerType::toString() const {
     return name;
 }
 
-std::unique_ptr<Type> TypeDef::clone() const {
-    return std::make_unique<TypeDef>(type, name, typeEnd);
+std::unique_ptr<Type> FunctionPointerType::clone() const {
+    return std::make_unique<FunctionPointerType>(type, name, typeEnd);
 }
 
-std::string TypeDef::defToString() const {
+std::string FunctionPointerType::defToString() const {
     if (typeEnd.empty()) {
         return "typedef " + type + " " + name + ";";
     }

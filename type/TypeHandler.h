@@ -29,7 +29,7 @@ private:
     }
 
 public:
-    std::vector<const TypeDef*> sortedTypeDefs; //vector of sorted typedefs, used in output
+    std::vector<const FunctionPointerType*> sortedTypeDefs; //vector of sorted typedefs, used in output
 
     TypeHandler(Program* program)
         : program(program) { }

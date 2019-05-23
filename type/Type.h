@@ -33,10 +33,10 @@ public:
 };
 
 /**
- * @brief The TypeDef class represents typedef for function pointer.
- * It contains all the information needed for printing the typedef definition.
+ * @brief The FunctionPointerType class represents function pointer.
+ * It contains all the information needed for printing the FunctionPointerType definition.
  */
-class TypeDef : public Type {
+class FunctionPointerType : public Type {
 friend class TypeHandler;
 private:
     //type is split into two string so the name can be printed separately
@@ -45,16 +45,16 @@ private:
     std::string typeEnd;
 
 public:
-    TypeDef(const std::string&, const std::string&, const std::string&);
-    TypeDef(const TypeDef&);
+    FunctionPointerType(const std::string&, const std::string&, const std::string&);
+    FunctionPointerType(const FunctionPointerType&);
 
     std::unique_ptr<Type> clone() const override;
     void print() const override;
     std::string toString() const override;
 
     /**
-     * @brief defToString Returns definition of typedef as a string.
-     * @return String with typedef definition
+     * @brief defToString Returns definition of FunctionPointerType as a typedef string.
+     * @return String with FunctionPointerType definition
      */
     std::string defToString() const;
 };
