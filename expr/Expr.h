@@ -234,27 +234,27 @@ public:
 };
 
 /**
- * @brief The PointerMove class represents moving of a pointer.
+ * @brief The PointerShift class represents shifting a pointer.
  */
-class PointerMove : public ExprBase {
+class PointerShift : public ExprBase {
 private:
     std::unique_ptr<Type> ptrType; //type of the pointer
-    Expr* pointer; //expression being moved
-    Expr* move; //expression representing number used for moving
+    Expr* pointer; //expression being shifted
+    Expr* move; //expression representing number used for shifting
 
 public:
-    PointerMove(std::unique_ptr<Type>, Expr*, Expr*);
+    PointerShift(std::unique_ptr<Type>, Expr*, Expr*);
 
     void print() const override;
     std::string toString() const override;
 };
 
 /**
- * @brief The GepExpr class represents getelementptr instruction in C. It is made of sequence of StructElement, ArrayElement and PointerMove expressions.
+ * @brief The GepExpr class represents getelementptr instruction in C. It is made of sequence of StructElement, ArrayElement and PointerShift expressions.
  */
 class GepExpr : public ExprBase {
 private:
-    std::vector<std::unique_ptr<Expr>> indices; //sequence of StructElement, ArrayElement and PointerMove expressions
+    std::vector<std::unique_ptr<Expr>> indices; //sequence of StructElement, ArrayElement and PointerShift expressions
 
 public:
     GepExpr(std::vector<std::unique_ptr<Expr>>&);

@@ -743,7 +743,7 @@ void Block::parseGepInstruction(const llvm::Instruction& ins, bool isConstExpr, 
             if (index->toString().compare("0") == 0) {
                 indices.push_back(std::make_unique<DerefExpr>(prevExpr));
             } else {
-                indices.push_back(std::make_unique<PointerMove>(func->getType(prevType), prevExpr, index));
+                indices.push_back(std::make_unique<PointerShift>(func->getType(prevType), prevExpr, index));
             }
         }
 

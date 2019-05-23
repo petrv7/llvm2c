@@ -431,7 +431,7 @@ std::string CallExpr::paramsToString() const {
     return ret;
 }
 
-PointerMove::PointerMove(std::unique_ptr<Type> ptrType, Expr* pointer, Expr* move)
+PointerShift::PointerShift(std::unique_ptr<Type> ptrType, Expr* pointer, Expr* move)
     : ptrType(std::move(ptrType)),
       pointer(pointer),
       move(move) {
@@ -440,11 +440,11 @@ PointerMove::PointerMove(std::unique_ptr<Type> ptrType, Expr* pointer, Expr* mov
     }
 }
 
-void PointerMove::print() const {
+void PointerShift::print() const {
     llvm::outs() << toString();
 }
 
-std::string PointerMove::toString() const {
+std::string PointerShift::toString() const {
     std::string ret;
 
     if (move->toString().compare("0") == 0) {
