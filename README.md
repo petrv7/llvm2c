@@ -7,8 +7,8 @@ Translation of LLVM bitcode to C
 | Name | Version | 
 | ---- | ------- |
 | CMake | 2.8+ |
-| LLVM | 4.0 |
-| Clang | 4.0 |
+| LLVM | 6.0 - 7.0 |
+| Clang | 6.0 - 7.0 |
 
 ## Installation
 
@@ -23,5 +23,3 @@ Translation of LLVM bitcode to C
 ## Authors
 
 * **Petr Vitovský** - [petrv7](https://github.com/petrv7)
-
-WIP
